@@ -35,30 +35,9 @@ export default function Dashboard() {
       supabase.from('kids').select('*').eq('user_id', user.id).order('created_at'),
       supabase.from('categories').select('*').eq('user_id', user.id).order('name'),
     ])
-
-    let categories = c.data ?? []
-    // Fallback: if no categories exist, seed defaults client-side
-    if (categories.length === 0) {
-      const defaults = [
-        { name: 'Medical',    emoji: '❤️',  color: '#dc2626' },
-        { name: 'School',     emoji: '📚',  color: '#2563eb' },
-        { name: 'Sports',     emoji: '⚽',  color: '#059669' },
-        { name: 'Excursions', emoji: '📍',  color: '#d97706' },
-        { name: 'Travel',     emoji: '✈️',  color: '#7c3aed' },
-        { name: 'Dental',     emoji: '😁',  color: '#db2777' },
-        { name: 'Clothing',   emoji: '🛍️',  color: '#0891b2' },
-        { name: 'Food',       emoji: '🍽️',  color: '#d97706' },
-        { name: 'Other',      emoji: '🏷️',  color: '#475569' },
-      ]
-      const { data: inserted } = await supabase.from('categories')
-        .insert(defaults.map(d => ({ ...d, user_id: user.id })))
-        .select()
-      categories = inserted ?? []
-    }
-
     setExpenses((e.data ?? []) as Expense[])
     setKids(k.data ?? [])
-    setCats(categories)
+    setCats(c.data ?? [])
     setLoading(false)
   }
 
