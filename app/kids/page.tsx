@@ -41,11 +41,9 @@ export default function KidsPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     setSaving(true)
-    if (editing) {
-      await supabase.from('kids').update({ name: form.name, dob: form.dob || null, color: form.color }).eq('id', editing.id)
-    } else {
-      await supabase.from('kids').insert({ user_id: user.id, name: form.name, dob: form.dob || null, color: form.color })
-    }
+    const payload = { name: form.name, dob: form.dob || null, color: form.color }
+    if (editing) await supabase.from('kids').update(payload).eq('id', editing.id)
+    else await supabase.from('kids').insert({ ...payload, user_id: user.id })
     setSaving(false); setModal(false); load()
   }
 
@@ -77,7 +75,7 @@ export default function KidsPage() {
           <div style={{ textAlign: 'center', padding: '56px 24px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '20px' }}>
             <div style={{ fontSize: '48px', marginBottom: '12px' }}>👶</div>
             <div style={{ fontWeight: '600', fontSize: '16px', color: '#374151', marginBottom: '6px' }}>No children added yet</div>
-            <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '20px' }}>Add a profile for each child to start tracking</div>
+            <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '20px' }}>Add a profile for each child</div>
             <button onClick={openAdd} style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Add first child</button>
           </div>
         ) : (
@@ -110,13 +108,12 @@ export default function KidsPage() {
         <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && setModal(false)}>
           <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px', width: '100%', maxWidth: '640px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>{editing ? 'Edit child' : 'Add child'}</h3>
+              <h3 style={{ fontSize: '18px', fontWeight: '700' }}>{editing ? 'Edit child' : 'Add child'}</h3>
               <button onClick={() => setModal(false)} style={{ width: '32px', height: '32px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {/* Avatar preview */}
               <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <div style={{ width: '72px', height: '72px', borderRadius: '20px', background: form.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '700', fontSize: '28px' }}>
                   {form.name?.[0]?.toUpperCase() || '?'}
@@ -127,9 +124,7 @@ export default function KidsPage() {
               <div>
                 <label style={lbl}>AVATAR COLOR</label>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {COLORS.map(c => (
-                    <button key={c} type="button" onClick={() => setForm({ ...form, color: c })} style={{ width: '36px', height: '36px', borderRadius: '10px', background: c, border: form.color === c ? '3px solid #0f172a' : '3px solid transparent', cursor: 'pointer' }} />
-                  ))}
+                  {COLORS.map(c => <button key={c} type="button" onClick={() => setForm({ ...form, color: c })} style={{ width: '36px', height: '36px', borderRadius: '10px', background: c, border: form.color === c ? '3px solid #0f172a' : '3px solid transparent', cursor: 'pointer' }} />)}
                 </div>
               </div>
               <button onClick={save} disabled={saving || !form.name.trim()} style={{ padding: '14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', opacity: (saving || !form.name.trim()) ? 0.5 : 1 }}>
