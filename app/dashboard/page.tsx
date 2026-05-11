@@ -277,9 +277,11 @@ export default function Dashboard() {
                       <div style={{ fontWeight: '700', fontSize: '14px', color: '#0f172a', fontVariantNumeric: 'tabular-nums' }}>{sym(exp.currency)}{Number(exp.amount).toFixed(2)}</div>
                       <div style={{ fontSize: '10px', color: '#94a3b8' }}>{exp.split_pct}/{100 - exp.split_pct}</div>
                     </div>
-                    <button onClick={() => deleteExpense(exp.id)} style={{ padding: '4px', background: 'none', border: 'none', cursor: 'pointer', color: '#cbd5e1', flexShrink: 0 }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-                    </button>
+                    {exp.created_by === ctx?.myUserId && (
+                      <button onClick={() => deleteExpense(exp.id)} style={{ padding: '4px', background: 'none', border: 'none', cursor: 'pointer', color: '#cbd5e1', flexShrink: 0 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+                      </button>
+                    )}
                   </div>
                 )
               })}

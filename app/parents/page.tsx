@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react'
 import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
 
-interface Member { user_id: string; display_name: string; color: string; role: string; household_id: string }
-interface Invite { id: string; code: string; invited_email: string | null; expires_at: string; accepted: boolean }
+interface Member { user_id: string; display_name: string; color: string; role: string }
+interface Invite { id: string; code: string; invited_email: string; expires_at: string }
 
 const COLORS = ['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#db2777','#0891b2','#475569']
 
@@ -14,14 +14,15 @@ export default function ParentsPage() {
   const [members, setMembers] = useState<Member[]>([])
   const [invites, setInvites] = useState<Invite[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Invite modal
   const [inviteModal, setInviteModal] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
-  const [generated, setGenerated] = useState<Invite | null>(null)
-  const [creating, setCreating] = useState(false)
-  const [joinCode, setJoinCode] = useState('')
-  const [joining, setJoining] = useState(false)
-  const [joinErr, setJoinErr] = useState('')
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState<Invite | null>(null)
+  const [inviteErr, setInviteErr] = useState('')
 
+  // Edit me
   const [editMe, setEditMe] = useState(false)
   const [myForm, setMyForm] = useState({ display_name: '', color: '#2563eb' })
   const [savingMe, setSavingMe] = useState(false)
@@ -33,13 +34,7 @@ export default function ParentsPage() {
     if (!user) return
     setMe({ id: user.id, email: user.email ?? '' })
 
-    // Find my household
-    const { data: myMembership } = await supabase
-      .from('household_members')
-      .select('household_id')
-      .eq('user_id', user.id)
-      .maybeSingle()
-
+    const { data: myMembership } = await supabase.from('household_members').select('household_id').eq('user_id', user.id).maybeSingle()
     if (!myMembership?.household_id) { setLoading(false); return }
 
     const { data: hh } = await supabase.from('households').select('*').eq('id', myMembership.household_id).single()
@@ -53,7 +48,7 @@ export default function ParentsPage() {
       .eq('household_id', myMembership.household_id)
       .eq('accepted', false)
       .order('created_at', { ascending: false })
-    setInvites(invs ?? [])
+    setInvites((invs ?? []) as Invite[])
 
     const my = mems?.find(m => m.user_id === user.id)
     if (my) setMyForm({ display_name: my.display_name, color: my.color })
@@ -61,38 +56,61 @@ export default function ParentsPage() {
     setLoading(false)
   }
 
-  async function createInvite() {
-    if (!household) return
-    setCreating(true)
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data, error } = await supabase
-      .from('invites')
-      .insert({ household_id: household.id, invited_by: user.id, invited_email: inviteEmail || null, code })
-      .select()
-      .single()
-    setCreating(false)
-    if (error) { alert('Could not create invite: ' + error.message); return }
-    setGenerated(data)
-    load()
-  }
-
-  async function joinHousehold() {
-    setJoining(true); setJoinErr('')
-    const { data, error } = await supabase.rpc('accept_invite', { invite_code: joinCode.trim().toUpperCase() })
-    setJoining(false)
-    if (error || !data?.ok) {
-      setJoinErr(data?.error ?? error?.message ?? 'Could not join')
+  async function sendInvite() {
+    if (!household || !me) return
+    if (!inviteEmail.trim() || !inviteEmail.includes('@')) {
+      setInviteErr('Enter a valid email address')
       return
     }
-    setJoinCode('')
+    setSending(true); setInviteErr('')
+
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase()
+    const link = `${window.location.origin}/invite/${code}`
+
+    // Create invite record
+    const { data: invite, error: invErr } = await supabase
+      .from('invites')
+      .insert({ household_id: household.id, invited_by: me.id, invited_email: inviteEmail.trim(), code })
+      .select().single()
+
+    if (invErr) {
+      setInviteErr('Could not create invite: ' + invErr.message)
+      setSending(false)
+      return
+    }
+
+    // Send email via Supabase Auth's invite system
+    // This uses Supabase's email template — make sure SMTP is configured!
+    const { error: emailErr } = await supabase.auth.signInWithOtp({
+      email: inviteEmail.trim(),
+      options: {
+        emailRedirectTo: link,
+        shouldCreateUser: true,
+      },
+    })
+
+    setSending(false)
+
+    if (emailErr) {
+      // Email failed but invite still exists — user can copy link manually
+      setSent(invite as Invite)
+      setInviteErr('Email send failed (' + emailErr.message + '). You can copy the link below and send it manually.')
+    } else {
+      setSent(invite as Invite)
+      setInviteErr('')
+    }
     load()
   }
 
   async function deleteInvite(id: string) {
     await supabase.from('invites').delete().eq('id', id)
     load()
+  }
+
+  async function copyLink(code: string) {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/invite/${code}`)
+    } catch {}
   }
 
   async function saveMe() {
@@ -104,15 +122,15 @@ export default function ParentsPage() {
     load()
   }
 
-  async function copy(text: string) {
-    try {
-      await navigator.clipboard.writeText(text)
-    } catch {}
+  function closeInviteModal() {
+    setInviteModal(false)
+    setSent(null)
+    setInviteEmail('')
+    setInviteErr('')
   }
 
   const myInfo = members.find(m => m.user_id === me?.id)
   const coParent = members.find(m => m.user_id !== me?.id)
-  const inviteLink = generated ? `${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${generated.code}` : ''
 
   const inp: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: '#f8fafc', outline: 'none' }
   const lbl: React.CSSProperties = { fontSize: '11px', fontWeight: '600', color: '#374151', marginBottom: '5px', display: 'block', letterSpacing: '0.05em' }
@@ -127,7 +145,6 @@ export default function ParentsPage() {
 
         {loading ? <div style={{ textAlign: 'center', padding: '48px', color: '#94a3b8' }}>Loading…</div> : (
         <>
-          {/* You */}
           {myInfo && (
             <div style={{ marginBottom: '12px' }}>
               <div style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '8px', paddingLeft: '4px' }}>YOU</div>
@@ -144,7 +161,6 @@ export default function ParentsPage() {
             </div>
           )}
 
-          {/* Co-parent */}
           <div style={{ marginBottom: '20px' }}>
             <div style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '8px', paddingLeft: '4px' }}>CO-PARENT</div>
             {coParent ? (
@@ -161,57 +177,36 @@ export default function ParentsPage() {
                 </div>
               </div>
             ) : (
-              <button onClick={() => { setGenerated(null); setInviteEmail(''); setInviteModal(true) }} style={{ width: '100%', textAlign: 'left', background: '#fff', border: '2px dashed #cbd5e1', borderRadius: '16px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }}>
+              <button onClick={() => setInviteModal(true)} style={{ width: '100%', textAlign: 'left', background: '#fff', border: '2px dashed #cbd5e1', borderRadius: '16px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }}>
                 <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontWeight: '700', fontSize: '24px' }}>+</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '600', fontSize: '15px', color: '#0f172a' }}>Invite co-parent</div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Send email invite or share a code</div>
+                  <div style={{ fontWeight: '600', fontSize: '15px', color: '#0f172a' }}>Invite co-parent by email</div>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Send them a link to join</div>
                 </div>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
               </button>
             )}
           </div>
 
-          {/* Pending invites */}
           {invites.length > 0 && !coParent && (
             <div style={{ marginBottom: '20px' }}>
               <div style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '8px', paddingLeft: '4px' }}>PENDING INVITES</div>
               {invites.map(inv => (
                 <div key={inv.id} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706', fontSize: '16px' }}>⏳</div>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>⏳</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#92400e' }}>
-                      Code: <span style={{ fontFamily: 'monospace', letterSpacing: '2px' }}>{inv.code}</span>
-                    </div>
-                    {inv.invited_email && <div style={{ fontSize: '11px', color: '#78350f', marginTop: '1px' }}>Sent to {inv.invited_email}</div>}
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#92400e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.invited_email}</div>
+                    <div style={{ fontSize: '11px', color: '#78350f', marginTop: '1px' }}>Waiting to accept · expires {new Date(inv.expires_at).toLocaleDateString()}</div>
                   </div>
-                  <button onClick={() => copy(inv.code)} style={{ padding: '5px 10px', background: '#fff', border: '1px solid #fde68a', borderRadius: '7px', fontSize: '12px', color: '#92400e', cursor: 'pointer', fontWeight: '500' }}>Copy</button>
+                  <button onClick={() => copyLink(inv.code)} style={{ padding: '5px 10px', background: '#fff', border: '1px solid #fde68a', borderRadius: '7px', fontSize: '12px', color: '#92400e', cursor: 'pointer', fontWeight: '500' }}>Copy link</button>
                   <button onClick={() => deleteInvite(inv.id)} style={{ padding: '5px 10px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '7px', fontSize: '12px', color: '#dc2626', cursor: 'pointer', fontWeight: '500' }}>Cancel</button>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Join with code */}
-          {!coParent && members.length === 1 && (
-            <div style={{ marginBottom: '20px', padding: '16px', background: '#f1f5f9', borderRadius: '14px' }}>
-              <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a', marginBottom: '8px' }}>Got an invite code?</div>
-              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>If your co-parent invited you, paste their code here:</div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input value={joinCode} onChange={e => { setJoinCode(e.target.value.toUpperCase()); setJoinErr('') }}
-                  placeholder="e.g. AB12CD" style={{ ...inp, fontFamily: 'monospace', letterSpacing: '2px' }} />
-                <button onClick={joinHousehold} disabled={!joinCode.trim() || joining}
-                  style={{ padding: '10px 18px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '600', fontSize: '13px', cursor: 'pointer', opacity: (!joinCode.trim() || joining) ? 0.5 : 1 }}>
-                  {joining ? '…' : 'Join'}
-                </button>
-              </div>
-              {joinErr && <div style={{ fontSize: '12px', color: '#dc2626', marginTop: '8px' }}>{joinErr}</div>}
-            </div>
-          )}
-
-          {/* Info */}
           <div style={{ padding: '14px 16px', background: '#eff6ff', borderRadius: '12px', fontSize: '13px', color: '#1e40af', lineHeight: 1.5 }}>
-            💡 Both parents share the same children, expenses, and categories. Settlement is calculated automatically.
+            💡 Both parents see all expenses, children, and categories. Only the parent who created an entry can edit or delete it.
           </div>
         </>
         )}
@@ -219,59 +214,66 @@ export default function ParentsPage() {
 
       {/* INVITE MODAL */}
       {inviteModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && setInviteModal(false)}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && closeInviteModal()}>
           <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px', width: '100%', maxWidth: '640px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Invite co-parent</h3>
-              <button onClick={() => setInviteModal(false)} style={{ width: '32px', height: '32px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <button onClick={closeInviteModal} style={{ width: '32px', height: '32px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
 
-            {!generated ? (
+            {!sent ? (
               <>
                 <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px', lineHeight: 1.5 }}>
-                  Add their email (optional) and generate an invite code. Send them the link or code — they sign up and join your household instantly.
+                  Enter your co-parent&apos;s email. We&apos;ll send them a link to join your household.
                 </div>
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={lbl}>EMAIL (OPTIONAL)</label>
-                  <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
-                    placeholder="coparent@example.com" style={inp} />
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={lbl}>EMAIL ADDRESS</label>
+                  <input type="email" value={inviteEmail} onChange={e => { setInviteEmail(e.target.value); setInviteErr('') }}
+                    onKeyDown={e => e.key === 'Enter' && sendInvite()}
+                    placeholder="coparent@example.com" style={inp} autoFocus />
                 </div>
-                <button onClick={createInvite} disabled={creating}
-                  style={{ width: '100%', padding: '13px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', opacity: creating ? 0.6 : 1 }}>
-                  {creating ? 'Creating…' : 'Generate invite'}
+                {inviteErr && (
+                  <div style={{ padding: '10px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '13px', color: '#dc2626', marginBottom: '14px' }}>
+                    {inviteErr}
+                  </div>
+                )}
+                <button onClick={sendInvite} disabled={sending}
+                  style={{ width: '100%', padding: '13px', background: sending ? '#93c5fd' : '#2563eb', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: sending ? 'not-allowed' : 'pointer' }}>
+                  {sending ? 'Sending invite…' : 'Send invite email'}
                 </button>
               </>
             ) : (
               <>
-                <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>Share this with your co-parent:</div>
-
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={lbl}>INVITE CODE</label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <div style={{ flex: 1, padding: '14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', fontFamily: 'monospace', fontSize: '22px', letterSpacing: '6px', textAlign: 'center', fontWeight: '700', color: '#2563eb' }}>
-                      {generated.code}
-                    </div>
-                    <button onClick={() => copy(generated.code)} style={{ padding: '10px 16px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Copy</button>
+                <div style={{ padding: '14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    <strong style={{ fontSize: '14px', color: '#059669' }}>Invite sent!</strong>
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#065f46', lineHeight: 1.5 }}>
+                    Email sent to <strong>{sent.invited_email}</strong>. They&apos;ll click the link in the email to join.
                   </div>
                 </div>
 
+                {inviteErr && (
+                  <div style={{ padding: '10px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '12px', color: '#dc2626', marginBottom: '14px' }}>
+                    {inviteErr}
+                  </div>
+                )}
+
                 <div style={{ marginBottom: '14px' }}>
-                  <label style={lbl}>OR SHARE THIS LINK</label>
+                  <label style={lbl}>BACKUP — SHARE THIS LINK MANUALLY</label>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <div style={{ flex: 1, padding: '10px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '12px', color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {inviteLink}
+                      {`${window.location.origin}/invite/${sent.code}`}
                     </div>
-                    <button onClick={() => copy(inviteLink)} style={{ padding: '10px 16px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Copy</button>
+                    <button onClick={() => copyLink(sent.code)} style={{ padding: '10px 16px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Copy</button>
                   </div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>In case the email doesn&apos;t arrive — you can send this link directly</div>
                 </div>
 
-                <div style={{ padding: '12px', background: '#eff6ff', borderRadius: '10px', fontSize: '12px', color: '#1e40af', lineHeight: 1.5, marginBottom: '14px' }}>
-                  Tell them: <strong>{generated.invited_email ?? 'they'}</strong> should sign up with their email, then open the link or paste the code in Parents → Got an invite code? Expires in 7 days.
-                </div>
-
-                <button onClick={() => setInviteModal(false)}
+                <button onClick={closeInviteModal}
                   style={{ width: '100%', padding: '13px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>
                   Done
                 </button>

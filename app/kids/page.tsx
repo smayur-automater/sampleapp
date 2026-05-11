@@ -4,7 +4,7 @@ import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
 import { useHousehold } from '@/lib/household'
 
-interface Kid { id: string; name: string; dob: string | null; color: string }
+interface Kid { id: string; name: string; dob: string | null; color: string; created_by: string | null }
 
 const COLORS = ['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#db2777','#0891b2','#475569']
 const EMPTY = { name: '', dob: '', color: '#2563eb' }
@@ -42,7 +42,7 @@ export default function KidsPage() {
     setSaving(true)
     const payload = { name: form.name, dob: form.dob || null, color: form.color }
     if (editing) await supabase.from('kids').update(payload).eq('id', editing.id)
-    else await supabase.from('kids').insert({ ...payload, household_id: ctx.household_id })
+    else await supabase.from('kids').insert({ ...payload, household_id: ctx.household_id, created_by: ctx.myUserId })
     setSaving(false); setModal(false); load()
   }
 
@@ -60,7 +60,7 @@ export default function KidsPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
           <div>
             <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.5px' }}>Kids</h1>
-            <p style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>{kids.length} {kids.length === 1 ? 'child' : 'children'} · Shared with both parents</p>
+            <p style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>{kids.length} {kids.length === 1 ? 'child' : 'children'} · Shared</p>
           </div>
           <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -80,6 +80,8 @@ export default function KidsPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {kids.map(kid => {
               const age = getAge(kid.dob)
+              const isMine = kid.created_by === ctx?.myUserId
+              const creator = ctx?.members.find(m => m.user_id === kid.created_by)
               return (
                 <div key={kid.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
                   <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: kid.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '700', fontSize: '20px', flexShrink: 0 }}>
@@ -87,14 +89,17 @@ export default function KidsPage() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: '700', fontSize: '16px', color: '#0f172a' }}>{kid.name}</div>
-                    <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
                       {age !== null ? `${age} years old` : kid.dob ? kid.dob : 'No birthday set'}
+                      {creator && !isMine && <span> · added by {creator.display_name}</span>}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => openEdit(kid)} style={{ padding: '8px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '9px', cursor: 'pointer', fontSize: '13px', color: '#374151', fontWeight: '500' }}>Edit</button>
-                    <button onClick={() => del(kid.id)} style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '9px', cursor: 'pointer', fontSize: '13px', color: '#dc2626', fontWeight: '500' }}>Delete</button>
-                  </div>
+                  {isMine && (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => openEdit(kid)} style={{ padding: '8px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '9px', cursor: 'pointer', fontSize: '13px', color: '#374151', fontWeight: '500' }}>Edit</button>
+                      <button onClick={() => del(kid.id)} style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '9px', cursor: 'pointer', fontSize: '13px', color: '#dc2626', fontWeight: '500' }}>Delete</button>
+                    </div>
+                  )}
                 </div>
               )
             })}

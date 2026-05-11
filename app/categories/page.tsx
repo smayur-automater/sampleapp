@@ -4,7 +4,7 @@ import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
 import { useHousehold } from '@/lib/household'
 
-interface Category { id: string; name: string; emoji: string; color: string }
+interface Category { id: string; name: string; emoji: string; color: string; created_by: string | null }
 
 const EMOJIS = ['❤️','📚','⚽','📍','✈️','😁','🛍️','🍽️','🎵','🎨','💻','🏥','🎭','🏋️','🎸','🏷️']
 const COLORS = ['#dc2626','#2563eb','#059669','#d97706','#7c3aed','#db2777','#0891b2','#475569']
@@ -34,7 +34,7 @@ export default function CategoriesPage() {
     if (!form.name.trim() || !ctx) return
     setSaving(true)
     if (editing) await supabase.from('categories').update({ name: form.name, emoji: form.emoji, color: form.color }).eq('id', editing.id)
-    else await supabase.from('categories').insert({ household_id: ctx.household_id, name: form.name, emoji: form.emoji, color: form.color })
+    else await supabase.from('categories').insert({ household_id: ctx.household_id, created_by: ctx.myUserId, name: form.name, emoji: form.emoji, color: form.color })
     setSaving(false); setModal(false); load()
   }
 
@@ -64,21 +64,28 @@ export default function CategoriesPage() {
           <div style={{ textAlign: 'center', padding: '48px', color: '#94a3b8' }}>Loading…</div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            {cats.map(cat => (
-              <div key={cat.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '13px', background: cat.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>{cat.emoji}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: '700', fontSize: '14px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.name}</div>
-                    <div style={{ width: '24px', height: '3px', background: cat.color, borderRadius: '2px', marginTop: '5px' }} />
+            {cats.map(cat => {
+              const isMine = cat.created_by === ctx?.myUserId
+              return (
+                <div key={cat.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '13px', background: cat.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>{cat.emoji}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: '700', fontSize: '14px', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.name}</div>
+                      <div style={{ width: '24px', height: '3px', background: cat.color, borderRadius: '2px', marginTop: '5px' }} />
+                    </div>
                   </div>
+                  {isMine ? (
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button onClick={() => openEdit(cat)} style={{ flex: 1, padding: '7px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', color: '#374151', fontWeight: '500' }}>Edit</button>
+                      <button onClick={() => del(cat.id)} style={{ flex: 1, padding: '7px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', color: '#dc2626', fontWeight: '500' }}>Delete</button>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', padding: '7px' }}>Added by co-parent</div>
+                  )}
                 </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button onClick={() => openEdit(cat)} style={{ flex: 1, padding: '7px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', color: '#374151', fontWeight: '500' }}>Edit</button>
-                  <button onClick={() => del(cat.id)} style={{ flex: 1, padding: '7px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', color: '#dc2626', fontWeight: '500' }}>Delete</button>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
