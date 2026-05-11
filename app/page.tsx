@@ -37,6 +37,20 @@ export default function LoginPage() {
     if (error) { err(error.message); setGoogleLoading(false) }
   }
 
+
+  async function afterLogin() {
+    // If there's a pending invite code, route through invite page
+    if (typeof window !== 'undefined') {
+      const code = localStorage.getItem('pendingInvite')
+      if (code) {
+        localStorage.removeItem('pendingInvite')
+        router.push(`/invite/${code}`)
+        return
+      }
+    }
+    router.push('/dashboard')
+  }
+
   // SIGN IN with email + password
   async function signIn() {
     if (!email || !password) { err('Enter your email and password'); return }
@@ -44,7 +58,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
     if (error) err('Wrong email or password')
-    else router.push('/dashboard')
+    else afterLogin()
   }
 
   // SIGN UP — create account & immediately send a 6-digit OTP for email verification
@@ -94,7 +108,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.verifyOtp({ email, token: otp, type: 'email' })
     setLoading(false)
     if (error) err('Code is invalid or expired')
-    else router.push('/dashboard')
+    else afterLogin()
   }
 
   async function resendOtp() {

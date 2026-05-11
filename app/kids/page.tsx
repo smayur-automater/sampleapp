@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
+import { useHousehold } from '@/lib/household'
 
 interface Kid { id: string; name: string; dob: string | null; color: string }
 
@@ -17,6 +18,7 @@ function getAge(dob: string | null) {
 }
 
 export default function KidsPage() {
+  const { ctx } = useHousehold()
   const [kids, setKids] = useState<Kid[]>([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState(false)
@@ -24,12 +26,11 @@ export default function KidsPage() {
   const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { if (ctx) load() }, [ctx])
 
   async function load() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data } = await supabase.from('kids').select('*').eq('user_id', user.id).order('name')
+    if (!ctx) return
+    const { data } = await supabase.from('kids').select('*').eq('household_id', ctx.household_id).order('name')
     setKids(data ?? []); setLoading(false)
   }
 
@@ -37,13 +38,11 @@ export default function KidsPage() {
   function openEdit(k: Kid) { setEditing(k); setForm({ name: k.name, dob: k.dob ?? '', color: k.color }); setModal(true) }
 
   async function save() {
-    if (!form.name.trim()) return
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!form.name.trim() || !ctx) return
     setSaving(true)
     const payload = { name: form.name, dob: form.dob || null, color: form.color }
     if (editing) await supabase.from('kids').update(payload).eq('id', editing.id)
-    else await supabase.from('kids').insert({ ...payload, user_id: user.id })
+    else await supabase.from('kids').insert({ ...payload, household_id: ctx.household_id })
     setSaving(false); setModal(false); load()
   }
 
@@ -61,7 +60,7 @@ export default function KidsPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
           <div>
             <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.5px' }}>Kids</h1>
-            <p style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>{kids.length} {kids.length === 1 ? 'child' : 'children'}</p>
+            <p style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>{kids.length} {kids.length === 1 ? 'child' : 'children'} · Shared with both parents</p>
           </div>
           <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -75,8 +74,7 @@ export default function KidsPage() {
           <div style={{ textAlign: 'center', padding: '56px 24px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '20px' }}>
             <div style={{ fontSize: '48px', marginBottom: '12px' }}>👶</div>
             <div style={{ fontWeight: '600', fontSize: '16px', color: '#374151', marginBottom: '6px' }}>No children added yet</div>
-            <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '20px' }}>Add a profile for each child</div>
-            <button onClick={openAdd} style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Add first child</button>
+            <button onClick={openAdd} style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', marginTop: '14px' }}>Add first child</button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -119,7 +117,7 @@ export default function KidsPage() {
                   {form.name?.[0]?.toUpperCase() || '?'}
                 </div>
               </div>
-              <div><label style={lbl}>NAME</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Child's full name" style={inp} autoFocus /></div>
+              <div><label style={lbl}>NAME</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Child's name" style={inp} autoFocus /></div>
               <div><label style={lbl}>DATE OF BIRTH (optional)</label><input type="date" value={form.dob} onChange={e => setForm({ ...form, dob: e.target.value })} style={inp} /></div>
               <div>
                 <label style={lbl}>AVATAR COLOR</label>

@@ -7,8 +7,18 @@ export default function AuthCallback() {
   const router = useRouter()
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace('/dashboard')
-      else router.replace('/')
+      if (session) {
+        // Check pending invite
+        const code = typeof window !== 'undefined' ? localStorage.getItem('pendingInvite') : null
+        if (code) {
+          localStorage.removeItem('pendingInvite')
+          router.replace(`/invite/${code}`)
+        } else {
+          router.replace('/dashboard')
+        }
+      } else {
+        router.replace('/')
+      }
     })
   }, [router])
   return (
