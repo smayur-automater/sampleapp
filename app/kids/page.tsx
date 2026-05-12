@@ -3,12 +3,11 @@ import { useEffect, useState } from 'react'
 import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
 import { useHousehold } from '@/lib/household'
-import { Plus, Pencil, Trash2, X, Baby } from 'lucide-react'
 
 interface Kid { id: string; name: string; dob: string | null; color: string; created_by: string | null }
 
-const COLORS = ['#1e40af','#0d9488','#7c3aed','#a16207','#b91c1c','#475569']
-const EMPTY = { name: '', dob: '', color: '#1e40af' }
+const COLORS = ['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#db2777','#0891b2','#475569']
+const EMPTY = { name: '', dob: '', color: '#2563eb' }
 
 function getAge(dob: string | null) {
   if (!dob) return null
@@ -52,58 +51,54 @@ export default function KidsPage() {
     await supabase.from('kids').delete().eq('id', id); load()
   }
 
-  const inp: React.CSSProperties = { width: '100%', padding: '11px 14px', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: '#f8fafc', outline: 'none' }
-  const lbl: React.CSSProperties = { fontSize: '11px', fontWeight: '600', color: '#475569', marginBottom: '6px', display: 'block', letterSpacing: '0.04em' }
+  const inp: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: '#f8fafc', outline: 'none' }
+  const lbl: React.CSSProperties = { fontSize: '11px', fontWeight: '600', color: '#374151', marginBottom: '5px', display: 'block', letterSpacing: '0.05em' }
 
   return (
     <Shell>
-      <div style={{ maxWidth: '640px', margin: '0 auto', padding: '24px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+      <div style={{ maxWidth: '640px', margin: '0 auto', padding: '20px 16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
           <div>
-            <h1 style={{ fontSize: '22px', fontWeight: '600', color: '#0f172a', letterSpacing: '-0.4px' }}>Kids</h1>
-            <p style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>{kids.length} {kids.length === 1 ? 'child' : 'children'}</p>
+            <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.5px' }}>Kids</h1>
+            <p style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>{kids.length} {kids.length === 1 ? 'child' : 'children'} · Shared</p>
           </div>
-          <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 14px', background: '#1e40af', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}>
-            <Plus size={14} strokeWidth={2.2} /> Add child
+          <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '9px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add child
           </button>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '48px', color: '#94a3b8', fontSize: '14px' }}>Loading…</div>
+          <div style={{ textAlign: 'center', padding: '48px', color: '#94a3b8' }}>Loading…</div>
         ) : kids.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 24px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px' }}>
-            <Baby size={32} color="#cbd5e1" strokeWidth={1.5} style={{ margin: '0 auto 12px' }} />
-            <div style={{ fontWeight: '600', fontSize: '15px', color: '#0f172a', marginBottom: '4px' }}>No children added yet</div>
-            <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '20px' }}>Add a profile for each child</div>
-            <button onClick={openAdd} style={{ padding: '10px 18px', background: '#1e40af', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>Add first child</button>
+          <div style={{ textAlign: 'center', padding: '56px 24px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '20px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>👶</div>
+            <div style={{ fontWeight: '600', fontSize: '16px', color: '#374151', marginBottom: '6px' }}>No children added yet</div>
+            <button onClick={openAdd} style={{ padding: '10px 20px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', marginTop: '14px' }}>Add first child</button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {kids.map(kid => {
               const age = getAge(kid.dob)
-              const mine = kid.created_by === ctx?.myUserId
+              const isMine = kid.created_by === ctx?.myUserId
+              const creator = ctx?.members.find(m => m.user_id === kid.created_by)
               return (
-                <div key={kid.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '14px', boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)' }}>
-                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: kid.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '600', fontSize: '17px', flexShrink: 0 }}>
+                <div key={kid.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: kid.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '700', fontSize: '20px', flexShrink: 0 }}>
                     {kid.name[0].toUpperCase()}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: '600', fontSize: '15px', color: '#0f172a' }}>{kid.name}</div>
-                    <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: '700', fontSize: '16px', color: '#0f172a' }}>{kid.name}</div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
                       {age !== null ? `${age} years old` : kid.dob ? kid.dob : 'No birthday set'}
+                      {creator && !isMine && <span> · added by {creator.display_name}</span>}
                     </div>
                   </div>
-                  {mine ? (
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button onClick={() => openEdit(kid)} style={{ padding: '7px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex' }}>
-                        <Pencil size={13} color="#64748b" strokeWidth={2} />
-                      </button>
-                      <button onClick={() => del(kid.id)} style={{ padding: '7px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', display: 'flex' }}>
-                        <Trash2 size={13} color="#94a3b8" strokeWidth={2} />
-                      </button>
+                  {isMine && (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => openEdit(kid)} style={{ padding: '8px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '9px', cursor: 'pointer', fontSize: '13px', color: '#374151', fontWeight: '500' }}>Edit</button>
+                      <button onClick={() => del(kid.id)} style={{ padding: '8px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '9px', cursor: 'pointer', fontSize: '13px', color: '#dc2626', fontWeight: '500' }}>Delete</button>
                     </div>
-                  ) : (
-                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>Co-parent</div>
                   )}
                 </div>
               )
@@ -113,29 +108,29 @@ export default function KidsPage() {
       </div>
 
       {modal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(15,23,42,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && setModal(false)}>
-          <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', padding: '24px', width: '100%', maxWidth: '640px' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && setModal(false)}>
+          <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px', width: '100%', maxWidth: '640px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '17px', fontWeight: '600' }}>{editing ? 'Edit child' : 'New child'}</h3>
-              <button onClick={() => setModal(false)} style={{ width: '32px', height: '32px', background: '#f8fafc', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={16} color="#64748b" strokeWidth={2} />
+              <h3 style={{ fontSize: '18px', fontWeight: '700' }}>{editing ? 'Edit child' : 'Add child'}</h3>
+              <button onClick={() => setModal(false)} style={{ width: '32px', height: '32px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
-                <div style={{ width: '72px', height: '72px', borderRadius: '18px', background: form.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '600', fontSize: '26px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <div style={{ width: '72px', height: '72px', borderRadius: '20px', background: form.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '700', fontSize: '28px' }}>
                   {form.name?.[0]?.toUpperCase() || '?'}
                 </div>
               </div>
               <div><label style={lbl}>NAME</label><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Child's name" style={inp} autoFocus /></div>
-              <div><label style={lbl}>DATE OF BIRTH (OPTIONAL)</label><input type="date" value={form.dob} onChange={e => setForm({ ...form, dob: e.target.value })} style={inp} /></div>
+              <div><label style={lbl}>DATE OF BIRTH (optional)</label><input type="date" value={form.dob} onChange={e => setForm({ ...form, dob: e.target.value })} style={inp} /></div>
               <div>
-                <label style={lbl}>ACCENT COLOR</label>
+                <label style={lbl}>AVATAR COLOR</label>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {COLORS.map(c => <button key={c} type="button" onClick={() => setForm({ ...form, color: c })} style={{ width: '34px', height: '34px', borderRadius: '9px', background: c, border: form.color === c ? '3px solid #0f172a' : '3px solid transparent', cursor: 'pointer' }} />)}
+                  {COLORS.map(c => <button key={c} type="button" onClick={() => setForm({ ...form, color: c })} style={{ width: '36px', height: '36px', borderRadius: '10px', background: c, border: form.color === c ? '3px solid #0f172a' : '3px solid transparent', cursor: 'pointer' }} />)}
                 </div>
               </div>
-              <button onClick={save} disabled={saving || !form.name.trim()} style={{ padding: '13px', background: '#1e40af', color: '#fff', border: 'none', borderRadius: '11px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', opacity: (saving || !form.name.trim()) ? 0.5 : 1 }}>
+              <button onClick={save} disabled={saving || !form.name.trim()} style={{ padding: '14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', opacity: (saving || !form.name.trim()) ? 0.5 : 1 }}>
                 {saving ? 'Saving…' : editing ? 'Save changes' : 'Add child'}
               </button>
             </div>

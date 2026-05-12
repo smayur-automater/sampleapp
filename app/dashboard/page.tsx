@@ -5,7 +5,7 @@ import { CurrencySelect, CURRENCIES } from '@/components/CurrencySelect'
 import { supabase } from '@/lib/supabase'
 import { useHousehold } from '@/lib/household'
 import {
-  Plus, X, TrendingUp, Scale, ArrowUpRight, ArrowDownRight,
+  Plus, X, TrendingUp, Scale, ArrowUpRight, ArrowDownRight, Paperclip, Eye, Trash2,
   Heart, BookOpen, Activity, MapPin, Plane, Smile,
   ShoppingBag, Utensils, Music, Palette, Monitor, Tag,
   GraduationCap, Stethoscope
@@ -16,6 +16,7 @@ interface Category { id: string; name: string; icon: string; color: string }
 interface Expense  {
   id: string; description: string; amount: number; currency: string
   date: string; split_pct: number; paid_by_user_id: string | null; created_by: string | null
+  receipt_url: string | null
   kid: { id: string; name: string; color: string }
   category: { id: string; name: string; icon: string; color: string }
 }
@@ -58,6 +59,9 @@ export default function Dashboard() {
   const [form,     setForm]     = useState(EMPTY_FORM)
   const [saving,   setSaving]   = useState(false)
   const [loading,  setLoading]  = useState(true)
+  const [receiptFile, setReceiptFile]   = useState<File | null>(null)
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null)
+  const [viewReceipt, setViewReceipt]   = useState<string | null>(null)
 
   useEffect(() => { if (ctx) load() }, [ctx])
 
@@ -74,17 +78,64 @@ export default function Dashboard() {
     setLoading(false)
   }
 
+  const [addError, setAddError] = useState('')
+
+  function handleReceiptPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) { setAddError('Receipt must be under 10 MB'); return }
+    setReceiptFile(file)
+    const reader = new FileReader()
+    reader.onload = ev => setReceiptPreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
+  }
+
   async function addExpense() {
     if (!form.description || !form.amount || !form.kid_id || !form.category_id || !ctx) return
-    setSaving(true)
-    await supabase.from('expenses').insert({
+    setSaving(true); setAddError('')
+
+    // Upload receipt first if provided
+    let receipt_url: string | null = null
+    if (receiptFile) {
+      const ext = receiptFile.name.split('.').pop()
+      const path = `${ctx.household_id}/${Date.now()}_${ctx.myUserId}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from('receipts')
+        .upload(path, receiptFile, { upsert: true })
+      if (upErr) {
+        setAddError('Receipt upload failed: ' + upErr.message)
+        setSaving(false)
+        return
+      }
+      const { data: urlData } = supabase.storage.from('receipts').getPublicUrl(path)
+      receipt_url = urlData?.publicUrl ?? null
+    }
+
+    const { error } = await supabase.from('expenses').insert({
       household_id: ctx.household_id, description: form.description,
       amount: parseFloat(form.amount), currency: form.currency,
       kid_id: form.kid_id, category_id: form.category_id,
       paid_by_user_id: form.paid_by_user_id || null,
       created_by: ctx.myUserId, date: form.date, split_pct: form.split_pct,
+      receipt_url,
     })
-    setSaving(false); setModal(false); setForm(EMPTY_FORM); load()
+    setSaving(false)
+    if (error) { setAddError(error.message); return }
+    setModal(false)
+    setForm(EMPTY_FORM)
+    setReceiptFile(null)
+    setReceiptPreview(null)
+    setAddError('')
+    load()
+  }
+
+  async function deleteReceipt(expenseId: string, receiptUrl: string) {
+    if (!confirm('Remove this receipt?')) return
+    // Extract path from URL
+    const path = receiptUrl.split('/receipts/')[1]
+    if (path) await supabase.storage.from('receipts').remove([path])
+    await supabase.from('expenses').update({ receipt_url: null }).eq('id', expenseId)
+    load()
   }
 
   async function delExpense(id: string) {
@@ -410,11 +461,11 @@ export default function Dashboard() {
 
       {/* ADD EXPENSE MODAL */}
       {modal && (
-        <div style={{ position:'fixed', inset:0, zIndex:300, background:'rgba(0,0,0,0.35)', display:'flex', alignItems:'flex-end', justifyContent:'center' }} onClick={e => e.target===e.currentTarget && setModal(false)}>
+        <div style={{ position:'fixed', inset:0, zIndex:300, background:'rgba(0,0,0,0.35)', display:'flex', alignItems:'flex-end', justifyContent:'center' }} onClick={e => { if (e.target===e.currentTarget) { setModal(false); setReceiptFile(null); setReceiptPreview(null) } }}>
           <div style={{ background:'var(--white)', borderRadius:'24px 24px 0 0', padding:24, width:'100%', maxWidth:640, maxHeight:'92vh', overflowY:'auto' }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
               <h3 style={{ fontSize:17, fontWeight:700, color:'var(--slate-900)' }}>Add expense</h3>
-              <button onClick={() => setModal(false)} style={{ width:32, height:32, background:'var(--slate-100)', border:'none', borderRadius:8, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <button onClick={() => { setModal(false); setReceiptFile(null); setReceiptPreview(null) }} style={{ width:32, height:32, background:'var(--slate-100)', border:'none', borderRadius:8, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
                 <X size={15} color="var(--slate-500)" />
               </button>
             </div>
@@ -448,11 +499,77 @@ export default function Dashboard() {
                 <input type="range" min="0" max="100" step="5" value={form.split_pct} onChange={e=>setForm({...form,split_pct:+e.target.value})} style={{ width:'100%' }} />
                 <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'var(--slate-400)', marginTop:2 }}><span>0%</span><span>50 / 50</span><span>100%</span></div>
               </div>
+              {/* Receipt upload */}
+              <div>
+                <label style={lbl}>RECEIPT (optional)</label>
+                {!receiptPreview ? (
+                  <label style={{ display:'flex', alignItems:'center', gap:8, padding:'11px 14px', border:'1.5px dashed var(--slate-300)', borderRadius:'var(--radius)', cursor:'pointer', color:'var(--slate-500)', fontSize:13, fontWeight:500 }}>
+                    <Paperclip size={15} color="var(--slate-400)" />
+                    Attach photo or PDF (max 10 MB)
+                    <input type="file" accept="image/*,.pdf" onChange={handleReceiptPick} style={{ display:'none' }} />
+                  </label>
+                ) : (
+                  <div style={{ position:'relative', borderRadius:'var(--radius)', overflow:'hidden', border:'1px solid var(--slate-200)' }}>
+                    {receiptFile?.type === 'application/pdf' ? (
+                      <div style={{ padding:'14px 16px', background:'var(--slate-50)', display:'flex', alignItems:'center', gap:10 }}>
+                        <Paperclip size={18} color="var(--blue)" />
+                        <div>
+                          <div style={{ fontSize:13, fontWeight:600, color:'var(--slate-900)' }}>{receiptFile.name}</div>
+                          <div style={{ fontSize:11, color:'var(--slate-400)' }}>{(receiptFile.size/1024).toFixed(0)} KB · PDF</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <img src={receiptPreview} alt="Receipt preview" style={{ width:'100%', maxHeight:180, objectFit:'cover', display:'block' }} />
+                    )}
+                    <button onClick={() => { setReceiptFile(null); setReceiptPreview(null) }}
+                      style={{ position:'absolute', top:8, right:8, width:26, height:26, background:'rgba(0,0,0,0.55)', border:'none', borderRadius:'50%', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                      <X size={13} color="#fff" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {addError && (
+                <div style={{ padding:'9px 12px', background:'var(--red-light)', border:'1px solid #fecaca', borderRadius:'var(--radius-sm)', fontSize:13, color:'var(--red)' }}>{addError}</div>
+              )}
               <button onClick={addExpense} disabled={saving || !form.description || !form.amount || !form.kid_id || !form.category_id}
                 style={{ padding:13, background:'var(--blue)', color:'#fff', border:'none', borderRadius:'var(--radius)', fontSize:14, fontWeight:600, cursor:'pointer', opacity:(saving || !form.description || !form.amount || !form.kid_id || !form.category_id)?0.5:1 }}>
-                {saving ? 'Saving…' : 'Add expense'}
+                {saving ? (receiptFile ? 'Uploading receipt…' : 'Saving…') : 'Add expense'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* RECEIPT VIEWER LIGHTBOX */}
+      {viewReceipt && (
+        <div
+          onClick={() => setViewReceipt(null)}
+          style={{ position:'fixed', inset:0, zIndex:500, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'center', justifyContent:'center', padding:24, cursor:'zoom-out' }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ position:'relative', maxWidth:760, width:'100%' }}>
+            {/* Header bar */}
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <Paperclip size={15} color="#fff" />
+                <span style={{ color:'#fff', fontSize:14, fontWeight:600 }}>Receipt</span>
+              </div>
+              <div style={{ display:'flex', gap:8 }}>
+                <a href={viewReceipt} target="_blank" rel="noopener noreferrer"
+                  style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 12px', background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, color:'#fff', fontSize:13, fontWeight:600, textDecoration:'none' }}>
+                  <Eye size={13} /> Open full size
+                </a>
+                <button onClick={() => setViewReceipt(null)}
+                  style={{ width:32, height:32, background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:8, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <X size={15} color="#fff" />
+                </button>
+              </div>
+            </div>
+            {/* Image or PDF */}
+            {viewReceipt.toLowerCase().endsWith('.pdf') ? (
+              <iframe src={viewReceipt} style={{ width:'100%', height:'75vh', borderRadius:12, border:'none' }} title="Receipt PDF" />
+            ) : (
+              <img src={viewReceipt} alt="Receipt" style={{ width:'100%', maxHeight:'80vh', objectFit:'contain', borderRadius:12, display:'block' }} />
+            )}
           </div>
         </div>
       )}
