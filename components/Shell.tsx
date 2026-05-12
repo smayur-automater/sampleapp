@@ -1,6 +1,6 @@
 'use client'
 import { useRouter, usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { LayoutDashboard, Users, Baby, Tag, LogOut } from 'lucide-react'
 
@@ -14,52 +14,21 @@ const TABS = [
 export default function Shell({ children }: { children: React.ReactNode }) {
   const router   = useRouter()
   const pathname = usePathname()
-  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    let resolved = false
-
-    function handleSession(session: any) {
-      if (resolved) return
-      resolved = true
-      if (!session) router.replace('/')
-      else setReady(true)
-    }
-
-    // Primary: onAuthStateChange fires instantly with cached state
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      handleSession(session)
-    })
-
-    // Backup: direct getSession
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      handleSession(session)
-    })
-
-    // Hard timeout: if neither resolves in 5s, go to login
-    const timer = setTimeout(() => {
-      if (!resolved) {
-        resolved = true
+    // Check auth AFTER render — never block the page from showing
+    const check = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) router.replace('/')
+      } catch {
         router.replace('/')
       }
-    }, 5000)
-
-    return () => {
-      subscription.unsubscribe()
-      clearTimeout(timer)
     }
+    check()
   }, [router])
 
-  if (!ready) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ width: 32, height: 32, border: '2.5px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin .7s linear infinite', margin: '0 auto 12px' }} />
-        <p style={{ fontSize: 13, color: '#94a3b8', fontFamily: 'system-ui, sans-serif' }}>Loading…</p>
-      </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-    </div>
-  )
-
+  // ALWAYS render immediately — no spinner, no blocking
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, height: 56, background: '#fff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px' }}>

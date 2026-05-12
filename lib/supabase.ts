@@ -1,6 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://placeholder.supabase.co'
-const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'placeholder'
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export const supabase = createClient(url, key)
+if (!url || !key) {
+  console.error('⚠️  Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY')
+}
+
+export const supabase = createClient(
+  url || 'https://placeholder.supabase.co',
+  key || 'placeholder-key'
+)
+
+export const isConfigured = !!(url && key && !url.includes('placeholder'))
