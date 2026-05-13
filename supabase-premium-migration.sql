@@ -164,3 +164,130 @@ create policy "household members can view audit log"
 create policy "household members can insert audit log"
   on public.audit_log for insert
   with check (public.is_household_member(household_id) and user_id = auth.uid());
+
+
+-- ════════════════════════════════════════════════════════════════
+-- Smart Rules + Monthly Statements
+-- ════════════════════════════════════════════════════════════════
+
+-- Split rules per category
+create table if not exists public.split_rules (
+  id           uuid default uuid_generate_v4() primary key,
+  household_id uuid references public.households(id) on delete cascade not null,
+  category_id  uuid references public.categories(id) on delete cascade not null,
+  split_pct    int  not null check (split_pct between 0 and 100),  -- % for creator/first parent
+  is_optional  boolean default false,   -- "optional" = mark with flag, no auto-split
+  created_by   uuid references auth.users(id) on delete set null,
+  created_at   timestamptz default now(),
+  unique (household_id, category_id)
+);
+alter table public.split_rules enable row level security;
+create policy "household members manage rules"
+  on public.split_rules for all
+  using  (public.is_household_member(household_id))
+  with check (public.is_household_member(household_id));
+
+-- Monthly statement log (track which months have been emailed)
+create table if not exists public.monthly_statements (
+  id           uuid default uuid_generate_v4() primary key,
+  household_id uuid references public.households(id) on delete cascade not null,
+  year         int  not null,
+  month        int  not null check (month between 1 and 12),
+  generated_at timestamptz default now(),
+  emailed      boolean default false,
+  emailed_at   timestamptz,
+  unique (household_id, year, month)
+);
+alter table public.monthly_statements enable row level security;
+create policy "household members view statements"
+  on public.monthly_statements for all
+  using  (public.is_household_member(household_id))
+  with check (public.is_household_member(household_id));
+
+-- RPC: get monthly summary data
+create or replace function public.get_monthly_summary(hh_id uuid, yr int, mo int)
+returns json language plpgsql security definer set search_path = public as $$
+declare
+  result json;
+  uid uuid := auth.uid();
+begin
+  if not public.is_household_member(hh_id) then raise exception 'Unauthorized'; end if;
+
+  select json_build_object(
+    'year',  yr,
+    'month', mo,
+    'total', coalesce((
+      select sum(amount) from public.expenses
+      where household_id = hh_id
+        and extract(year from date)  = yr
+        and extract(month from date) = mo
+        and archived = false
+    ), 0),
+    'by_currency', (
+      select json_agg(row_to_json(c)) from (
+        select currency, sum(amount)::numeric as total, count(*)::int as count
+        from public.expenses
+        where household_id = hh_id
+          and extract(year from date)  = yr
+          and extract(month from date) = mo
+          and archived = false
+        group by currency
+      ) c
+    ),
+    'by_member', (
+      select json_agg(row_to_json(m)) from (
+        select
+          e.paid_by_user_id as user_id,
+          hm.display_name,
+          hm.color,
+          sum(e.amount)::numeric as paid,
+          sum(e.amount * case when e.created_by = hm.user_id then e.split_pct else 100-e.split_pct end / 100)::numeric as owed
+        from public.expenses e
+        join public.household_members hm on hm.user_id = e.paid_by_user_id and hm.household_id = hh_id
+        where e.household_id = hh_id
+          and extract(year from e.date) = yr
+          and extract(month from e.date) = mo
+          and e.archived = false
+        group by e.paid_by_user_id, hm.display_name, hm.color
+      ) m
+    ),
+    'by_category', (
+      select json_agg(row_to_json(c)) from (
+        select
+          cat.name, cat.color,
+          sum(e.amount)::numeric as total,
+          count(*)::int as count
+        from public.expenses e
+        join public.categories cat on cat.id = e.category_id
+        where e.household_id = hh_id
+          and extract(year from e.date) = yr
+          and extract(month from e.date) = mo
+          and e.archived = false
+        group by cat.name, cat.color
+        order by total desc
+      ) c
+    ),
+    'expenses', (
+      select json_agg(row_to_json(ex)) from (
+        select
+          e.id, e.description, e.amount, e.currency, e.date, e.split_pct,
+          k.name as kid_name, cat.name as category_name,
+          paid.display_name as paid_by_name,
+          creator.display_name as created_by_name
+        from public.expenses e
+        left join public.kids k on k.id = e.kid_id
+        left join public.categories cat on cat.id = e.category_id
+        left join public.household_members paid on paid.user_id = e.paid_by_user_id and paid.household_id = hh_id
+        left join public.household_members creator on creator.user_id = e.created_by and creator.household_id = hh_id
+        where e.household_id = hh_id
+          and extract(year from e.date) = yr
+          and extract(month from e.date) = mo
+          and e.archived = false
+        order by e.date asc
+      ) ex
+    )
+  ) into result;
+
+  return result;
+end;
+$$;

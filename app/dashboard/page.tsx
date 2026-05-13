@@ -58,6 +58,7 @@ export default function DashboardPage() {
   const [kids,     setKids]     = useState<Kid[]>([])
   const [cats,     setCats]     = useState<Category[]>([])
   const [usage,    setUsage]    = useState<Usage | null>(null)
+  const [splitRules, setSplitRules] = useState<Record<string, { split_pct: number; is_optional: boolean }>>({})  // keyed by category_id
   const [currency, setCurrency] = useState('AUD')
   const [period,   setPeriod]   = useState<Period>('month')
   const [tab,      setTab]      = useState<'overview'|'analytics'>('overview')
@@ -79,7 +80,7 @@ export default function DashboardPage() {
   const loadData = useCallback(async () => {
     if (!ctx) return
     setPageLoad(true)
-    const [e, k, c, u] = await Promise.all([
+    const [e, k, c, u, r] = await Promise.all([
       supabase.from('expenses')
         .select('id,description,amount,currency,date,split_pct,paid_by_user_id,created_by,receipt_url,archived,kid:kids(id,name,color),category:categories(id,name)')
         .eq('household_id', ctx.household_id)
@@ -88,11 +89,15 @@ export default function DashboardPage() {
       supabase.from('kids').select('id,name,color').eq('household_id', ctx.household_id).order('name'),
       supabase.from('categories').select('id,name,color').eq('household_id', ctx.household_id).order('name'),
       supabase.rpc('get_my_usage'),
+      supabase.from('split_rules').select('category_id,split_pct,is_optional').eq('household_id', ctx.household_id),
     ])
     setExpenses((e.data ?? []) as unknown as Expense[])
     setKids(k.data ?? [])
     setCats(c.data ?? [])
     setUsage(u.data)
+    const rulesMap: Record<string, { split_pct: number; is_optional: boolean }> = {}
+    ;(r.data ?? []).forEach((rule: any) => { rulesMap[rule.category_id] = { split_pct: rule.split_pct, is_optional: rule.is_optional } })
+    setSplitRules(rulesMap)
     setPageLoad(false)
   }, [ctx])
 
@@ -678,10 +683,22 @@ export default function DashboardPage() {
 
               <div>
                 <label style={LBL}>Category *</label>
-                <select value={form.category_id} onChange={e => F({ category_id: e.target.value })} style={{ ...INP, cursor: 'pointer', color: form.category_id ? '#0f172a' : '#94a3b8' }}>
+                <select value={form.category_id} onChange={e => {
+                  const catId = e.target.value
+                  const rule = splitRules[catId]
+                  F({ category_id: catId, ...(rule && !rule.is_optional ? { split_pct: rule.split_pct } : {}) })
+                }} style={{ ...INP, cursor: 'pointer', color: form.category_id ? '#0f172a' : '#94a3b8' }}>
                   <option value="">Select category…</option>
                   {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
+                {form.category_id && splitRules[form.category_id] && (
+                  <div style={{ marginTop: 5, fontSize: 11, color: splitRules[form.category_id].is_optional ? '#d97706' : '#059669', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {splitRules[form.category_id].is_optional
+                      ? '⚡ Smart rule: Optional expense'
+                      : `⚡ Smart rule applied: ${splitRules[form.category_id].split_pct}/${100 - splitRules[form.category_id].split_pct}`
+                    }
+                  </div>
+                )}
               </div>
 
               <div>

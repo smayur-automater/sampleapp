@@ -2,7 +2,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { LayoutDashboard, Users, Baby, Tag, LogOut, Activity } from 'lucide-react'
+import { LayoutDashboard, Users, Baby, Tag, LogOut, Activity, Zap, FileText } from 'lucide-react'
 import AuditPanel from '@/components/AuditPanel'
 
 const TABS = [
@@ -10,6 +10,8 @@ const TABS = [
   { path: '/kids',       label: 'Kids',        Icon: Baby },
   { path: '/parents',    label: 'Parents',     Icon: Users },
   { path: '/categories', label: 'Categories',  Icon: Tag },
+  { path: '/rules',      label: 'Rules',       Icon: Zap },
+  { path: '/statements', label: 'Statements',  Icon: FileText },
 ]
 
 export default function Shell({ children }: { children: React.ReactNode }) {
