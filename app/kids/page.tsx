@@ -4,6 +4,7 @@ import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
 import { useHousehold } from '@/lib/household'
 import { Plus, Pencil, Trash2, X } from 'lucide-react'
+import { logAudit } from '@/lib/audit'
 
 interface Kid { id: string; name: string; dob: string | null; color: string; created_by: string | null }
 
@@ -71,11 +72,13 @@ export default function KidsPage() {
         .update({ name: form.name.trim(), dob: form.dob || null, color: form.color })
         .eq('id', editing.id)
       if (error) { setErr(error.message); setSaving(false); return }
+      await logAudit({ household_id: ctx.household_id, user_id: ctx.myUserId, actor_name: ctx.members.find(m=>m.user_id===ctx.myUserId)?.display_name ?? 'Unknown', action: 'kid.edit', entity: form.name.trim() })
     } else {
       const { error } = await supabase
         .from('kids')
         .insert({ name: form.name.trim(), dob: form.dob || null, color: form.color, household_id: ctx.household_id, created_by: ctx.myUserId })
       if (error) { setErr(error.message); setSaving(false); return }
+      await logAudit({ household_id: ctx.household_id, user_id: ctx.myUserId, actor_name: ctx.members.find(m=>m.user_id===ctx.myUserId)?.display_name ?? 'Unknown', action: 'kid.add', entity: form.name.trim() })
     }
 
     setSaving(false)
@@ -86,8 +89,10 @@ export default function KidsPage() {
   async function del(k: Kid) {
     if (!confirm(`Delete ${k.name}? Their expenses will also be removed.`)) return
     const { error } = await supabase.from('kids').delete().eq('id', k.id)
-    if (error) alert(error.message)
+    if (error) { alert(error.message); return }
+    if (ctx) await logAudit({ household_id: ctx.household_id, user_id: ctx.myUserId, actor_name: ctx.members.find(m=>m.user_id===ctx.myUserId)?.display_name ?? 'Unknown', action: 'kid.delete', entity: k.name })
     else load()
+    load()
   }
 
   if (ctxLoading) return (

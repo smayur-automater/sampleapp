@@ -6,6 +6,7 @@ import { useHousehold } from '@/lib/household'
 import { CURRENCIES } from '@/components/CurrencySelect'
 import { Plus, X, Paperclip, Eye, ArrowUpRight, ArrowDownRight, TrendingUp, Pencil, Download, Crown, Lock } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { logAudit } from '@/lib/audit'
 
 // ── Types ──────────────────────────────────────────────────────────
 interface Kid      { id: string; name: string; color: string }
@@ -169,6 +170,19 @@ export default function DashboardPage() {
 
     setSaving(false)
     if (error) { setSaveErr(error.message); return }
+
+    // Audit log
+    const actorName = me?.display_name ?? 'Unknown'
+    const kidName   = kids.find(k => k.id === form.kid_id)?.name ?? ''
+    await logAudit({
+      household_id: ctx.household_id,
+      user_id:      ctx.myUserId,
+      actor_name:   actorName,
+      action:       editingId ? 'expense.edit' : 'expense.add',
+      entity:       form.description.trim(),
+      detail:       `${form.currency} ${parseFloat(form.amount).toFixed(2)} · ${kidName}`,
+    })
+
     setModal(false); loadData()
   }
 
@@ -179,7 +193,19 @@ export default function DashboardPage() {
       const path = receiptUrl.split('/receipts/')[1]
       if (path) await supabase.storage.from('receipts').remove([decodeURIComponent(path)])
     }
-    await supabase.from('expenses').delete().eq('id', id); loadData()
+    const exp = expenses.find(e => e.id === id)
+    await supabase.from('expenses').delete().eq('id', id)
+    if (exp && ctx && me) {
+      await logAudit({
+        household_id: ctx.household_id,
+        user_id:      ctx.myUserId,
+        actor_name:   me.display_name,
+        action:       'expense.delete',
+        entity:       exp.description,
+        detail:       `${exp.currency} ${Number(exp.amount).toFixed(2)}`,
+      })
+    }
+    loadData()
   }
 
   // ── Export ─────────────────────────────────────────────────────

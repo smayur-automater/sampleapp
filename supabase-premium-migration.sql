@@ -136,3 +136,31 @@ begin
   return coalesce(result, '[]'::json);
 end;
 $$;
+
+
+-- ════════════════════════════════════════════════════════════════
+-- Audit Trail
+-- ════════════════════════════════════════════════════════════════
+
+create table if not exists public.audit_log (
+  id          uuid default uuid_generate_v4() primary key,
+  household_id uuid references public.households(id) on delete cascade not null,
+  user_id     uuid references auth.users(id) on delete set null,
+  actor_name  text,
+  action      text not null,   -- 'expense.add' | 'expense.edit' | 'expense.delete' | 'kid.add' etc
+  entity      text,            -- human-readable name of the thing changed
+  detail      text,            -- extra context e.g. "$45.00 Medical"
+  created_at  timestamptz default now()
+);
+alter table public.audit_log enable row level security;
+create index audit_log_household_idx on public.audit_log(household_id, created_at desc);
+
+-- Both parents can read the audit log for their household
+create policy "household members can view audit log"
+  on public.audit_log for select
+  using (public.is_household_member(household_id));
+
+-- Any household member can insert (app writes on their behalf)
+create policy "household members can insert audit log"
+  on public.audit_log for insert
+  with check (public.is_household_member(household_id) and user_id = auth.uid());

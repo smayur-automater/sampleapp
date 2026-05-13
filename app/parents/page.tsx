@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
 import { Pencil, X, UserMinus, Copy, Mail, MessageCircle, Phone, Check, RefreshCw, AlertTriangle, Plus } from 'lucide-react'
+import { logAudit } from '@/lib/audit'
 
 interface Member { user_id: string; display_name: string; color: string; role: string }
 interface Invite  { id: string; code: string; invited_email: string; expires_at: string }
@@ -86,6 +87,7 @@ export default function ParentsPage() {
     setCreating(false)
     if (error) { setInviteErr(error.message); return }
     setCreated(inv as Invite)
+    if (household) await logAudit({ household_id: household.id, user_id: me.id, actor_name: me.email.split('@')[0], action: 'parent.invite', entity: inviteEmail.trim() })
     load()
   }
 
@@ -130,6 +132,7 @@ export default function ParentsPage() {
       .delete().eq('user_id', removeTarget.user_id).eq('household_id', household.id)
     setRemoving(false)
     if (error) { alert(error.message); return }
+    if (household) await logAudit({ household_id: household.id, user_id: me!.id, actor_name: me!.email.split('@')[0], action: 'parent.remove', entity: removeTarget.display_name })
     setRemoveTarget(null); load()
   }
 
@@ -142,6 +145,7 @@ export default function ParentsPage() {
       .eq('user_id', me.id).eq('household_id', household.id)
     setSaving(false)
     if (error) { alert(error.message); return }
+    if (household) await logAudit({ household_id: household.id, user_id: me.id, actor_name: myForm.display_name, action: 'profile.edit', entity: myForm.display_name })
     setEditModal(false); load()
   }
 
