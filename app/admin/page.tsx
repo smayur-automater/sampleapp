@@ -6,7 +6,7 @@ import {
   Users, Home, Baby, DollarSign, TrendingUp, Trash2,
   UserMinus, Search, X, ChevronRight, ChevronDown,
   RefreshCw, AlertTriangle, Shield, LogOut, ArrowUpRight,
-  ArrowDownRight, Activity, Clock, Mail, Calendar
+  ArrowDownRight, Activity, Clock, Mail, Calendar, Crown, Lock
 } from 'lucide-react'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -27,6 +27,7 @@ interface User {
   email_confirmed_at: string | null; display_name: string | null
   color: string | null; role: string | null; household_id: string | null
   household_name: string | null; expense_count: number; total_spend: number
+  plan: string | null; plan_assigned_at: string | null
 }
 interface HouseholdDetail {
   household: { id: string; name: string; created_at: string }
@@ -129,6 +130,13 @@ export default function AdminPage() {
     ask(`Delete expense "${desc}"?`, async () => {
       await supabase.rpc('admin_delete_expense', { expense_id: expId })
       loadDetail(hhId); showToast('Expense deleted')
+    })
+  }
+
+  async function setPlan(uid: string, plan: 'free'|'premium', name: string) {
+    ask(`Set ${name} to ${plan.toUpperCase()} plan?`, async () => {
+      await supabase.rpc('admin_set_plan', { uid, new_plan: plan })
+      loadView(); showToast(`${name} is now on ${plan} plan`)
     })
   }
 
@@ -578,9 +586,21 @@ export default function AdminPage() {
                         <td style={{ ...S.td, fontSize: 12 }}>{fmtDate(u.created_at)}</td>
                         <td style={{ ...S.td, fontSize: 12 }}>{fmtDateTime(u.last_sign_in_at)}</td>
                         <td style={S.td}>
-                          <span style={S.badge(u.email_confirmed_at ? '#34d399' : '#fb923c')}>
-                            {u.email_confirmed_at ? 'Verified' : 'Unverified'}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                            <span style={S.badge(u.email_confirmed_at ? '#34d399' : '#fb923c')}>
+                              {u.email_confirmed_at ? 'Verified' : 'Unverified'}
+                            </span>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              <span style={S.badge(u.plan === 'premium' ? '#f59e0b' : '#64748b')}>
+                                {u.plan === 'premium' ? '★ Premium' : 'Free'}
+                              </span>
+                              <button
+                                onClick={e => { e.stopPropagation(); setPlan(u.id, u.plan === 'premium' ? 'free' : 'premium', u.display_name ?? u.email) }}
+                                style={{ padding: '1px 7px', border: '1px solid #334155', borderRadius: 6, background: '#1e293b', color: '#94a3b8', fontSize: 10, cursor: 'pointer', fontWeight: 600 }}>
+                                {u.plan === 'premium' ? 'Downgrade' : 'Upgrade'}
+                              </button>
+                            </div>
+                          </div>
                         </td>
                       </tr>
                     ))}
