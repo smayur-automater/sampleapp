@@ -153,7 +153,7 @@ create table if not exists public.audit_log (
   created_at  timestamptz default now()
 );
 alter table public.audit_log enable row level security;
-create index audit_log_household_idx on public.audit_log(household_id, created_at desc);
+create index if not exists audit_log_household_idx on public.audit_log(household_id, created_at desc);
 
 -- Both parents can read the audit log for their household
 create policy "household members can view audit log"
