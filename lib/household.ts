@@ -15,21 +15,45 @@ export interface HouseholdContext {
   myUserId: string
 }
 
-export function useHousehold(): { ctx: HouseholdContext | null; loading: boolean } {
+export function useHousehold() {
   const [ctx, setCtx] = useState<HouseholdContext | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    ;(async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setLoading(false); return }
-      const { data: m } = await supabase.from('household_members').select('household_id').eq('user_id', user.id).maybeSingle()
-      if (!m?.household_id) { setLoading(false); return }
-      const { data: mems } = await supabase.from('household_members').select('user_id, display_name, color, role').eq('household_id', m.household_id)
-      setCtx({ household_id: m.household_id, members: mems ?? [], myUserId: user.id })
-      setLoading(false)
-    })()
-  }, [])
+  async function load() {
+    setLoading(true)
+    setError(null)
+    try {
+      // Get current user - use getSession which is faster than getUser
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) { setLoading(false); return }
 
-  return { ctx, loading }
+      const userId = session.user.id
+
+      const { data: mb, error: mbErr } = await supabase
+        .from('household_members')
+        .select('household_id')
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (mbErr) { setError(mbErr.message); setLoading(false); return }
+      if (!mb?.household_id) { setLoading(false); return }
+
+      const { data: mems, error: memsErr } = await supabase
+        .from('household_members')
+        .select('user_id, display_name, color, role')
+        .eq('household_id', mb.household_id)
+
+      if (memsErr) { setError(memsErr.message); setLoading(false); return }
+
+      setCtx({ household_id: mb.household_id, members: mems ?? [], myUserId: userId })
+    } catch (e: any) {
+      setError(e.message)
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
+
+  return { ctx, loading, error, reload: load }
 }

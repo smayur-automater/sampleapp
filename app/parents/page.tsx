@@ -2,297 +2,335 @@
 import { useEffect, useState } from 'react'
 import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
+import { Pencil, X, UserMinus, Copy, Mail, MessageCircle, Phone, Check, RefreshCw, AlertTriangle, Plus } from 'lucide-react'
 
 interface Member { user_id: string; display_name: string; color: string; role: string }
-interface Invite { id: string; code: string; invited_email: string; expires_at: string }
+interface Invite  { id: string; code: string; invited_email: string; expires_at: string }
 
-const COLORS = ['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#db2777','#0891b2','#475569']
+const COLORS = ['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#0891b2','#374151','#db2777']
+const INP: React.CSSProperties = { width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 14, background: '#f8fafc', outline: 'none', color: '#0f172a', boxSizing: 'border-box' }
+const LBL: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 600, color: '#64748b', marginBottom: 5, letterSpacing: '0.06em', textTransform: 'uppercase' as const }
 
 export default function ParentsPage() {
-  const [me, setMe] = useState<{ id: string; email: string } | null>(null)
+  const [me,        setMe]        = useState<{ id: string; email: string } | null>(null)
   const [household, setHousehold] = useState<{ id: string; name: string } | null>(null)
-  const [members, setMembers] = useState<Member[]>([])
-  const [invites, setInvites] = useState<Invite[]>([])
-  const [loading, setLoading] = useState(true)
+  const [members,   setMembers]   = useState<Member[]>([])
+  const [invites,   setInvites]   = useState<Invite[]>([])
+  const [loading,   setLoading]   = useState(true)
+  const [err,       setErr]       = useState('')
 
+  // Invite modal
   const [inviteModal, setInviteModal] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
-  const [creating, setCreating] = useState(false)
-  const [created, setCreated] = useState<Invite | null>(null)
-  const [inviteErr, setInviteErr] = useState('')
-  const [copyToast, setCopyToast] = useState('')
+  const [creating,    setCreating]    = useState(false)
+  const [created,     setCreated]     = useState<Invite | null>(null)
+  const [inviteErr,   setInviteErr]   = useState('')
 
-  const [editMe, setEditMe] = useState(false)
-  const [myForm, setMyForm] = useState({ display_name: '', color: '#2563eb' })
-  const [savingMe, setSavingMe] = useState(false)
+  // Edit me modal
+  const [editModal, setEditModal] = useState(false)
+  const [myForm,    setMyForm]    = useState({ display_name: '', color: '#2563eb' })
+  const [saving,    setSaving]    = useState(false)
+
+  // Remove modal
+  const [removeTarget, setRemoveTarget] = useState<Member | null>(null)
+  const [removing,     setRemoving]     = useState(false)
+
+  // Toast
+  const [toast, setToast] = useState('')
 
   useEffect(() => { load() }, [])
 
   async function load() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    setMe({ id: user.id, email: user.email ?? '' })
+    setLoading(true); setErr('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) { setErr('Not signed in'); setLoading(false); return }
 
-    const { data: myMembership } = await supabase.from('household_members').select('household_id').eq('user_id', user.id).maybeSingle()
-    if (!myMembership?.household_id) { setLoading(false); return }
+      const userId = session.user.id
+      setMe({ id: userId, email: session.user.email ?? '' })
 
-    const { data: hh } = await supabase.from('households').select('*').eq('id', myMembership.household_id).single()
-    setHousehold(hh)
+      const { data: mb, error: mbErr } = await supabase
+        .from('household_members').select('household_id').eq('user_id', userId).maybeSingle()
+      if (mbErr) { setErr(mbErr.message); setLoading(false); return }
+      if (!mb?.household_id) { setLoading(false); return }
 
-    const { data: mems } = await supabase.from('household_members').select('*').eq('household_id', myMembership.household_id)
-    setMembers(mems ?? [])
+      const [{ data: hh }, { data: mems }, { data: invs }] = await Promise.all([
+        supabase.from('households').select('id, name').eq('id', mb.household_id).single(),
+        supabase.from('household_members').select('user_id, display_name, color, role').eq('household_id', mb.household_id),
+        supabase.from('invites').select('id, code, invited_email, expires_at').eq('household_id', mb.household_id).eq('accepted', false).order('created_at', { ascending: false }),
+      ])
 
-    const { data: invs } = await supabase
-      .from('invites').select('*')
-      .eq('household_id', myMembership.household_id).eq('accepted', false)
-      .order('created_at', { ascending: false })
-    setInvites((invs ?? []) as Invite[])
+      setHousehold(hh)
+      setMembers(mems ?? [])
+      setInvites((invs ?? []) as Invite[])
 
-    const my = mems?.find(m => m.user_id === user.id)
-    if (my) setMyForm({ display_name: my.display_name, color: my.color })
+      const mine = mems?.find(m => m.user_id === userId)
+      if (mine) setMyForm({ display_name: mine.display_name, color: mine.color })
+    } catch (e: any) {
+      setErr(e.message)
+    }
     setLoading(false)
   }
 
+  // ── Invite ─────────────────────────────────────────────────────
   async function createInvite() {
     if (!household || !me) return
-    if (!inviteEmail.trim() || !inviteEmail.includes('@')) {
-      setInviteErr('Enter a valid email address')
-      return
-    }
+    if (!inviteEmail.trim() || !inviteEmail.includes('@')) { setInviteErr('Enter a valid email address'); return }
     setCreating(true); setInviteErr('')
 
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase()
-    const { data: invite, error } = await supabase
-      .from('invites')
+    const code = Math.random().toString(36).substring(2, 9).toUpperCase()
+    const { data: inv, error } = await supabase.from('invites')
       .insert({ household_id: household.id, invited_by: me.id, invited_email: inviteEmail.trim(), code })
       .select().single()
 
     setCreating(false)
-
-    if (error) {
-      setInviteErr('Could not create invite: ' + error.message)
-      return
-    }
-
-    setCreated(invite as Invite)
-    load()
-  }
-
-  async function deleteInvite(id: string) {
-    await supabase.from('invites').delete().eq('id', id)
+    if (error) { setInviteErr(error.message); return }
+    setCreated(inv as Invite)
     load()
   }
 
   function inviteLink(code: string) {
+    if (typeof window === 'undefined') return `https://your-app.vercel.app/invite/${code}`
     return `${window.location.origin}/invite/${code}`
   }
 
-  async function copyText(text: string) {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopyToast('Copied!')
-      setTimeout(() => setCopyToast(''), 2000)
-    } catch {}
+  async function copyLink(code: string) {
+    try { await navigator.clipboard.writeText(inviteLink(code)); showToast('Link copied') } catch {}
   }
 
-  function openEmailClient(email: string, code: string) {
+  function sendEmail(email: string, code: string) {
+    const name = me?.email?.split('@')[0] ?? 'Your co-parent'
     const link = inviteLink(code)
-    const myName = me?.email?.split('@')[0] ?? 'Your co-parent'
-    const subject = encodeURIComponent(`Join me on CoParent — shared expense tracker`)
-    const body = encodeURIComponent(
-      `Hi,\n\n` +
-      `${myName} invited you to join their CoParent household to track shared children expenses together.\n\n` +
-      `Click this link to join:\n${link}\n\n` +
-      `(This invite expires in 7 days)\n\n` +
-      `Once you sign up or sign in, you'll be added automatically.`
-    )
+    const subject = encodeURIComponent('Join me on CoParent')
+    const body = encodeURIComponent(`Hi,\n\n${name} has invited you to join CoParent — a shared expense tracker for your kids.\n\nClick to join: ${link}\n\nExpires in 7 days.`)
     window.location.href = `mailto:${email}?subject=${subject}&body=${body}`
   }
 
-  function openWhatsApp(code: string) {
-    const link = inviteLink(code)
-    const text = encodeURIComponent(`Join me on CoParent to track our shared children expenses: ${link}`)
+  function sendWhatsApp(code: string) {
+    const text = encodeURIComponent(`Join me on CoParent to track our shared children's expenses: ${inviteLink(code)}`)
     window.open(`https://wa.me/?text=${text}`, '_blank')
   }
 
-  function openSMS(code: string) {
-    const link = inviteLink(code)
-    const text = encodeURIComponent(`Join me on CoParent to track our shared children expenses: ${link}`)
+  function sendSMS(code: string) {
+    const text = encodeURIComponent(`Join me on CoParent: ${inviteLink(code)}`)
     window.location.href = `sms:?body=${text}`
   }
 
+  async function cancelInvite(id: string) {
+    await supabase.from('invites').delete().eq('id', id); load()
+  }
+
+  function closeInviteModal() { setInviteModal(false); setCreated(null); setInviteEmail(''); setInviteErr('') }
+
+  // ── Remove parent ───────────────────────────────────────────────
+  async function removeParent() {
+    if (!removeTarget || !household) return
+    setRemoving(true)
+    const { error } = await supabase.from('household_members')
+      .delete().eq('user_id', removeTarget.user_id).eq('household_id', household.id)
+    setRemoving(false)
+    if (error) { alert(error.message); return }
+    setRemoveTarget(null); load()
+  }
+
+  // ── Edit me ─────────────────────────────────────────────────────
   async function saveMe() {
     if (!me || !household) return
-    setSavingMe(true)
-    await supabase.from('household_members').update(myForm).eq('user_id', me.id).eq('household_id', household.id)
-    setSavingMe(false); setEditMe(false); load()
+    setSaving(true)
+    const { error } = await supabase.from('household_members')
+      .update({ display_name: myForm.display_name, color: myForm.color })
+      .eq('user_id', me.id).eq('household_id', household.id)
+    setSaving(false)
+    if (error) { alert(error.message); return }
+    setEditModal(false); load()
   }
 
-  function closeInviteModal() {
-    setInviteModal(false); setCreated(null); setInviteEmail(''); setInviteErr('')
-  }
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 2500) }
 
-  const myInfo = members.find(m => m.user_id === me?.id)
+  const myInfo   = members.find(m => m.user_id === me?.id)
   const coParent = members.find(m => m.user_id !== me?.id)
 
-  const inp: React.CSSProperties = { width: '100%', padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '14px', background: '#f8fafc', outline: 'none' }
-  const lbl: React.CSSProperties = { fontSize: '11px', fontWeight: '600', color: '#374151', marginBottom: '5px', display: 'block', letterSpacing: '0.05em' }
-  const shareBtn: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', fontSize: '14px', fontWeight: '600', color: '#0f172a', cursor: 'pointer' }
+  if (loading) return (
+    <Shell>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 60 }}>
+        <div style={{ width: 28, height: 28, border: '2px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin .7s linear infinite' }} />
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      </div>
+    </Shell>
+  )
+
+  if (err) return (
+    <Shell>
+      <div style={{ padding: 24, textAlign: 'center' }}>
+        <p style={{ color: '#dc2626', marginBottom: 12 }}>{err}</p>
+        <button onClick={load} style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Retry</button>
+      </div>
+    </Shell>
+  )
 
   return (
     <Shell>
-      <div style={{ maxWidth: '640px', margin: '0 auto', padding: '20px 16px' }}>
-        <div style={{ marginBottom: '20px' }}>
-          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', letterSpacing: '-0.5px' }}>Household</h1>
-          <p style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>{household?.name ?? 'Loading…'}</p>
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '20px 16px', fontFamily: 'system-ui, sans-serif' }}>
+
+        <div style={{ marginBottom: 24 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0, letterSpacing: '-0.4px' }}>Household</h1>
+          <p style={{ fontSize: 13, color: '#64748b', margin: '3px 0 0' }}>{household?.name ?? '—'}</p>
         </div>
 
-        {loading ? <div style={{ textAlign: 'center', padding: '48px', color: '#94a3b8' }}>Loading…</div> : (
-        <>
-          {myInfo && (
-            <div style={{ marginBottom: '12px' }}>
-              <div style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '8px', paddingLeft: '4px' }}>YOU</div>
-              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: myInfo.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '700', fontSize: '20px' }}>
-                  {myInfo.display_name[0]?.toUpperCase()}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '700', fontSize: '16px', color: '#0f172a' }}>{myInfo.display_name}</div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{me?.email}</div>
-                </div>
-                <button onClick={() => setEditMe(true)} style={{ padding: '7px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '12px', color: '#374151', fontWeight: '500', cursor: 'pointer' }}>Edit</button>
+        {/* YOU */}
+        {myInfo && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>You</div>
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 50, height: 50, borderRadius: 15, background: myInfo.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 20, flexShrink: 0 }}>
+                {myInfo.display_name?.[0]?.toUpperCase() ?? '?'}
               </div>
-            </div>
-          )}
-
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '8px', paddingLeft: '4px' }}>CO-PARENT</div>
-            {coParent ? (
-              <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: coParent.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '700', fontSize: '20px' }}>
-                  {coParent.display_name[0]?.toUpperCase()}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '700', fontSize: '16px', color: '#0f172a' }}>{coParent.display_name}</div>
-                  <div style={{ fontSize: '12px', color: '#10b981', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }} />
-                    Connected
-                  </div>
-                </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>{myInfo.display_name}</div>
+                <div style={{ fontSize: 12, color: '#64748b', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{me?.email}</div>
               </div>
-            ) : (
-              <button onClick={() => setInviteModal(true)} style={{ width: '100%', textAlign: 'left', background: '#fff', border: '2px dashed #cbd5e1', borderRadius: '16px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }}>
-                <div style={{ width: '52px', height: '52px', borderRadius: '16px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontWeight: '700', fontSize: '24px' }}>+</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '600', fontSize: '15px', color: '#0f172a' }}>Invite co-parent</div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>Share invite link via email, WhatsApp or SMS</div>
-                </div>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
+              <button onClick={() => setEditModal(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 11px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, cursor: 'pointer', fontSize: 12, color: '#374151', fontWeight: 500, flexShrink: 0 }}>
+                <Pencil size={12} /> Edit
               </button>
-            )}
-          </div>
-
-          {invites.length > 0 && !coParent && (
-            <div style={{ marginBottom: '20px' }}>
-              <div style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '8px', paddingLeft: '4px' }}>PENDING INVITES</div>
-              {invites.map(inv => (
-                <div key={inv.id} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>⏳</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#92400e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.invited_email}</div>
-                    <div style={{ fontSize: '11px', color: '#78350f', marginTop: '1px' }}>Waiting · expires {new Date(inv.expires_at).toLocaleDateString()}</div>
-                  </div>
-                  <button onClick={() => copyText(inviteLink(inv.code))} style={{ padding: '5px 10px', background: '#fff', border: '1px solid #fde68a', borderRadius: '7px', fontSize: '12px', color: '#92400e', cursor: 'pointer', fontWeight: '500' }}>Copy link</button>
-                  <button onClick={() => deleteInvite(inv.id)} style={{ padding: '5px 10px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '7px', fontSize: '12px', color: '#dc2626', cursor: 'pointer', fontWeight: '500' }}>Cancel</button>
-                </div>
-              ))}
             </div>
-          )}
-
-          <div style={{ padding: '14px 16px', background: '#eff6ff', borderRadius: '12px', fontSize: '13px', color: '#1e40af', lineHeight: 1.5 }}>
-            💡 Both parents see all expenses, children, and categories. Only the parent who created an entry can edit or delete it.
           </div>
-        </>
         )}
+
+        {/* CO-PARENT */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>Co-parent</div>
+          {coParent ? (
+            <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 50, height: 50, borderRadius: 15, background: coParent.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 20, flexShrink: 0 }}>
+                {coParent.display_name?.[0]?.toUpperCase() ?? '?'}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>{coParent.display_name}</div>
+                <div style={{ fontSize: 12, color: '#059669', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669' }} /> Connected
+                </div>
+              </div>
+              <button onClick={() => setRemoveTarget(coParent)}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 11px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, cursor: 'pointer', fontSize: 12, color: '#dc2626', fontWeight: 500, flexShrink: 0 }}>
+                <UserMinus size={12} /> Remove
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => { setCreated(null); setInviteEmail(''); setInviteErr(''); setInviteModal(true) }}
+              style={{ width: '100%', textAlign: 'left', background: '#fff', border: '2px dashed #cbd5e1', borderRadius: 14, padding: 16, display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
+              <div style={{ width: 50, height: 50, borderRadius: 15, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Plus size={22} color="#94a3b8" strokeWidth={1.8} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 15, color: '#334155' }}>Invite co-parent</div>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Share a link via email, WhatsApp or SMS</div>
+              </div>
+            </button>
+          )}
+        </div>
+
+        {/* PENDING INVITES */}
+        {invites.length > 0 && !coParent && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>Pending invites</div>
+            {invites.map(inv => (
+              <div key={inv.id} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <RefreshCw size={14} color="#b45309" style={{ flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#92400e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.invited_email}</div>
+                  <div style={{ fontSize: 11, color: '#78350f', marginTop: 1 }}>Waiting · expires {new Date(inv.expires_at).toLocaleDateString('en-AU')}</div>
+                </div>
+                <button onClick={() => copyLink(inv.code)} style={{ padding: '5px 9px', background: '#fff', border: '1px solid #fde68a', borderRadius: 7, fontSize: 11, color: '#92400e', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+                  <Copy size={10} /> Copy
+                </button>
+                <button onClick={() => cancelInvite(inv.id)} style={{ padding: '5px 9px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 7, fontSize: 11, color: '#dc2626', cursor: 'pointer', fontWeight: 600, flexShrink: 0 }}>
+                  Cancel
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* INFO */}
+        <div style={{ padding: '12px 14px', background: '#eff6ff', border: '1px solid #dbeafe', borderRadius: 12, fontSize: 13, color: '#1e40af', lineHeight: 1.6 }}>
+          Both parents see all expenses, children and categories. Only the parent who added an entry can edit or delete it.
+        </div>
       </div>
 
-      {/* COPY TOAST */}
-      {copyToast && (
-        <div style={{ position: 'fixed', bottom: '88px', left: '50%', transform: 'translateX(-50%)', zIndex: 400, background: '#0f172a', color: '#fff', padding: '10px 16px', borderRadius: '999px', fontSize: '13px', fontWeight: '500' }}>
-          {copyToast}
+      {/* TOAST */}
+      {toast && (
+        <div style={{ position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 500, background: '#0f172a', color: '#fff', padding: '9px 16px', borderRadius: 99, fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+          <Check size={13} /> {toast}
         </div>
       )}
 
       {/* INVITE MODAL */}
       {inviteModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && closeInviteModal()}>
-          <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px', width: '100%', maxWidth: '640px', maxHeight: '92vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Invite co-parent</h3>
-              <button onClick={closeInviteModal} style={{ width: '32px', height: '32px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <div onClick={e => e.target === e.currentTarget && closeInviteModal()}
+          style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: 24, width: '100%', maxWidth: 480 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: 0 }}>Invite co-parent</h3>
+              <button onClick={closeInviteModal} style={{ width: 32, height: 32, background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={16} color="#64748b" />
               </button>
             </div>
 
             {!created ? (
               <>
-                <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px', lineHeight: 1.5 }}>
-                  Enter your co-parent&apos;s email to generate an invite. You&apos;ll then send the join link via your preferred channel.
-                </div>
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={lbl}>CO-PARENT EMAIL</label>
-                  <input type="email" value={inviteEmail} onChange={e => { setInviteEmail(e.target.value); setInviteErr('') }}
-                    onKeyDown={e => e.key === 'Enter' && createInvite()}
-                    placeholder="coparent@example.com" style={inp} autoFocus />
-                </div>
-                {inviteErr && (
-                  <div style={{ padding: '10px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '13px', color: '#dc2626', marginBottom: '14px' }}>{inviteErr}</div>
-                )}
+                <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16, lineHeight: 1.6 }}>Enter their email to generate an invite link. You choose how to send it.</p>
+                <label style={LBL}>Co-parent email</label>
+                <input type="email" value={inviteEmail} onChange={e => { setInviteEmail(e.target.value); setInviteErr('') }}
+                  onKeyDown={e => e.key === 'Enter' && createInvite()}
+                  placeholder="their@email.com" style={{ ...INP, marginBottom: 12 }} autoFocus />
+                {inviteErr && <div style={{ padding: '9px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize: 13, color: '#dc2626', marginBottom: 12 }}>{inviteErr}</div>}
                 <button onClick={createInvite} disabled={creating}
-                  style={{ width: '100%', padding: '13px', background: creating ? '#93c5fd' : '#2563eb', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: creating ? 'not-allowed' : 'pointer' }}>
-                  {creating ? 'Creating…' : 'Generate invite link'}
+                  style={{ width: '100%', padding: 13, background: creating ? '#93c5fd' : '#2563eb', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: creating ? 'not-allowed' : 'pointer' }}>
+                  {creating ? 'Generating…' : 'Generate invite link'}
                 </button>
               </>
             ) : (
               <>
-                <div style={{ padding: '14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', marginBottom: '20px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    <strong style={{ fontSize: '14px', color: '#059669' }}>Invite ready</strong>
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#065f46', lineHeight: 1.5 }}>
-                    Send this link to <strong>{created.invited_email}</strong>. They&apos;ll click it, sign in or sign up, and join your household automatically.
+                <div style={{ padding: '12px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, marginBottom: 18, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <Check size={16} color="#059669" style={{ marginTop: 1, flexShrink: 0 }} />
+                  <div style={{ fontSize: 13, color: '#065f46', lineHeight: 1.5 }}>
+                    Invite ready for <strong>{created.invited_email}</strong>. Send the link via:
                   </div>
                 </div>
 
-                {/* Share buttons */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '14px' }}>
-                  <button onClick={() => openEmailClient(created.invited_email, created.code)} style={shareBtn}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                    Email
-                  </button>
-                  <button onClick={() => openWhatsApp(created.code)} style={shareBtn}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
-                    WhatsApp
-                  </button>
-                  <button onClick={() => openSMS(created.code)} style={shareBtn}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                    SMS
-                  </button>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 14 }}>
+                  {[
+                    { label: 'Email', icon: <Mail size={18} color="#2563eb" />, action: () => sendEmail(created.invited_email, created.code) },
+                    { label: 'WhatsApp', icon: <MessageCircle size={18} color="#25D366" />, action: () => sendWhatsApp(created.code) },
+                    { label: 'SMS', icon: <Phone size={18} color="#64748b" />, action: () => sendSMS(created.code) },
+                  ].map(b => (
+                    <button key={b.label} onClick={b.action}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '12px 8px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#334155' }}>
+                      {b.icon}{b.label}
+                    </button>
+                  ))}
                 </div>
 
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={lbl}>OR COPY THE LINK</label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <div style={{ flex: 1, padding: '10px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '12px', color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={LBL}>Or copy link</label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ flex: 1, padding: '10px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 11, color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {inviteLink(created.code)}
                     </div>
-                    <button onClick={() => copyText(inviteLink(created.code))} style={{ padding: '10px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>Copy</button>
+                    <button onClick={() => copyLink(created.code)}
+                      style={{ padding: '10px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <Copy size={13} /> Copy
+                    </button>
                   </div>
                 </div>
 
+                <p style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.5, marginBottom: 14 }}>
+                  Clicking Email, WhatsApp or SMS opens your app with the message pre-filled. The link expires in 7 days.
+                </p>
+
                 <button onClick={closeInviteModal}
-                  style={{ width: '100%', padding: '13px', background: '#fff', color: '#0f172a', border: '1px solid #e2e8f0', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>
+                  style={{ width: '100%', padding: 12, background: '#f8fafc', color: '#334155', border: '1px solid #e2e8f0', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                   Done
                 </button>
               </>
@@ -302,30 +340,75 @@ export default function ParentsPage() {
       )}
 
       {/* EDIT ME MODAL */}
-      {editMe && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={e => e.target === e.currentTarget && setEditMe(false)}>
-          <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '24px', width: '100%', maxWidth: '640px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: '700' }}>Your profile</h3>
-              <button onClick={() => setEditMe(false)} style={{ width: '32px', height: '32px', background: '#f1f5f9', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      {editModal && (
+        <div onClick={e => e.target === e.currentTarget && setEditModal(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: 24, width: '100%', maxWidth: 480 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: 0 }}>Your profile</h3>
+              <button onClick={() => setEditModal(false)} style={{ width: 32, height: 32, background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={16} color="#64748b" />
               </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <div style={{ width: '72px', height: '72px', borderRadius: '20px', background: myForm.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: '700', fontSize: '28px' }}>
-                  {myForm.display_name[0]?.toUpperCase() || '?'}
-                </div>
+
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+              <div style={{ width: 68, height: 68, borderRadius: 20, background: myForm.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 28 }}>
+                {myForm.display_name?.[0]?.toUpperCase() || '?'}
               </div>
-              <div><label style={lbl}>YOUR NAME</label><input value={myForm.display_name} onChange={e => setMyForm({ ...myForm, display_name: e.target.value })} placeholder="Your display name" style={inp} /></div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label style={lbl}>COLOR</label>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {COLORS.map(c => <button key={c} type="button" onClick={() => setMyForm({ ...myForm, color: c })} style={{ width: '36px', height: '36px', borderRadius: '10px', background: c, border: myForm.color === c ? '3px solid #0f172a' : '3px solid transparent', cursor: 'pointer' }} />)}
+                <label style={LBL}>Your name</label>
+                <input value={myForm.display_name} onChange={e => setMyForm(p => ({ ...p, display_name: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && saveMe()}
+                  placeholder="Display name" style={INP} autoFocus />
+              </div>
+              <div>
+                <label style={LBL}>Colour</label>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {COLORS.map(c => (
+                    <button key={c} type="button" onClick={() => setMyForm(p => ({ ...p, color: c }))}
+                      style={{ width: 36, height: 36, borderRadius: 10, background: c, border: myForm.color === c ? '3px solid #0f172a' : '2.5px solid transparent', cursor: 'pointer' }} />
+                  ))}
                 </div>
               </div>
-              <button onClick={saveMe} disabled={savingMe || !myForm.display_name.trim()} style={{ padding: '14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', opacity: (savingMe || !myForm.display_name.trim()) ? 0.5 : 1 }}>
-                {savingMe ? 'Saving…' : 'Save'}
+              <button onClick={saveMe} disabled={saving || !myForm.display_name.trim()}
+                style={{ padding: 13, background: saving || !myForm.display_name.trim() ? '#93c5fd' : '#2563eb', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: saving || !myForm.display_name.trim() ? 'not-allowed' : 'pointer' }}>
+                {saving ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REMOVE MODAL */}
+      {removeTarget && (
+        <div onClick={e => e.target === e.currentTarget && setRemoveTarget(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: 24, width: '100%', maxWidth: 480 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: 0 }}>Remove co-parent</h3>
+              <button onClick={() => setRemoveTarget(null)} style={{ width: 32, height: 32, background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <X size={16} color="#64748b" />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, marginBottom: 16 }}>
+              <AlertTriangle size={17} color="#dc2626" style={{ marginTop: 1, flexShrink: 0 }} />
+              <p style={{ fontSize: 13, color: '#7f1d1d', lineHeight: 1.6, margin: 0 }}>
+                <strong>{removeTarget.display_name}</strong> will be disconnected from this household. Their account is not deleted — they will just lose access to shared data. You can re-invite them at any time.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setRemoveTarget(null)}
+                style={{ flex: 1, padding: 12, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', color: '#334155' }}>
+                Cancel
+              </button>
+              <button onClick={removeParent} disabled={removing}
+                style={{ flex: 1, padding: 12, background: removing ? '#fca5a5' : '#dc2626', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: removing ? 'not-allowed' : 'pointer' }}>
+                {removing ? 'Removing…' : 'Remove'}
               </button>
             </div>
           </div>
