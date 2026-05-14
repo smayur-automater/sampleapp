@@ -73,7 +73,7 @@ export default function AuditPanel({ open, onClose }: AuditPanelProps) {
 
       {/* Panel */}
       <div style={{
-        position: 'fixed', top: 56, right: 0, bottom: 0, zIndex: 201,
+        position: 'fixed', top: 90, right: 0, bottom: 0, zIndex: 201,
         width: 340, background: '#fff', borderLeft: '1px solid #e2e8f0',
         display: 'flex', flexDirection: 'column',
         transform: open ? 'translateX(0)' : 'translateX(100%)',

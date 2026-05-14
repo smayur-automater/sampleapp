@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 
 export interface Member {
@@ -16,20 +16,22 @@ export interface HouseholdContext {
 }
 
 export function useHousehold() {
-  const [ctx, setCtx] = useState<HouseholdContext | null>(null)
+  const [ctx,     setCtx]     = useState<HouseholdContext | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error,   setError]   = useState<string | null>(null)
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      // Get current user - use getSession which is faster than getUser
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) { setLoading(false); return }
+      // getUser() hits the server to validate — more reliable than getSession()
+      // for the initial load after a page refresh
+      const { data: { user }, error: userErr } = await supabase.auth.getUser()
+      if (userErr || !user) { setLoading(false); return }
 
-      const userId = session.user.id
+      const userId = user.id
 
+      // Find this user's household
       const { data: mb, error: mbErr } = await supabase
         .from('household_members')
         .select('household_id')
@@ -39,6 +41,7 @@ export function useHousehold() {
       if (mbErr) { setError(mbErr.message); setLoading(false); return }
       if (!mb?.household_id) { setLoading(false); return }
 
+      // Load all members of that household
       const { data: mems, error: memsErr } = await supabase
         .from('household_members')
         .select('user_id, display_name, color, role')
@@ -46,14 +49,35 @@ export function useHousehold() {
 
       if (memsErr) { setError(memsErr.message); setLoading(false); return }
 
-      setCtx({ household_id: mb.household_id, members: mems ?? [], myUserId: userId })
+      setCtx({
+        household_id: mb.household_id,
+        members: mems ?? [],
+        myUserId: userId,
+      })
     } catch (e: any) {
-      setError(e.message)
+      setError(e?.message ?? 'Failed to load household')
     }
     setLoading(false)
-  }
+  }, [])
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    // Listen for auth state — run load() as soon as we have a confirmed session
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session?.user) {
+          load()
+        } else if (event === 'SIGNED_OUT') {
+          setCtx(null)
+          setLoading(false)
+        }
+      }
+    )
+
+    // Also attempt immediately in case session is already restored
+    load()
+
+    return () => subscription.unsubscribe()
+  }, [load])
 
   return { ctx, loading, error, reload: load }
 }
