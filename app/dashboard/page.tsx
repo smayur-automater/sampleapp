@@ -78,7 +78,7 @@ export default function DashboardPage() {
   const [period,      setPeriod]      = useState<Period>('month')
   const [statusFilter,setStatusFilter]= useState<StatusFilter>('all')
   const [tab,         setTab]         = useState<'overview'|'analytics'|'expenses'>('overview')
-  const [pageLoad,    setPageLoad]    = useState(true)
+  const [pageLoad,    setPageLoad]    = useState(false)
 
   // Modals
   const [expenseModal, setExpenseModal] = useState(false)

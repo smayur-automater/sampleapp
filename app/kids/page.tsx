@@ -29,7 +29,7 @@ function age(dob: string | null) {
 export default function KidsPage() {
   const { ctx, loading: ctxLoading, error: ctxError, reload: reloadCtx } = useHousehold()
   const [kids,    setKids]    = useState<Kid[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [modal,   setModal]   = useState(false)
   const [editing, setEditing] = useState<Kid | null>(null)
   const [form,    setForm]    = useState({ name: '', dob: '', color: COLORS[0] })

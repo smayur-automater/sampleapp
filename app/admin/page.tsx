@@ -201,7 +201,7 @@ export default function AdminPage() {
   const navItems: { id: View; label: string; Icon: React.ElementType }[] = [
     { id: 'dashboard',  label: 'Dashboard',  Icon: ChartBarIcon },
     { id: 'households', label: 'Households', Icon: HomeIcon },
-    { id: 'users',      label: 'UsersIcon',      Icon: UsersIcon },
+    { id: 'users',      label: 'Users',      Icon: UsersIcon },
   ]
 
   return (

@@ -19,21 +19,22 @@ export function useHousehold() {
   const [ctx,     setCtx]     = useState<HouseholdContext | null>(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState<string | null>(null)
-  const loadingRef = useRef(false)   // prevent concurrent loads
+  const inFlight  = useRef(false)
 
   const load = useCallback(async () => {
-    // Prevent double-loading
-    if (loadingRef.current) return
-    loadingRef.current = true
+    // Skip if already loading to avoid race conditions
+    if (inFlight.current) return
+    inFlight.current = true
     setLoading(true)
     setError(null)
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
+
       if (!user) {
         setCtx(null)
         setLoading(false)
-        loadingRef.current = false
+        inFlight.current = false
         return
       }
 
@@ -46,15 +47,14 @@ export function useHousehold() {
       if (mbErr) {
         setError(mbErr.message)
         setLoading(false)
-        loadingRef.current = false
+        inFlight.current = false
         return
       }
 
       if (!mb?.household_id) {
-        // User has no household yet — not an error, just show empty state
         setCtx(null)
         setLoading(false)
-        loadingRef.current = false
+        inFlight.current = false
         return
       }
 
@@ -66,7 +66,7 @@ export function useHousehold() {
       if (memsErr) {
         setError(memsErr.message)
         setLoading(false)
-        loadingRef.current = false
+        inFlight.current = false
         return
       }
 
@@ -80,30 +80,29 @@ export function useHousehold() {
     }
 
     setLoading(false)
-    loadingRef.current = false
+    inFlight.current = false
   }, [])
 
   useEffect(() => {
-    let mounted = true
+    // 1. Try immediately — works if session is already in storage
+    load()
 
-    // onAuthStateChange fires on page load with INITIAL_SESSION
-    // This is the single source of truth — don't call load() separately
+    // 2. Also listen for auth changes (sign in / sign out)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return
-        if (session?.user) {
-          await load()
-        } else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION' && !session) {
+      (event, session) => {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          inFlight.current = false // allow reload
+          load()
+        }
+        if (event === 'SIGNED_OUT') {
           setCtx(null)
           setLoading(false)
+          inFlight.current = false
         }
       }
     )
 
-    return () => {
-      mounted = false
-      subscription.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [load])
 
   return { ctx, loading, error, reload: load }

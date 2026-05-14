@@ -1,7 +1,7 @@
 'use client'
 import {
   ArrowPathIcon,
-  ChartBarIcon,
+  BellAlertIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline'
 import { useEffect, useState, useCallback } from 'react'
@@ -91,8 +91,8 @@ export default function AuditPanel({ open, onClose }: AuditPanelProps) {
         <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid #f1f5f9', flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <ChartBarIcon style={{ width: 16, height: 16, color: "#2563eb" }}/>
-              <span style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>ChartBarIcon</span>
+              <BellAlertIcon style={{ width: 16, height: 16, color: "#2563eb" }}/>
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>Activity</span>
               {entries.length > 0 && (
                 <span style={{ padding: '1px 7px', background: '#eff6ff', color: '#2563eb', borderRadius: 99, fontSize: 11, fontWeight: 700 }}>{entries.length}</span>
               )}
