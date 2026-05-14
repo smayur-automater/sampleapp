@@ -1,11 +1,22 @@
 'use client'
+import {
+  ArrowPathIcon,
+  ChatBubbleLeftIcon,
+  CheckIcon,
+  ClipboardDocumentIcon,
+  EnvelopeIcon,
+  ExclamationTriangleIcon,
+  LinkIcon,
+  PencilIcon,
+  PhoneIcon,
+  PlusIcon,
+  UserMinusIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline'
 import { useEffect, useState, useCallback } from 'react'
 import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
-import {
-  Pencil, X, UserMinus, Copy, Mail, MessageCircle, Phone,
-  Check, RefreshCw, AlertTriangle, Plus, Link as LinkIcon,
-} from 'lucide-react'
+
 import { logAudit } from '@/lib/audit'
 
 interface Member { user_id: string; display_name: string; color: string; role: string }
@@ -38,6 +49,8 @@ export default function ParentsPage() {
   const [created,     setCreated]     = useState<Invite | null>(null)
   const [inviteErr,   setInviteErr]   = useState('')
   const [copied,      setCopied]      = useState(false)
+  const [emailStatus, setEmailStatus] = useState<'idle'|'sending'|'sent'|'failed'>('idle')
+  const [emailErr,    setEmailErr]    = useState('')
 
   // Edit profile
   const [editModal, setEditModal] = useState(false)
@@ -133,7 +146,40 @@ export default function ParentsPage() {
       return
     }
 
-    setCreated(inv as Invite)
+    const newInvite = inv as Invite
+    setCreated(newInvite)
+
+    // Send invite email — track status so user sees confirmation
+    setEmailStatus('sending')
+    setEmailErr('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) throw new Error('No session')
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const res = await fetch(`${supabaseUrl}/functions/v1/send-invite`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          invite_id:   newInvite.id,
+          invite_code: newInvite.code,
+          to_email:    inviteEmail.trim().toLowerCase(),
+        }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (res.ok && result.ok) {
+        setEmailStatus('sent')
+      } else {
+        setEmailStatus('failed')
+        setEmailErr(result.error ?? `HTTP ${res.status}`)
+      }
+    } catch (e: any) {
+      setEmailStatus('failed')
+      setEmailErr(e.message ?? 'Could not reach email service')
+    }
+
     await logAudit({
       household_id: household.id, user_id: me.id,
       actor_name: me.email.split('@')[0],
@@ -142,7 +188,7 @@ export default function ParentsPage() {
     load()
   }
 
-  // ── Link helpers ────────────────────────────────────────────────
+  // ── LinkIcon helpers ────────────────────────────────────────────────
   function inviteLink(code: string) {
     if (typeof window === 'undefined') return ''
     return `${window.location.origin}/invite/${code}`
@@ -153,14 +199,14 @@ export default function ParentsPage() {
     try {
       await navigator.clipboard.writeText(link)
       setCopied(true); setTimeout(() => setCopied(false), 2000)
-      showToast('Link copied to clipboard!')
+      showToast('LinkIcon copied to clipboard!')
     } catch {
       // Fallback for browsers that block clipboard
       const el = document.createElement('textarea')
       el.value = link; document.body.appendChild(el)
       el.select(); document.execCommand('copy')
       document.body.removeChild(el)
-      showToast('Link copied!')
+      showToast('LinkIcon copied!')
     }
   }
 
@@ -206,6 +252,7 @@ export default function ParentsPage() {
   function closeInviteModal() {
     setInviteModal(false); setCreated(null)
     setInviteEmail(''); setInviteErr(''); setCopied(false)
+    setEmailStatus('idle'); setEmailErr('')
   }
 
   function openInviteModal() {
@@ -291,7 +338,7 @@ export default function ParentsPage() {
               </div>
               <button onClick={() => setEditModal(true)}
                 style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 13px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, cursor: 'pointer', fontSize: 13, color: '#374151', fontWeight: 600 }}>
-                <Pencil size={13} /> Edit
+                <PencilIcon style={{ width: 13, height: 13 }}/> Edit
               </button>
             </div>
           </section>
@@ -314,7 +361,7 @@ export default function ParentsPage() {
               </div>
               <button onClick={() => setRemoveTarget(coParent)}
                 style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 13px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, cursor: 'pointer', fontSize: 13, color: '#dc2626', fontWeight: 600 }}>
-                <UserMinus size={13} /> Remove
+                <UserMinusIcon style={{ width: 13, height: 13 }}/> Remove
               </button>
             </div>
           ) : (
@@ -323,7 +370,7 @@ export default function ParentsPage() {
               <button onClick={openInviteModal}
                 style={{ width: '100%', textAlign: 'left', background: '#fff', border: '2px dashed #cbd5e1', borderRadius: 16, padding: 16, display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', marginBottom: invites.length ? 10 : 0 }}>
                 <div style={{ width: 52, height: 52, borderRadius: 15, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Plus size={24} color="#94a3b8" strokeWidth={1.8} />
+                  <PlusIcon strokeWidth={1.8} style={{ width: 24, height: 24, color: "#94a3b8" }}/>
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 15, color: '#334155' }}>Invite co-parent</div>
@@ -334,7 +381,7 @@ export default function ParentsPage() {
               {/* Pending invites */}
               {invites.map(inv => (
                 <div key={inv.id} style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 14, padding: '13px 15px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                  <RefreshCw size={14} color="#b45309" style={{ flexShrink: 0 }} />
+                  <ArrowPathIcon style={{  flexShrink: 0, width: 14, height: 14, color: "#b45309" }}/>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#92400e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.invited_email}</div>
                     <div style={{ fontSize: 11, color: '#78350f', marginTop: 1 }}>
@@ -343,7 +390,7 @@ export default function ParentsPage() {
                   </div>
                   <button onClick={() => { setCreated(inv); setInviteModal(true) }}
                     style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 11px', background: '#fff', border: '1px solid #fde68a', borderRadius: 8, fontSize: 12, color: '#92400e', cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}>
-                    <LinkIcon size={11} /> Share
+                    <LinkIcon style={{ width: 11, height: 11 }}/> Share
                   </button>
                   <button onClick={() => cancelInvite(inv.id)}
                     style={{ padding: '6px 11px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize: 12, color: '#dc2626', cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}>
@@ -364,7 +411,7 @@ export default function ParentsPage() {
       {/* ── TOAST ── */}
       {toast && (
         <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 500, background: '#0f172a', color: '#fff', padding: '10px 18px', borderRadius: 99, fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
-          <Check size={14} color="#4ade80" /> {toast}
+          <CheckIcon style={{ width: 14, height: 14, color: "#4ade80" }}/> {toast}
         </div>
       )}
 
@@ -384,7 +431,7 @@ export default function ParentsPage() {
               </h3>
               <button onClick={closeInviteModal}
                 style={{ width: 32, height: 32, background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={16} color="#64748b" />
+                <XMarkIcon style={{ width: 16, height: 16, color: "#64748b" }}/>
               </button>
             </div>
 
@@ -409,7 +456,7 @@ export default function ParentsPage() {
                   </div>
                   {inviteErr && (
                     <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, fontSize: 13, color: '#dc2626', marginBottom: 14, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                      <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1 }} /> {inviteErr}
+                      <ExclamationTriangleIcon style={{  flexShrink: 0, marginTop: 1, width: 15, height: 15 }}/> {inviteErr}
                     </div>
                   )}
                   <button onClick={createInvite} disabled={creating || !inviteEmail.trim()}
@@ -422,16 +469,37 @@ export default function ParentsPage() {
                 <>
                   {/* Success banner */}
                   <div style={{ padding: '12px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, marginBottom: 20, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                    <Check size={16} color="#059669" style={{ marginTop: 1, flexShrink: 0 }} />
+                    <CheckIcon style={{  marginTop: 1, flexShrink: 0, width: 16, height: 16, color: "#059669" }}/>
                     <div style={{ fontSize: 13, color: '#065f46', lineHeight: 1.5 }}>
-                      Link created for <strong>{created.invited_email}</strong>. Valid for 7 days. Choose how to send it:
+                      Invite link created for <strong>{created.invited_email}</strong>. Valid for 7 days.
                     </div>
                   </div>
+
+                  {/* Email send status */}
+                  {emailStatus === 'sending' && (
+                    <div style={{ padding: '10px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, marginBottom: 14, fontSize: 13, color: '#1e40af', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 14, height: 14, border: '2px solid #93c5fd', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin .7s linear infinite', flexShrink: 0 }} />
+                      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+                      Sending email to {created?.invited_email}…
+                    </div>
+                  )}
+                  {emailStatus === 'sent' && (
+                    <div style={{ padding: '10px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, marginBottom: 14, fontSize: 13, color: '#065f46', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <CheckIcon style={{ width: 14, height: 14, flexShrink: 0 }} />
+                      Email sent to <strong>{created?.invited_email}</strong>
+                    </div>
+                  )}
+                  {emailStatus === 'failed' && (
+                    <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, marginBottom: 14, fontSize: 13, color: '#92400e', lineHeight: 1.5 }}>
+                      <strong>Email not sent</strong> — {emailErr || 'edge function not deployed yet'}.<br />
+                      <span style={{ fontSize: 12 }}>Share the link below manually instead.</span>
+                    </div>
+                  )}
 
                   {/* ── BIG COPY BUTTON — most important action ── */}
                   <button onClick={() => copyLink(created.code)}
                     style={{ width: '100%', padding: '14px 16px', background: copied ? '#f0fdf4' : '#1a3a6b', color: copied ? '#059669' : '#fff', border: copied ? '1.5px solid #bbf7d0' : 'none', borderRadius: 13, fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, marginBottom: 16, transition: 'all .2s' }}>
-                    {copied ? <Check size={18} /> : <Copy size={18} />}
+                    {copied ? <CheckIcon style={{ width: 18, height: 18 }}/> : <ClipboardDocumentIcon style={{ width: 18, height: 18 }}/>}
                     {copied ? 'Copied!' : 'Copy invite link'}
                   </button>
 
@@ -444,10 +512,10 @@ export default function ParentsPage() {
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', letterSpacing: '.07em', textTransform: 'uppercase', marginBottom: 10 }}>Or send via</div>
                   <div style={{ display: 'grid', gridTemplateColumns: canShareNative ? 'repeat(4,1fr)' : 'repeat(3,1fr)', gap: 8, marginBottom: 18 }}>
                     {[
-                      { label: 'Email',     icon: <Mail size={20} color="#2563eb" />,     bg: '#eff6ff', action: () => shareEmail(created)    },
-                      { label: 'WhatsApp',  icon: <MessageCircle size={20} color="#25D366" />, bg: '#f0fdf4', action: () => shareWhatsApp(created) },
-                      { label: 'SMS',       icon: <Phone size={20} color="#64748b" />,    bg: '#f8fafc', action: () => shareSMS(created)      },
-                      ...(canShareNative ? [{ label: 'More', icon: <LinkIcon size={20} color="#7c3aed" />, bg: '#f5f3ff', action: () => shareNative(created) }] : []),
+                      { label: 'Email',     icon: <EnvelopeIcon style={{ width: 20, height: 20, color: "#2563eb" }}/>,     bg: '#eff6ff', action: () => shareEmail(created)    },
+                      { label: 'WhatsApp',  icon: <ChatBubbleLeftIcon style={{ width: 20, height: 20, color: "#25D366" }}/>, bg: '#f0fdf4', action: () => shareWhatsApp(created) },
+                      { label: 'SMS',       icon: <PhoneIcon style={{ width: 20, height: 20, color: "#64748b" }}/>,    bg: '#f8fafc', action: () => shareSMS(created)      },
+                      ...(canShareNative ? [{ label: 'More', icon: <LinkIcon style={{ width: 20, height: 20, color: "#7c3aed" }}/>, bg: '#f5f3ff', action: () => shareNative(created) }] : []),
                     ].map(b => (
                       <button key={b.label} onClick={b.action}
                         style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '14px 8px', background: b.bg, border: '1px solid #e2e8f0', borderRadius: 13, cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#334155' }}>
@@ -480,7 +548,7 @@ export default function ParentsPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 22px 0' }}>
               <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', margin: 0 }}>Your profile</h3>
               <button onClick={() => setEditModal(false)} style={{ width: 32, height: 32, background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={16} color="#64748b" />
+                <XMarkIcon style={{ width: 16, height: 16, color: "#64748b" }}/>
               </button>
             </div>
             <div style={{ padding: '18px 22px 0' }}>
@@ -525,12 +593,12 @@ export default function ParentsPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 22px 0' }}>
               <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', margin: 0 }}>Remove co-parent?</h3>
               <button onClick={() => setRemoveTarget(null)} style={{ width: 32, height: 32, background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={16} color="#64748b" />
+                <XMarkIcon style={{ width: 16, height: 16, color: "#64748b" }}/>
               </button>
             </div>
             <div style={{ padding: '16px 22px 0' }}>
               <div style={{ display: 'flex', gap: 10, padding: '13px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 13, marginBottom: 18 }}>
-                <AlertTriangle size={17} color="#dc2626" style={{ flexShrink: 0, marginTop: 1 }} />
+                <ExclamationTriangleIcon style={{  flexShrink: 0, marginTop: 1, width: 17, height: 17, color: "#dc2626" }}/>
                 <p style={{ fontSize: 13, color: '#7f1d1d', lineHeight: 1.6, margin: 0 }}>
                   <strong>{removeTarget.display_name}</strong> will lose access to all shared data. Their account is not deleted — you can re-invite them at any time.
                 </p>

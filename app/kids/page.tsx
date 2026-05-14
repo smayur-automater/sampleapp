@@ -1,9 +1,15 @@
 'use client'
-import { useEffect, useState } from 'react'
+import {
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline'
+import { useEffect, useState, useCallback } from 'react'
 import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
 import { useHousehold } from '@/lib/household'
-import { Plus, Pencil, Trash2, X } from 'lucide-react'
+
 import { logAudit } from '@/lib/audit'
 
 interface Kid { id: string; name: string; dob: string | null; color: string; created_by: string | null }
@@ -32,9 +38,7 @@ export default function KidsPage() {
 
   const F = (k: Partial<typeof form>) => setForm(p => ({ ...p, ...k }))
 
-  useEffect(() => { if (ctx) load() }, [ctx])
-
-  async function load() {
+  const load = useCallback(async () => {
     if (!ctx) return
     setLoading(true)
     const { data, error } = await supabase
@@ -45,7 +49,9 @@ export default function KidsPage() {
     if (error) console.error('kids load error:', error.message)
     setKids(data ?? [])
     setLoading(false)
-  }
+  }, [ctx])
+
+  useEffect(() => { if (ctx) load() }, [ctx, load])
 
   function openAdd() {
     setEditing(null)
@@ -124,7 +130,7 @@ export default function KidsPage() {
             <p style={{ fontSize: 13, color: '#64748b', margin: '3px 0 0' }}>{kids.length} {kids.length === 1 ? 'child' : 'children'} · shared with both parents</p>
           </div>
           <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-            <Plus size={15} strokeWidth={2.5} /> Add child
+            <PlusIcon strokeWidth={2.5} style={{ width: 15, height: 15 }}/> Add child
           </button>
         </div>
 
@@ -157,10 +163,10 @@ export default function KidsPage() {
                   {isOwner ? (
                     <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                       <button onClick={() => openEdit(kid)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 11px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, cursor: 'pointer', fontSize: 12, color: '#374151', fontWeight: 500 }}>
-                        <Pencil size={12} /> Edit
+                        <PencilIcon style={{ width: 12, height: 12 }}/> Edit
                       </button>
                       <button onClick={() => del(kid)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 11px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, cursor: 'pointer', fontSize: 12, color: '#dc2626', fontWeight: 500 }}>
-                        <Trash2 size={12} /> Delete
+                        <TrashIcon style={{ width: 12, height: 12 }}/> Delete
                       </button>
                     </div>
                   ) : (
@@ -182,7 +188,7 @@ export default function KidsPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: 0 }}>{editing ? 'Edit child' : 'Add child'}</h3>
               <button onClick={() => setModal(false)} style={{ width: 32, height: 32, background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={16} color="#64748b" />
+                <XMarkIcon style={{ width: 16, height: 16, color: "#64748b" }}/>
               </button>
             </div>
 

@@ -1,9 +1,18 @@
 'use client'
+import {
+  BoltIcon,
+  CheckIcon,
+  LockClosedIcon,
+  PlusIcon,
+  StarIcon,
+  TrashIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline'
 import { useEffect, useState } from 'react'
 import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
 import { useHousehold } from '@/lib/household'
-import { Crown, Plus, Trash2, X, Zap, Lock, Check } from 'lucide-react'
+
 import { logAudit } from '@/lib/audit'
 
 interface Category { id: string; name: string; color: string; icon: string }
@@ -151,17 +160,17 @@ export default function RulesPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Zap size={20} color="#d97706" />
+              <BoltIcon style={{ width: 20, height: 20, color: "#d97706" }}/>
               <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0, letterSpacing: '-0.4px' }}>Smart Rules</h1>
               <span style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 8px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#d97706' }}>
-                <Crown size={10} /> Premium
+                <StarIcon style={{ width: 10, height: 10 }}/> Premium
               </span>
             </div>
             <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0' }}>Auto-apply split rules when adding expenses by category</p>
           </div>
           {isPremium && availableCategories.length > 0 && (
             <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-              <Plus size={14} strokeWidth={2.5} /> Add rule
+              <PlusIcon strokeWidth={2.5} style={{ width: 14, height: 14 }}/> Add rule
             </button>
           )}
         </div>
@@ -170,7 +179,7 @@ export default function RulesPage() {
         {!isPremium && (
           <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 14, padding: '20px 18px', marginBottom: 20, marginTop: 16 }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-              <Lock size={18} color="#d97706" style={{ marginTop: 2, flexShrink: 0 }} />
+              <LockClosedIcon style={{  marginTop: 2, flexShrink: 0, width: 18, height: 18, color: "#d97706" }}/>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 15, color: '#92400e', marginBottom: 6 }}>Premium feature</div>
                 <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.6 }}>
@@ -190,7 +199,7 @@ export default function RulesPage() {
 
         {/* How it works */}
         <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: '12px 14px', marginBottom: 20, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-          <Check size={15} color="#059669" style={{ marginTop: 1, flexShrink: 0 }} />
+          <CheckIcon style={{  marginTop: 1, flexShrink: 0, width: 15, height: 15, color: "#059669" }}/>
           <div style={{ fontSize: 13, color: '#065f46', lineHeight: 1.6 }}>
             When you add a new expense, the split slider will <strong>automatically jump</strong> to the rule for that category. Rules are shared with your co-parent.
           </div>
@@ -199,7 +208,7 @@ export default function RulesPage() {
         {/* Rules list */}
         {rules.length === 0 ? (
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: '40px 24px', textAlign: 'center' }}>
-            <Zap size={32} color="#e2e8f0" style={{ margin: '0 auto 12px', display: 'block' }} />
+            <BoltIcon style={{  margin: '0 auto 12px', display: 'block', width: 32, height: 32, color: "#e2e8f0" }}/>
             <div style={{ fontWeight: 600, fontSize: 15, color: '#334155', marginBottom: 6 }}>No rules yet</div>
             <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>Add a rule for each category that has an agreed split</div>
             {isPremium && availableCategories.length > 0 && (
@@ -259,7 +268,7 @@ export default function RulesPage() {
                   {isPremium && (
                     <button onClick={() => deleteRule(rule)}
                       style={{ padding: 7, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, cursor: 'pointer', display: 'flex', flexShrink: 0 }}>
-                      <Trash2 size={13} color="#dc2626" />
+                      <TrashIcon style={{ width: 13, height: 13, color: "#dc2626" }}/>
                     </button>
                   )}
                 </div>
@@ -268,7 +277,7 @@ export default function RulesPage() {
 
             {isPremium && availableCategories.length > 0 && (
               <button onClick={openAdd} style={{ width: '100%', marginTop: 12, padding: '10px', background: '#f8fafc', border: '1.5px dashed #cbd5e1', borderRadius: 12, fontSize: 13, fontWeight: 600, color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                <Plus size={14} /> Add another rule
+                <PlusIcon style={{ width: 14, height: 14 }}/> Add another rule
               </button>
             )}
           </>
@@ -283,7 +292,7 @@ export default function RulesPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: 0 }}>Add split rule</h3>
               <button onClick={() => setModal(false)} style={{ width: 32, height: 32, background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={16} color="#64748b" />
+                <XMarkIcon style={{ width: 16, height: 16, color: "#64748b" }}/>
               </button>
             </div>
 
@@ -355,7 +364,7 @@ export default function RulesPage() {
       {/* Toast */}
       {toast && (
         <div style={{ position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 500, background: '#0f172a', color: '#fff', padding: '9px 16px', borderRadius: 99, fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <Check size={13} /> {toast}
+          <CheckIcon style={{ width: 13, height: 13 }}/> {toast}
         </div>
       )}
     </Shell>

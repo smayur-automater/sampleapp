@@ -1,8 +1,12 @@
 'use client'
+import {
+  ArrowLeftStartOnRectangleIcon,
+  ChartBarIcon,
+} from '@heroicons/react/24/outline'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Activity, LogOut } from 'lucide-react'
+
 import AuditPanel from '@/components/AuditPanel'
 
 const TABS = [
@@ -68,12 +72,12 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                 color: auditOpen ? '#2563eb' : '#64748b',
                 cursor: 'pointer',
               }}>
-              <Activity size={13} /> Activity
+              <ChartBarIcon style={{ width: 13, height: 13 }}/> ChartBarIcon
             </button>
             <button
               onClick={async () => { await supabase.auth.signOut(); router.replace('/') }}
               style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', fontSize: 12, fontWeight: 600, color: '#64748b', cursor: 'pointer' }}>
-              <LogOut size={13} />
+              <ArrowLeftStartOnRectangleIcon style={{ width: 13, height: 13 }}/>
             </button>
           </div>
         </div>

@@ -229,3 +229,55 @@ begin
   return json_build_object('ok', true);
 end;
 $$;
+
+
+-- ── Update handle_new_user to use first_name + last_name metadata ──────────
+-- Run this to update the trigger so sign-ups with name fields show full names
+
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  new_hh_id    uuid;
+  display_name text;
+  first_name   text;
+  last_name    text;
+begin
+  if (new.raw_user_meta_data->>'joined_household') is not null then return new; end if;
+
+  -- Use first_name + last_name from metadata if provided, else fall back to email local
+  first_name := trim(coalesce(new.raw_user_meta_data->>'first_name', ''));
+  last_name  := trim(coalesce(new.raw_user_meta_data->>'last_name', ''));
+
+  if first_name <> '' and last_name <> '' then
+    display_name := first_name || ' ' || last_name;
+  elsif first_name <> '' then
+    display_name := first_name;
+  else
+    display_name := split_part(coalesce(new.email, 'user'), '@', 1);
+  end if;
+
+  insert into public.households (name)
+    values (display_name || '''s household')
+    returning id into new_hh_id;
+
+  insert into public.household_members (household_id, user_id, display_name, color, role)
+    values (new_hh_id, new.id, display_name, '#1a3a6b', 'parent');
+
+  insert into public.categories (household_id, created_by, name, icon, color) values
+    (new_hh_id, new.id, 'Medical',     'heart',        '#dc2626'),
+    (new_hh_id, new.id, 'School',      'academic-cap', '#1a3a6b'),
+    (new_hh_id, new.id, 'Sports',      'trophy',       '#059669'),
+    (new_hh_id, new.id, 'Excursions',  'map-pin',      '#4f46e5'),
+    (new_hh_id, new.id, 'Travel',      'plane',        '#0891b2'),
+    (new_hh_id, new.id, 'Dental',      'sparkles',     '#7c3aed'),
+    (new_hh_id, new.id, 'Clothing',    'shopping-bag', '#374151'),
+    (new_hh_id, new.id, 'Food',        'cake',         '#d97706'),
+    (new_hh_id, new.id, 'Activities',  'puzzle',       '#db2777'),
+    (new_hh_id, new.id, 'Other',       'tag',          '#374151');
+
+  return new;
+exception when others then
+  raise warning 'handle_new_user error: %', sqlerrm;
+  return new;
+end;
+$$;

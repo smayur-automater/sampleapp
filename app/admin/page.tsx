@@ -1,13 +1,32 @@
 'use client'
+import {
+  ArrowDownRightIcon,
+  ArrowLeftStartOnRectangleIcon,
+  ArrowPathIcon,
+  ArrowTrendingUpIcon,
+  ArrowUpRightIcon,
+  BanknotesIcon,
+  ChartBarIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  EnvelopeIcon,
+  ExclamationTriangleIcon,
+  HeartIcon,
+  HomeIcon,
+  LockClosedIcon,
+  MagnifyingGlassIcon,
+  ShieldCheckIcon,
+  StarIcon,
+  TrashIcon,
+  UserMinusIcon,
+  UsersIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline'
 import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import {
-  Users, Home, Baby, DollarSign, TrendingUp, Trash2,
-  UserMinus, Search, X, ChevronRight, ChevronDown,
-  RefreshCw, AlertTriangle, Shield, LogOut, ArrowUpRight,
-  ArrowDownRight, Activity, Clock, Mail, Calendar, Crown, Lock
-} from 'lucide-react'
+
 
 // ── Types ──────────────────────────────────────────────────────────
 interface Stats {
@@ -180,9 +199,9 @@ export default function AdminPage() {
   )
 
   const navItems: { id: View; label: string; Icon: React.ElementType }[] = [
-    { id: 'dashboard',  label: 'Dashboard',  Icon: Activity },
-    { id: 'households', label: 'Households', Icon: Home },
-    { id: 'users',      label: 'Users',      Icon: Users },
+    { id: 'dashboard',  label: 'Dashboard',  Icon: ChartBarIcon },
+    { id: 'households', label: 'Households', Icon: HomeIcon },
+    { id: 'users',      label: 'UsersIcon',      Icon: UsersIcon },
   ]
 
   return (
@@ -206,7 +225,7 @@ export default function AdminPage() {
           {navItems.map(({ id, label, Icon }) => (
             <button key={id} onClick={() => { setView(id); setSearch(''); setDetail(null) }}
               style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', border: 'none', borderRadius: 9, background: view === id ? '#2563eb22' : 'transparent', color: view === id ? '#60a5fa' : '#94a3b8', fontSize: 13, fontWeight: view === id ? 600 : 400, cursor: 'pointer', marginBottom: 2 }}>
-              <Icon size={16} strokeWidth={view === id ? 2.2 : 1.8} />
+              <Icon style={{ width: 16, height: 16 }} strokeWidth={view === id ? 2.2 : 1.8} />
               {label}
             </button>
           ))}
@@ -215,11 +234,11 @@ export default function AdminPage() {
         <div style={{ padding: '12px 10px', borderTop: '1px solid #334155' }}>
           <button onClick={() => router.push('/dashboard')}
             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', border: 'none', borderRadius: 9, background: 'transparent', color: '#64748b', fontSize: 13, cursor: 'pointer' }}>
-            <ArrowUpRight size={14} /> Back to App
+            <ArrowUpRightIcon style={{ width: 14, height: 14 }}/> Back to App
           </button>
           <button onClick={async () => { await supabase.auth.signOut(); router.replace('/') }}
             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', border: 'none', borderRadius: 9, background: 'transparent', color: '#64748b', fontSize: 13, cursor: 'pointer' }}>
-            <LogOut size={14} /> Sign out
+            <ArrowLeftStartOnRectangleIcon style={{ width: 14, height: 14 }}/> Sign out
           </button>
         </div>
       </div>
@@ -242,16 +261,16 @@ export default function AdminPage() {
                 {/* KPI grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
                   {[
-                    { label: 'Total users',       value: stats.total_users,       sub: `+${stats.new_users_7d} this week`,    Icon: Users,      color: '#60a5fa' },
-                    { label: 'Households',         value: stats.total_households,  sub: `${stats.linked_households} linked`,   Icon: Home,       color: '#34d399' },
-                    { label: 'Total expenses',     value: stats.total_expenses,    sub: `+${stats.new_expenses_7d} this week`, Icon: DollarSign, color: '#a78bfa' },
-                    { label: 'Total spend',        value: fmt(stats.total_spend),  sub: `${stats.total_kids} children tracked`,Icon: TrendingUp,  color: '#fb923c' },
+                    { label: 'Total users',       value: stats.total_users,       sub: `+${stats.new_users_7d} this week`,    Icon: UsersIcon,      color: '#60a5fa' },
+                    { label: 'Households',         value: stats.total_households,  sub: `${stats.linked_households} linked`,   Icon: HomeIcon,       color: '#34d399' },
+                    { label: 'Total expenses',     value: stats.total_expenses,    sub: `+${stats.new_expenses_7d} this week`, Icon: BanknotesIcon, color: '#a78bfa' },
+                    { label: 'Total spend',        value: fmt(stats.total_spend),  sub: `${stats.total_kids} children tracked`,Icon: ArrowTrendingUpIcon,  color: '#fb923c' },
                   ].map(({ label, value, sub, Icon, color }) => (
                     <div key={label} style={{ ...S.card }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                         <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', letterSpacing: '0.07em', textTransform: 'uppercase' }}>{label}</span>
                         <div style={{ width: 30, height: 30, borderRadius: 9, background: color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Icon size={15} color={color} strokeWidth={2} />
+                          <Icon style={{ width: 15, height: 15, color: color }} strokeWidth={2} />
                         </div>
                       </div>
                       <div style={{ fontSize: 28, fontWeight: 700, color: '#f1f5f9', letterSpacing: '-0.5px' }}>{value}</div>
@@ -282,12 +301,12 @@ export default function AdminPage() {
                   <div style={S.card}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 14 }}>This week</div>
                     {[
-                      { label: 'New users',    value: stats.new_users_7d,    Icon: Users,      color: '#60a5fa' },
-                      { label: 'New expenses', value: stats.new_expenses_7d, Icon: DollarSign, color: '#34d399' },
+                      { label: 'New users',    value: stats.new_users_7d,    Icon: UsersIcon,      color: '#60a5fa' },
+                      { label: 'New expenses', value: stats.new_expenses_7d, Icon: BanknotesIcon, color: '#34d399' },
                     ].map(row => (
                       <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #334155' }}>
                         <div style={{ width: 34, height: 34, borderRadius: 9, background: row.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <row.Icon size={15} color={row.color} />
+                          <row.Icon style={{ width: 15, height: 15, color: row.color }} />
                         </div>
                         <div>
                           <div style={{ fontSize: 20, fontWeight: 700, color: '#f1f5f9' }}>{row.value}</div>
@@ -312,7 +331,7 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Activity chart */}
+                {/* ChartBarIcon chart */}
                 {stats.expenses_by_day && stats.expenses_by_day.length > 0 && (
                   <div style={S.card}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 18 }}>Expenses — last 30 days</div>
@@ -346,13 +365,13 @@ export default function AdminPage() {
                 <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0' }}>{filteredHouseholds.length} of {households.length}</p>
               </div>
               <button onClick={loadView} style={{ ...S.btn, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <RefreshCw size={13} /> Refresh
+                <ArrowPathIcon style={{ width: 13, height: 13 }}/> Refresh
               </button>
             </div>
 
             <div style={{ position: 'relative', marginBottom: 16 }}>
-              <Search size={14} color="#475569" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by household or parent name…" style={{ ...S.inp, paddingLeft: 34 }} />
+              <MagnifyingGlassIcon style={{  position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: "#475569" }}/>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="MagnifyingGlassIcon by household or parent name…" style={{ ...S.inp, paddingLeft: 34 }} />
             </div>
 
             {loading ? <Spinner /> : (
@@ -422,7 +441,7 @@ export default function AdminPage() {
                 <p style={{ fontSize: 12, color: '#64748b', margin: '2px 0 0' }}>Created {fmtDate(detail.household.created_at)} · ID: {detail.household.id.slice(0, 8)}…</p>
               </div>
               <button onClick={() => deleteHousehold(detail.household.id, detail.household.name)} style={{ ...S.danger, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
-                <Trash2 size={12} /> Delete household
+                <TrashIcon style={{ width: 12, height: 12 }}/> Delete household
               </button>
             </div>
 
@@ -443,7 +462,7 @@ export default function AdminPage() {
                         <div style={{ fontSize: 10, color: '#475569', marginTop: 1 }}>Joined {fmtDate(m.joined_at)} · {m.role}</div>
                       </div>
                       <button onClick={() => removeMember(detail.household.id, m.user_id, m.display_name)} style={S.danger}>
-                        <UserMinus size={11} />
+                        <UserMinusIcon style={{ width: 11, height: 11 }}/>
                       </button>
                     </div>
                   ))}
@@ -463,7 +482,7 @@ export default function AdminPage() {
                         {k.dob && <div style={{ fontSize: 11, color: '#64748b' }}>DOB: {fmtDate(k.dob)}</div>}
                       </div>
                       <button onClick={() => deleteKid(k.id, k.name, detail.household.id)} style={S.danger}>
-                        <Trash2 size={11} />
+                        <TrashIcon style={{ width: 11, height: 11 }}/>
                       </button>
                     </div>
                   ))}
@@ -476,7 +495,7 @@ export default function AdminPage() {
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 14 }}>Invites ({detail.invites.length})</div>
                     {detail.invites.map(inv => (
                       <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #334155' }}>
-                        <Mail size={14} color={inv.accepted ? '#34d399' : '#fb923c'} />
+                        <EnvelopeIcon color={inv.accepted ? '#34d399' : '#fb923c'} style={{ width: 14, height: 14 }}/>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: 13, color: '#cbd5e1' }}>{inv.invited_email}</div>
                           <div style={{ fontSize: 11, color: '#475569' }}>Expires {fmtDate(inv.expires_at)}</div>
@@ -517,7 +536,7 @@ export default function AdminPage() {
                               <td style={{ ...S.td, fontSize: 11, color: '#64748b' }}>{e.creator_email}</td>
                               <td style={S.td}>
                                 <button onClick={() => deleteExpense(e.id, e.description, detail.household.id)} style={S.danger}>
-                                  <Trash2 size={11} />
+                                  <TrashIcon style={{ width: 11, height: 11 }}/>
                                 </button>
                               </td>
                             </tr>
@@ -537,17 +556,17 @@ export default function AdminPage() {
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <div>
-                <h1 style={{ fontSize: 24, fontWeight: 700, color: '#f1f5f9', margin: 0 }}>Users</h1>
+                <h1 style={{ fontSize: 24, fontWeight: 700, color: '#f1f5f9', margin: 0 }}>UsersIcon</h1>
                 <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0' }}>{filteredUsers.length} of {users.length} total</p>
               </div>
               <button onClick={loadView} style={{ ...S.btn, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <RefreshCw size={13} /> Refresh
+                <ArrowPathIcon style={{ width: 13, height: 13 }}/> Refresh
               </button>
             </div>
 
             <div style={{ position: 'relative', marginBottom: 16 }}>
-              <Search size={14} color="#475569" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by email, name, or household…" style={{ ...S.inp, paddingLeft: 34 }} />
+              <MagnifyingGlassIcon style={{  position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: "#475569" }}/>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="MagnifyingGlassIcon by email, name, or household…" style={{ ...S.inp, paddingLeft: 34 }} />
             </div>
 
             {loading ? <Spinner /> : (
@@ -632,7 +651,7 @@ export default function AdminPage() {
         <div onClick={() => setConfirm(null)} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 16, padding: 24, maxWidth: 400, width: '100%' }}>
             <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-              <AlertTriangle size={20} color="#f59e0b" style={{ flexShrink: 0, marginTop: 2 }} />
+              <ExclamationTriangleIcon style={{  flexShrink: 0, marginTop: 2, width: 20, height: 20, color: "#f59e0b" }}/>
               <p style={{ fontSize: 14, color: '#cbd5e1', lineHeight: 1.6, margin: 0 }}>{confirm.msg}</p>
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>

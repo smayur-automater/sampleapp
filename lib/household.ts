@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 
 export interface Member {
@@ -19,64 +19,91 @@ export function useHousehold() {
   const [ctx,     setCtx]     = useState<HouseholdContext | null>(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState<string | null>(null)
+  const loadingRef = useRef(false)   // prevent concurrent loads
 
   const load = useCallback(async () => {
+    // Prevent double-loading
+    if (loadingRef.current) return
+    loadingRef.current = true
     setLoading(true)
     setError(null)
+
     try {
-      // getUser() hits the server to validate — more reliable than getSession()
-      // for the initial load after a page refresh
-      const { data: { user }, error: userErr } = await supabase.auth.getUser()
-      if (userErr || !user) { setLoading(false); return }
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setCtx(null)
+        setLoading(false)
+        loadingRef.current = false
+        return
+      }
 
-      const userId = user.id
-
-      // Find this user's household
       const { data: mb, error: mbErr } = await supabase
         .from('household_members')
         .select('household_id')
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .maybeSingle()
 
-      if (mbErr) { setError(mbErr.message); setLoading(false); return }
-      if (!mb?.household_id) { setLoading(false); return }
+      if (mbErr) {
+        setError(mbErr.message)
+        setLoading(false)
+        loadingRef.current = false
+        return
+      }
 
-      // Load all members of that household
+      if (!mb?.household_id) {
+        // User has no household yet — not an error, just show empty state
+        setCtx(null)
+        setLoading(false)
+        loadingRef.current = false
+        return
+      }
+
       const { data: mems, error: memsErr } = await supabase
         .from('household_members')
         .select('user_id, display_name, color, role')
         .eq('household_id', mb.household_id)
 
-      if (memsErr) { setError(memsErr.message); setLoading(false); return }
+      if (memsErr) {
+        setError(memsErr.message)
+        setLoading(false)
+        loadingRef.current = false
+        return
+      }
 
       setCtx({
         household_id: mb.household_id,
         members: mems ?? [],
-        myUserId: userId,
+        myUserId: user.id,
       })
     } catch (e: any) {
-      setError(e?.message ?? 'Failed to load household')
+      setError(e?.message ?? 'Failed to load')
     }
+
     setLoading(false)
+    loadingRef.current = false
   }, [])
 
   useEffect(() => {
-    // Listen for auth state — run load() as soon as we have a confirmed session
+    let mounted = true
+
+    // onAuthStateChange fires on page load with INITIAL_SESSION
+    // This is the single source of truth — don't call load() separately
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        if (!mounted) return
         if (session?.user) {
-          load()
-        } else if (event === 'SIGNED_OUT') {
+          await load()
+        } else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION' && !session) {
           setCtx(null)
           setLoading(false)
         }
       }
     )
 
-    // Also attempt immediately in case session is already restored
-    load()
-
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [load])
 
   return { ctx, loading, error, reload: load }

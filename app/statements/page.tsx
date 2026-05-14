@@ -1,10 +1,20 @@
 'use client'
+import {
+  ArrowDownTrayIcon,
+  ArrowTrendingUpIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  DocumentTextIcon,
+  EnvelopeIcon,
+  LockClosedIcon,
+  StarIcon,
+} from '@heroicons/react/24/outline'
 import { useEffect, useState, useMemo } from 'react'
 import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
 import { useHousehold } from '@/lib/household'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
-import { Crown, Download, Mail, ChevronLeft, ChevronRight, Lock, FileText, TrendingUp } from 'lucide-react'
+
 import { CURRENCIES } from '@/components/CurrencySelect'
 
 interface MonthlySummary {
@@ -210,10 +220,10 @@ ${exps.map(e => `<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'num
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <FileText size={20} color="#2563eb" />
+              <DocumentTextIcon style={{ width: 20, height: 20, color: "#2563eb" }}/>
               <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0 }}>Monthly Statement</h1>
               <span style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 8px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#d97706' }}>
-                <Crown size={10} /> Premium
+                <StarIcon style={{ width: 10, height: 10 }}/> Premium
               </span>
             </div>
             <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0' }}>Full breakdown of your shared household expenses</p>
@@ -221,13 +231,13 @@ ${exps.map(e => `<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'num
           {isPremium && summary && (
             <div style={{ display: 'flex', gap: 6 }}>
               <button onClick={exportCSV} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 11px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                <Download size={13} /> CSV
+                <ArrowDownTrayIcon style={{ width: 13, height: 13 }}/> CSV
               </button>
               <button onClick={exportPDF} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 11px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                <Download size={13} /> PDF
+                <ArrowDownTrayIcon style={{ width: 13, height: 13 }}/> PDF
               </button>
               <button onClick={emailSummary} disabled={sending} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 11px', background: '#2563eb', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600, cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.6 : 1 }}>
-                <Mail size={13} /> {sending ? 'Sending…' : 'Email'}
+                <EnvelopeIcon style={{ width: 13, height: 13 }}/> {sending ? 'Sending…' : 'Email'}
               </button>
             </div>
           )}
@@ -237,7 +247,7 @@ ${exps.map(e => `<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'num
         {!isPremium ? (
           <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 14, padding: '20px 18px', marginTop: 8 }}>
             <div style={{ display: 'flex', gap: 12 }}>
-              <Lock size={18} color="#d97706" style={{ marginTop: 2, flexShrink: 0 }} />
+              <LockClosedIcon style={{  marginTop: 2, flexShrink: 0, width: 18, height: 18, color: "#d97706" }}/>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 15, color: '#92400e', marginBottom: 6 }}>Premium feature</div>
                 <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.7 }}>
@@ -260,13 +270,13 @@ ${exps.map(e => `<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'num
             {/* Month navigator */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '10px 16px', marginBottom: 20 }}>
               <button onClick={prevMonth} style={{ padding: 6, background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
-                <ChevronLeft size={18} color="#64748b" />
+                <ChevronLeftIcon style={{ width: 18, height: 18, color: "#64748b" }}/>
               </button>
               <div style={{ fontWeight: 700, fontSize: 16, color: '#0f172a', minWidth: 180, textAlign: 'center' }}>
                 {MONTH_NAMES[month - 1]} {year}
               </div>
               <button onClick={nextMonth} disabled={isCurrentMonth} style={{ padding: 6, background: 'none', border: 'none', cursor: isCurrentMonth ? 'not-allowed' : 'pointer', display: 'flex', opacity: isCurrentMonth ? 0.3 : 1 }}>
-                <ChevronRight size={18} color="#64748b" />
+                <ChevronRightIcon style={{ width: 18, height: 18, color: "#64748b" }}/>
               </button>
             </div>
 
@@ -277,7 +287,7 @@ ${exps.map(e => `<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'num
               </div>
             ) : !summary || exps.length === 0 ? (
               <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: '48px 24px', textAlign: 'center' }}>
-                <TrendingUp size={32} color="#cbd5e1" style={{ margin: '0 auto 12px', display: 'block' }} />
+                <ArrowTrendingUpIcon style={{  margin: '0 auto 12px', display: 'block', width: 32, height: 32, color: "#cbd5e1" }}/>
                 <div style={{ fontWeight: 600, fontSize: 15, color: '#334155', marginBottom: 6 }}>No expenses in {MONTH_NAMES[month - 1]} {year}</div>
               </div>
             ) : (

@@ -1,62 +1,105 @@
 'use client'
+import type { FC, SVGProps } from 'react'
 import {
-  HeartPulse, GraduationCap, Dumbbell, MapPin, Plane, Sparkles,
-  Shirt, Utensils, Music, Tag, Briefcase, Gift, Book, Gamepad2,
-  Bus, Bike, Stethoscope, Palette, Tv, Phone, Pizza,
-  type LucideIcon
-} from 'lucide-react'
+  HeartIcon, BeakerIcon, SparklesIcon, AcademicCapIcon, BookOpenIcon,
+  TrophyIcon, MapPinIcon, PaperAirplaneIcon, TruckIcon, ShoppingBagIcon,
+  CakeIcon, MusicalNoteIcon, PaintBrushIcon, PuzzlePieceIcon, FilmIcon,
+  DevicePhoneMobileIcon, GiftIcon, BriefcaseIcon, TagIcon, HomeIcon,
+  SunIcon, MoonIcon, BoltIcon, FireIcon, StarIcon, CameraIcon,
+  ScissorsIcon, WrenchIcon, TicketIcon, GlobeAltIcon, BanknotesIcon,
+  UserGroupIcon, BuildingLibraryIcon, RocketLaunchIcon, WalletIcon,
+} from '@heroicons/react/24/outline'
 
-// Lucide icon name → component map
-const ICONS: Record<string, LucideIcon> = {
-  'heart-pulse': HeartPulse,
-  'graduation-cap': GraduationCap,
-  'dumbbell': Dumbbell,
-  'map-pin': MapPin,
-  'plane': Plane,
-  'sparkles': Sparkles,
-  'shirt': Shirt,
-  'utensils': Utensils,
-  'music': Music,
-  'tag': Tag,
-  'briefcase': Briefcase,
-  'gift': Gift,
-  'book': Book,
-  'gamepad': Gamepad2,
-  'bus': Bus,
-  'bike': Bike,
-  'stethoscope': Stethoscope,
-  'palette': Palette,
-  'tv': Tv,
-  'phone': Phone,
-  'pizza': Pizza,
+type HeroIcon = FC<SVGProps<SVGSVGElement> & { title?: string; titleId?: string }>
+
+const ICONS: Record<string, HeroIcon> = {
+  'heart':        HeartIcon,
+  'beaker':       BeakerIcon,
+  'sparkles':     SparklesIcon,
+  'academic-cap': AcademicCapIcon,
+  'book-open':    BookOpenIcon,
+  'trophy':       TrophyIcon,
+  'map-pin':      MapPinIcon,
+  'plane':        PaperAirplaneIcon,
+  'truck':        TruckIcon,
+  'shopping-bag': ShoppingBagIcon,
+  'cake':         CakeIcon,
+  'music':        MusicalNoteIcon,
+  'paint-brush':  PaintBrushIcon,
+  'puzzle':       PuzzlePieceIcon,
+  'film':         FilmIcon,
+  'phone':        DevicePhoneMobileIcon,
+  'gift':         GiftIcon,
+  'briefcase':    BriefcaseIcon,
+  'tag':          TagIcon,
+  'home':         HomeIcon,
+  'sun':          SunIcon,
+  'moon':         MoonIcon,
+  'bolt':         BoltIcon,
+  'fire':         FireIcon,
+  'star':         StarIcon,
+  'camera':       CameraIcon,
+  'scissors':     ScissorsIcon,
+  'wrench':       WrenchIcon,
+  'ticket':       TicketIcon,
+  'globe':        GlobeAltIcon,
+  'banknotes':    BanknotesIcon,
+  'users':        UserGroupIcon,
+  'library':      BuildingLibraryIcon,
+  'rocket':       RocketLaunchIcon,
+  'wallet':       WalletIcon,
 }
 
-// The list users can pick from when creating a category
 export const ICON_OPTIONS: { name: string; label: string }[] = [
-  { name: 'heart-pulse', label: 'Medical' },
-  { name: 'stethoscope', label: 'Health' },
-  { name: 'sparkles', label: 'Dental' },
-  { name: 'graduation-cap', label: 'School' },
-  { name: 'book', label: 'Books' },
-  { name: 'dumbbell', label: 'Sports' },
-  { name: 'bike', label: 'Cycling' },
-  { name: 'map-pin', label: 'Excursions' },
-  { name: 'plane', label: 'Travel' },
-  { name: 'bus', label: 'Transport' },
-  { name: 'shirt', label: 'Clothing' },
-  { name: 'utensils', label: 'Food' },
-  { name: 'pizza', label: 'Treats' },
-  { name: 'music', label: 'Music' },
-  { name: 'palette', label: 'Art' },
-  { name: 'gamepad', label: 'Games' },
-  { name: 'tv', label: 'Entertainment' },
-  { name: 'phone', label: 'Phone' },
-  { name: 'gift', label: 'Gifts' },
-  { name: 'briefcase', label: 'Other' },
-  { name: 'tag', label: 'Tag' },
+  { name: 'heart',        label: 'Medical'       },
+  { name: 'beaker',       label: 'Health'        },
+  { name: 'sparkles',     label: 'Dental'        },
+  { name: 'academic-cap', label: 'School'        },
+  { name: 'book-open',    label: 'Books'         },
+  { name: 'trophy',       label: 'Sports'        },
+  { name: 'map-pin',      label: 'Excursions'    },
+  { name: 'plane',        label: 'Travel'        },
+  { name: 'truck',        label: 'Transport'     },
+  { name: 'shopping-bag', label: 'Shopping'      },
+  { name: 'cake',         label: 'Food'          },
+  { name: 'music',        label: 'Music'         },
+  { name: 'paint-brush',  label: 'Art'           },
+  { name: 'puzzle',       label: 'Activities'    },
+  { name: 'film',         label: 'Entertainment' },
+  { name: 'phone',        label: 'Phone'         },
+  { name: 'gift',         label: 'Gifts'         },
+  { name: 'ticket',       label: 'Events'        },
+  { name: 'camera',       label: 'Photos'        },
+  { name: 'scissors',     label: 'Haircut'       },
+  { name: 'home',         label: 'Home'          },
+  { name: 'globe',        label: 'Holidays'      },
+  { name: 'rocket',       label: 'Hobbies'       },
+  { name: 'star',         label: 'Special'       },
+  { name: 'fire',         label: 'Urgent'        },
+  { name: 'bolt',         label: 'Utilities'     },
+  { name: 'wallet',       label: 'Allowance'     },
+  { name: 'banknotes',    label: 'Cash'          },
+  { name: 'users',        label: 'Childcare'     },
+  { name: 'library',      label: 'Tutoring'      },
+  { name: 'wrench',       label: 'Equipment'     },
+  { name: 'briefcase',    label: 'Other'         },
+  { name: 'tag',          label: 'General'       },
 ]
 
-export function CategoryIcon({ name, size = 18, color = '#475569' }: { name: string; size?: number; color?: string }) {
-  const Comp = ICONS[name] ?? Tag
-  return <Comp size={size} color={color} strokeWidth={1.75} />
+export function CategoryIcon({
+  name,
+  size  = 18,
+  color = '#475569',
+}: {
+  name:   string
+  size?:  number
+  color?: string
+}) {
+  const Comp = ICONS[name] ?? TagIcon
+  return (
+    <Comp
+      style={{ width: size, height: size, color, flexShrink: 0 }}
+      strokeWidth={1.75}
+    />
+  )
 }

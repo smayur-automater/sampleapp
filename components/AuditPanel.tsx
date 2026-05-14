@@ -1,9 +1,14 @@
 'use client'
+import {
+  ArrowPathIcon,
+  ChartBarIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline'
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useHousehold } from '@/lib/household'
 import { AuditEntry, actionLabel, actionColor, actionIcon, timeAgo } from '@/lib/audit'
-import { X, Activity, RefreshCw } from 'lucide-react'
+
 
 interface AuditPanelProps {
   open: boolean
@@ -86,18 +91,18 @@ export default function AuditPanel({ open, onClose }: AuditPanelProps) {
         <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid #f1f5f9', flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <Activity size={16} color="#2563eb" />
-              <span style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>Activity</span>
+              <ChartBarIcon style={{ width: 16, height: 16, color: "#2563eb" }}/>
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>ChartBarIcon</span>
               {entries.length > 0 && (
                 <span style={{ padding: '1px 7px', background: '#eff6ff', color: '#2563eb', borderRadius: 99, fontSize: 11, fontWeight: 700 }}>{entries.length}</span>
               )}
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
               <button onClick={load} style={{ width: 28, height: 28, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 7, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <RefreshCw size={12} color="#64748b" />
+                <ArrowPathIcon style={{ width: 12, height: 12, color: "#64748b" }}/>
               </button>
               <button onClick={onClose} style={{ width: 28, height: 28, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 7, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={14} color="#64748b" />
+                <XMarkIcon style={{ width: 14, height: 14, color: "#64748b" }}/>
               </button>
             </div>
           </div>

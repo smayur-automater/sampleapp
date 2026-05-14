@@ -1,14 +1,28 @@
 'use client'
+import React from 'react'
+import {
+  ArrowDownTrayIcon,
+  BanknotesIcon,
+  CheckCircleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  ClockIcon,
+  ExclamationCircleIcon,
+  EyeIcon,
+  LockClosedIcon,
+  PaperClipIcon,
+  PencilIcon,
+  PlusIcon,
+  StarIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline'
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
 import { useHousehold } from '@/lib/household'
 import { CURRENCIES } from '@/components/CurrencySelect'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
-import {
-  Plus, X, Paperclip, Eye, Pencil, Download, Crown, Lock,
-  CheckCircle, Clock, AlertCircle, DollarSign, ChevronDown, ChevronUp,
-} from 'lucide-react'
+
 import { logAudit } from '@/lib/audit'
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -38,9 +52,9 @@ type Period = typeof PERIODS[number]['key']
 type StatusFilter = 'all' | SettlementStatus
 
 const STATUS_CONFIG: Record<SettlementStatus, { label: string; color: string; bg: string; border: string; Icon: React.ElementType }> = {
-  outstanding: { label: 'Outstanding', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', Icon: AlertCircle },
-  partial:     { label: 'Partial',     color: '#d97706', bg: '#fffbeb', border: '#fde68a', Icon: Clock },
-  settled:     { label: 'Settled',     color: '#059669', bg: '#f0fdf4', border: '#bbf7d0', Icon: CheckCircle },
+  outstanding: { label: 'Outstanding', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', Icon: ExclamationCircleIcon },
+  partial:     { label: 'Partial',     color: '#d97706', bg: '#fffbeb', border: '#fde68a', Icon: ClockIcon },
+  settled:     { label: 'Settled',     color: '#059669', bg: '#f0fdf4', border: '#bbf7d0', Icon: CheckCircleIcon },
 }
 
 const INP: React.CSSProperties = { width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 14, background: '#f8fafc', outline: 'none', color: '#0f172a', boxSizing: 'border-box' }
@@ -63,7 +77,7 @@ export default function DashboardPage() {
   const [currency,    setCurrency]    = useState('AUD')
   const [period,      setPeriod]      = useState<Period>('month')
   const [statusFilter,setStatusFilter]= useState<StatusFilter>('all')
-  const [tab,         setTab]         = useState<'overview'|'analytics'>('overview')
+  const [tab,         setTab]         = useState<'overview'|'analytics'|'expenses'>('overview')
   const [pageLoad,    setPageLoad]    = useState(true)
 
   // Modals
@@ -93,24 +107,28 @@ export default function DashboardPage() {
   const loadData = useCallback(async () => {
     if (!ctx) return
     setPageLoad(true)
-    const [e, k, c, u, r] = await Promise.all([
-      supabase.from('expenses')
-        .select('id,description,amount,currency,date,created_at,split_pct,paid_by_user_id,created_by,receipt_url,archived,settlement_status,settled_amount,settled_at,settlement_note,kid:kids(id,name,color),category:categories(id,name)')
-        .eq('household_id', ctx.household_id)
-        .eq('archived', false)
-        .order('created_at', { ascending: false }),   // ← sort by recently added
-      supabase.from('kids').select('id,name,color').eq('household_id', ctx.household_id).order('name'),
-      supabase.from('categories').select('id,name,color').eq('household_id', ctx.household_id).order('name'),
-      supabase.rpc('get_my_usage'),
-      supabase.from('split_rules').select('category_id,split_pct,is_optional').eq('household_id', ctx.household_id),
-    ])
-    setExpenses((e.data ?? []) as unknown as Expense[])
-    setKids(k.data ?? [])
-    setCats(c.data ?? [])
-    setUsage(u.data)
-    const rulesMap: Record<string, { split_pct: number; is_optional: boolean }> = {}
-    ;(r.data ?? []).forEach((rule: any) => { rulesMap[rule.category_id] = { split_pct: rule.split_pct, is_optional: rule.is_optional } })
-    setSplitRules(rulesMap)
+    try {
+      const [e, k, c, u, r] = await Promise.all([
+        supabase.from('expenses')
+          .select('id,description,amount,currency,date,created_at,split_pct,paid_by_user_id,created_by,receipt_url,archived,settlement_status,settled_amount,settled_at,settlement_note,kid:kids(id,name,color),category:categories(id,name,color)')
+          .eq('household_id', ctx.household_id)
+          .eq('archived', false)
+          .order('created_at', { ascending: false }),
+        supabase.from('kids').select('id,name,color').eq('household_id', ctx.household_id).order('name'),
+        supabase.from('categories').select('id,name,color').eq('household_id', ctx.household_id).order('name'),
+        supabase.rpc('get_my_usage').maybeSingle(),
+        supabase.from('split_rules').select('category_id,split_pct,is_optional').eq('household_id', ctx.household_id),
+      ])
+      setExpenses((e.data ?? []) as unknown as Expense[])
+      setKids(k.data ?? [])
+      setCats(c.data ?? [])
+      if (!u.error) setUsage(u.data as Usage | null)
+      const rulesMap: Record<string, { split_pct: number; is_optional: boolean }> = {}
+      ;(r.data ?? []).forEach((rule: any) => { rulesMap[rule.category_id] = { split_pct: rule.split_pct, is_optional: rule.is_optional } })
+      setSplitRules(rulesMap)
+    } catch (err) {
+      console.error('loadData error:', err)
+    }
     setPageLoad(false)
   }, [ctx])
 
@@ -335,12 +353,12 @@ export default function DashboardPage() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0, letterSpacing: '-0.4px' }}>Dashboard</h1>
-              {isPremium && <span style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 8px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#d97706' }}><Crown size={10} /> Premium</span>}
+              {isPremium && <span style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 8px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#d97706' }}><StarIcon style={{ width: 10, height: 10 }}/> Premium</span>}
             </div>
             <p style={{ fontSize: 13, color: '#64748b', margin: '3px 0 0' }}>{co ? `Shared with ${co.display_name}` : 'Your household'}</p>
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            {isPremium && <button onClick={exportCSV} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 11px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}><Download size={13} /> CSV</button>}
+            {isPremium && <button onClick={exportCSV} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 11px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}><ArrowDownTrayIcon style={{ width: 13, height: 13 }}/> CSV</button>}
             <select value={currency} onChange={e => setCurrency(e.target.value)} style={{ padding: '7px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontWeight: 600, background: '#fff', color: '#0f172a', cursor: 'pointer', outline: 'none' }}>
               {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>)}
             </select>
@@ -373,7 +391,7 @@ export default function DashboardPage() {
               <button key={status} onClick={() => setStatusFilter(isActive ? 'all' : status)}
                 style={{ background: isActive ? cfg.bg : '#fff', border: `${isActive ? '2px' : '1px'} solid ${isActive ? cfg.color : '#e2e8f0'}`, borderRadius: 14, padding: '12px 10px', cursor: 'pointer', textAlign: 'left' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
-                  <cfg.Icon size={13} color={cfg.color} />
+                  <cfg.Icon style={{ width: 13, height: 13, color: cfg.color }} />
                   <span style={{ fontSize: 10, fontWeight: 700, color: cfg.color, letterSpacing: '0.04em', textTransform: 'uppercase' as const }}>{cfg.label}</span>
                 </div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>{cs}{total.toFixed(2)}</div>
@@ -405,8 +423,8 @@ export default function DashboardPage() {
 
         {/* Tabs */}
         <div style={{ display: 'flex', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 3, marginBottom: 14, gap: 2 }}>
-          {(['overview','analytics'] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: '7px 0', border: 'none', borderRadius: 8, background: tab === t ? '#2563eb' : 'transparent', color: tab === t ? '#fff' : '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize' as const }}>{t}</button>
+          {(['overview','analytics','expenses'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: '7px 0', border: 'none', borderRadius: 8, background: tab === t ? '#2563eb' : 'transparent', color: tab === t ? '#fff' : '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize' as const }}>{t === 'expenses' ? 'Expenses' : t.charAt(0).toUpperCase() + t.slice(1)}</button>
           ))}
         </div>
 
@@ -441,7 +459,7 @@ export default function DashboardPage() {
           {/* Add button */}
           <button onClick={openAdd} disabled={atLimit}
             style={{ width: '100%', padding: 13, background: atLimit ? '#e2e8f0' : '#2563eb', color: atLimit ? '#94a3b8' : '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: atLimit ? 'not-allowed' : 'pointer', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            {atLimit ? <><Lock size={15} /> Limit reached — upgrade to Premium</> : <><Plus size={18} strokeWidth={2.5} /> Add expense</>}
+            {atLimit ? <><LockClosedIcon style={{ width: 15, height: 15 }}/> Limit reached — upgrade to Premium</> : <><PlusIcon strokeWidth={2.5} style={{ width: 18, height: 18 }}/> Add expense</>}
           </button>
 
           {/* Status filter label */}
@@ -462,7 +480,7 @@ export default function DashboardPage() {
           {pageLoad ? <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>Loading…</div> :
            filtered.length === 0 ? (
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: '40px 24px', textAlign: 'center' }}>
-              <DollarSign size={32} color="#cbd5e1" style={{ margin: '0 auto 12px', display: 'block' }} />
+              <BanknotesIcon style={{  margin: '0 auto 12px', display: 'block', width: 32, height: 32, color: "#cbd5e1" }}/>
               <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>
                 {statusFilter !== 'all' ? `No ${statusFilter} expenses this period` : 'No expenses this period'}
               </p>
@@ -498,7 +516,7 @@ export default function DashboardPage() {
 
                       {/* Status badge */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 99, background: cfg.bg, border: `1px solid ${cfg.border}`, flexShrink: 0 }}>
-                        <cfg.Icon size={11} color={cfg.color} />
+                        <cfg.Icon style={{ width: 11, height: 11, color: cfg.color }} />
                         <span style={{ fontSize: 10, fontWeight: 700, color: cfg.color }}>{cfg.label}</span>
                       </div>
 
@@ -506,26 +524,26 @@ export default function DashboardPage() {
                       <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                         {exp.receipt_url && (
                           <button onClick={() => setViewReceipt(exp.receipt_url)} style={{ padding: 5, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6, cursor: 'pointer', display: 'flex' }}>
-                            <Paperclip size={12} color="#2563eb" />
+                            <PaperClipIcon style={{ width: 12, height: 12, color: "#2563eb" }}/>
                           </button>
                         )}
                         {isOwner && exp.settlement_status !== 'settled' && (
                           <button onClick={() => openEdit(exp)} style={{ padding: 5, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, cursor: 'pointer', display: 'flex' }}>
-                            <Pencil size={12} color="#64748b" />
+                            <PencilIcon style={{ width: 12, height: 12, color: "#64748b" }}/>
                           </button>
                         )}
                         {/* Settle button */}
                         {exp.settlement_status !== 'settled' && (
                           <button onClick={() => openSettle(exp)} style={{ padding: '4px 8px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, cursor: 'pointer', fontSize: 10, fontWeight: 700, color: '#059669', display: 'flex', alignItems: 'center', gap: 3 }}>
-                            <CheckCircle size={11} /> Settle
+                            <CheckCircleIcon style={{ width: 11, height: 11 }}/> Settle
                           </button>
                         )}
                         <button onClick={() => setExpandedId(isExpanded ? null : exp.id)} style={{ padding: 5, background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
-                          {isExpanded ? <ChevronUp size={14} color="#94a3b8" /> : <ChevronDown size={14} color="#94a3b8" />}
+                          {isExpanded ? <ChevronUpIcon style={{ width: 14, height: 14, color: "#94a3b8" }}/> : <ChevronDownIcon style={{ width: 14, height: 14, color: "#94a3b8" }}/>}
                         </button>
                         {isOwner && (
                           <button onClick={() => removeExpense(exp.id, exp.receipt_url)} style={{ padding: 5, background: 'none', border: 'none', cursor: 'pointer', color: '#cbd5e1', display: 'flex' }}>
-                            <X size={14} />
+                            <XMarkIcon style={{ width: 14, height: 14 }}/>
                           </button>
                         )}
                       </div>
@@ -594,7 +612,7 @@ export default function DashboardPage() {
                       const cfg = STATUS_CONFIG[status]
                       return (
                         <div key={status} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <cfg.Icon size={14} color={cfg.color} />
+                          <cfg.Icon style={{ width: 14, height: 14, color: cfg.color }} />
                           <div style={{ flex: 1 }}>
                             <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a' }}>{cfg.label}</div>
                             <div style={{ fontSize: 11, color: '#64748b' }}>{count} expenses · {cs}{total.toFixed(2)}</div>
@@ -707,6 +725,20 @@ export default function DashboardPage() {
             )}
           </div>
         )}
+
+        {/* ── EXPENSES TAB ─────────────────────────────────── */}
+        {tab === 'expenses' && (
+          <ExpensesTab
+            expenses={filtered}
+            ctx={ctx}
+            cs={cs}
+            STATUS_CONFIG={STATUS_CONFIG}
+            onEdit={(exp) => { setEditingId(exp.id); setForm({ description: exp.description, amount: String(exp.amount), currency: exp.currency, date: exp.date, split_pct: exp.split_pct, kid_id: exp.kid?.id ?? '', category_id: exp.category?.id ?? '', paid_by_user_id: exp.paid_by_user_id ?? ctx?.myUserId ?? '' }); setExpenseModal(true) }}
+            onSettle={(exp) => { setSettleModal(exp); setSettleForm({ amount: String((exp.amount - exp.settled_amount).toFixed(2)), settlement_date: new Date().toISOString().split('T')[0], note: '' }) }}
+            onDelete={(id) => removeExpense(id, null)}
+          />
+        )}
+
       </div>
 
       {/* ── ADD/EDIT EXPENSE MODAL ────────────────────────── */}
@@ -715,7 +747,7 @@ export default function DashboardPage() {
           <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: 24, width: '100%', maxWidth: 640, maxHeight: '92vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: 0 }}>{editingId ? 'Edit expense' : 'Add expense'}</h3>
-              <button onClick={() => setExpenseModal(false)} style={{ width: 32, height: 32, background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} color="#64748b" /></button>
+              <button onClick={() => setExpenseModal(false)} style={{ width: 32, height: 32, background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><XMarkIcon style={{ width: 16, height: 16, color: "#64748b" }}/></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div><label style={LBL}>Description *</label><input value={form.description} onChange={e => F({ description: e.target.value })} placeholder="e.g. School excursion" style={INP} autoFocus /></div>
@@ -769,13 +801,13 @@ export default function DashboardPage() {
                   <label style={LBL}>Receipt (optional)</label>
                   {!receiptPreview ? (
                     <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 14px', border: '1.5px dashed #cbd5e1', borderRadius: 10, cursor: 'pointer', color: '#64748b', fontSize: 13 }}>
-                      <Paperclip size={15} color="#94a3b8" /> Attach photo or PDF
+                      <PaperClipIcon style={{ width: 15, height: 15, color: "#94a3b8" }}/> Attach photo or PDF
                       <input type="file" accept="image/*,.pdf" onChange={handleReceipt} style={{ display: 'none' }} />
                     </label>
                   ) : (
                     <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
                       <img src={receiptPreview} alt="Receipt" style={{ width: '100%', maxHeight: 140, objectFit: 'cover', display: 'block' }} />
-                      <button onClick={() => { setReceiptFile(null); setReceiptPreview(null) }} style={{ position: 'absolute', top: 6, right: 6, width: 24, height: 24, background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={12} color="#fff" /></button>
+                      <button onClick={() => { setReceiptFile(null); setReceiptPreview(null) }} style={{ position: 'absolute', top: 6, right: 6, width: 24, height: 24, background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><XMarkIcon style={{ width: 12, height: 12, color: "#fff" }}/></button>
                     </div>
                   )}
                 </div>
@@ -795,7 +827,7 @@ export default function DashboardPage() {
           <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: 24, width: '100%', maxWidth: 480 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: 0 }}>Record settlement</h3>
-              <button onClick={() => setSettleModal(null)} style={{ width: 32, height: 32, background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} color="#64748b" /></button>
+              <button onClick={() => setSettleModal(null)} style={{ width: 32, height: 32, background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><XMarkIcon style={{ width: 16, height: 16, color: "#64748b" }}/></button>
             </div>
 
             {/* Expense summary */}
@@ -814,7 +846,7 @@ export default function DashboardPage() {
               <div><label style={LBL}>Note (optional)</label><input value={settleForm.note} onChange={e => setSettleForm(p => ({ ...p, note: e.target.value }))} placeholder="e.g. Bank transfer, cash" style={INP} /></div>
               <button onClick={submitSettlement} disabled={settling}
                 style={{ padding: 13, background: settling ? '#6ee7b7' : '#059669', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: settling ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                <CheckCircle size={17} /> {settling ? 'Saving…' : 'Record settlement'}
+                <CheckCircleIcon style={{ width: 17, height: 17 }}/> {settling ? 'Saving…' : 'Record settlement'}
               </button>
             </div>
           </div>
@@ -828,8 +860,8 @@ export default function DashboardPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
               <span style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>Receipt</span>
               <div style={{ display: 'flex', gap: 8 }}>
-                <a href={viewReceipt} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}><Eye size={13} /> Open</a>
-                <button onClick={() => setViewReceipt(null)} style={{ width: 32, height: 32, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={15} color="#fff" /></button>
+                <a href={viewReceipt} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}><EyeIcon style={{ width: 13, height: 13 }}/> Open</a>
+                <button onClick={() => setViewReceipt(null)} style={{ width: 32, height: 32, background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><XMarkIcon style={{ width: 15, height: 15, color: "#fff" }}/></button>
               </div>
             </div>
             <img src={viewReceipt} alt="Receipt" style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain', borderRadius: 12 }} />
@@ -837,6 +869,182 @@ export default function DashboardPage() {
         </div>
       )}
     </Shell>
+  )
+}
+
+
+// ── Expenses Tab ──────────────────────────────────────────────────
+type GroupBy = 'date' | 'category' | 'payer'
+
+function ExpensesTab({ expenses, ctx, cs, STATUS_CONFIG, onEdit, onSettle, onDelete }: {
+  expenses: any[]
+  ctx: any
+  cs: string
+  STATUS_CONFIG: any
+  onEdit: (e: any) => void
+  onSettle: (e: any) => void
+  onDelete: (id: string) => void
+}) {
+  const [groupBy,  setGroupBy]  = React.useState<GroupBy>('date')
+  const [sortAsc,  setSortAsc]  = React.useState(false)
+  const [expanded, setExpanded] = React.useState<Record<string, boolean>>({})
+
+  // Sort all expenses by date
+  const sorted = [...expenses].sort((a, b) => {
+    const d = new Date(a.date).getTime() - new Date(b.date).getTime()
+    return sortAsc ? d : -d
+  })
+
+  // Group by chosen key
+  const groups: Record<string, { label: string; color: string; items: any[] }> = {}
+
+  for (const exp of sorted) {
+    let key = '', label = '', color = ''
+    if (groupBy === 'date') {
+      const d = new Date(exp.date)
+      key = d.toISOString().slice(0, 7) // YYYY-MM
+      label = d.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })
+      color = '#1a3a6b'
+    } else if (groupBy === 'category') {
+      key   = exp.category?.id ?? 'none'
+      label = exp.category?.name ?? 'Uncategorised'
+      color = exp.category?.color ?? '#94a3b8'
+    } else {
+      key   = exp.paid_by_user_id ?? 'unknown'
+      const member = ctx?.members?.find((m: any) => m.user_id === key)
+      label = member?.display_name ?? 'Unknown'
+      color = member?.color ?? '#94a3b8'
+    }
+    if (!groups[key]) groups[key] = { label, color, items: [] }
+    groups[key].items.push(exp)
+  }
+
+  const groupKeys = Object.keys(groups)
+
+  const toggleGroup = (k: string) => setExpanded(p => ({ ...p, [k]: !p[k] }))
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+      {/* Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: 9, padding: 2, gap: 1 }}>
+          {(['date','category','payer'] as GroupBy[]).map(g => (
+            <button key={g} onClick={() => setGroupBy(g)}
+              style={{ padding: '5px 11px', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: groupBy === g ? '#fff' : 'transparent', color: groupBy === g ? '#0f172a' : '#64748b', boxShadow: groupBy === g ? '0 1px 2px rgba(0,0,0,0.08)' : 'none' }}>
+              {g.charAt(0).toUpperCase() + g.slice(1)}
+            </button>
+          ))}
+        </div>
+        <button onClick={() => setSortAsc(p => !p)}
+          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 11px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', fontSize: 12, fontWeight: 600, color: '#64748b', cursor: 'pointer' }}>
+          Date {sortAsc ? '↑ oldest' : '↓ newest'}
+        </button>
+      </div>
+
+      {expenses.length === 0 && (
+        <div style={{ padding: '40px 0', textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>No expenses for this period</div>
+      )}
+
+      {/* Groups */}
+      {groupKeys.map(key => {
+        const g = groups[key]
+        const isOpen = expanded[key] !== false // default open
+        const groupTotal = g.items.reduce((s, e) => s + e.amount, 0)
+        return (
+          <div key={key} style={{ marginBottom: 10 }}>
+            {/* Group header */}
+            <button onClick={() => toggleGroup(key)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: isOpen ? '12px 12px 0 0' : 12, cursor: 'pointer', borderBottom: isOpen ? '1px solid #f1f5f9' : '1px solid #e2e8f0' }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: g.color, flexShrink: 0 }} />
+              <span style={{ flex: 1, textAlign: 'left', fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{g.label}</span>
+              <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>{g.items.length} · {cs}{groupTotal.toFixed(2)}</span>
+              <span style={{ fontSize: 11, color: '#94a3b8' }}>{isOpen ? '▲' : '▼'}</span>
+            </button>
+
+            {/* Expense rows */}
+            {isOpen && (
+              <div style={{ border: '1px solid #e2e8f0', borderTop: 'none', borderRadius: '0 0 12px 12px', overflow: 'hidden' }}>
+                {/* Column headers */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto', gap: 0, padding: '6px 14px', background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
+                  {['Description', 'Payer', 'Date & time', 'Amount', ''].map((h, i) => (
+                    <div key={i} style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.06em', textTransform: 'uppercase', textAlign: i > 0 ? 'right' : 'left' }}>{h}</div>
+                  ))}
+                </div>
+
+                {g.items.map((exp, idx) => {
+                  const cfg    = STATUS_CONFIG[exp.settlement_status as keyof typeof STATUS_CONFIG]
+                  const payer  = ctx?.members?.find((m: any) => m.user_id === exp.paid_by_user_id)
+                  const isLast = idx === g.items.length - 1
+                  const dt     = new Date(exp.created_at ?? exp.date)
+                  const dateStr = new Date(exp.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+                  const timeStr = dt.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })
+                  const isOwner = exp.created_by === ctx?.myUserId
+
+                  return (
+                    <div key={exp.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto', gap: 8, alignItems: 'center', padding: '10px 14px', background: '#fff', borderBottom: isLast ? 'none' : '1px solid #f8fafc' }}>
+
+                      {/* Description + category + kid */}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{exp.description}</div>
+                        <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                          {exp.category && <span style={{ background: (exp.category.color ?? '#94a3b8') + '20', color: exp.category.color ?? '#94a3b8', padding: '1px 6px', borderRadius: 99, fontWeight: 600 }}>{exp.category.name}</span>}
+                          {exp.kid && <span style={{ background: (exp.kid.color ?? '#94a3b8') + '20', color: exp.kid.color ?? '#94a3b8', padding: '1px 6px', borderRadius: 99, fontWeight: 600 }}>{exp.kid.name}</span>}
+                        </div>
+                      </div>
+
+                      {/* Payer */}
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        {payer ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'flex-end' }}>
+                            <div style={{ width: 22, height: 22, borderRadius: 7, background: payer.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 800 }}>
+                              {payer.display_name?.[0]?.toUpperCase()}
+                            </div>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{payer.display_name?.split(' ')[0]}</span>
+                          </div>
+                        ) : <span style={{ fontSize: 11, color: '#94a3b8' }}>—</span>}
+                      </div>
+
+                      {/* Date & time */}
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{dateStr}</div>
+                        <div style={{ fontSize: 11, color: '#94a3b8' }}>{timeStr}</div>
+                      </div>
+
+                      {/* Amount + split + status */}
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a' }}>{cs}{exp.amount.toFixed(2)}</div>
+                        <div style={{ fontSize: 10, color: '#94a3b8' }}>{exp.split_pct}/{100 - exp.split_pct}</div>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, padding: '2px 6px', borderRadius: 99, fontSize: 9, fontWeight: 700, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`, marginTop: 2 }}>
+                          <span style={{ width: 4, height: 4, borderRadius: '50%', background: cfg.color, display: 'inline-block' }}></span>
+                          {cfg.label}
+                        </span>
+                      </div>
+
+                      {/* Actions */}
+                      <div style={{ display: 'flex', gap: 4, flexShrink: 0, justifyContent: 'flex-end' }}>
+                        {exp.settlement_status !== 'settled' && (
+                          <button onClick={() => onSettle(exp)} title="Settle"
+                            style={{ width: 28, height: 28, border: '1px solid #bbf7d0', borderRadius: 7, background: '#f0fdf4', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>✓</button>
+                        )}
+                        {isOwner && (
+                          <>
+                            <button onClick={() => onEdit(exp)} title="Edit"
+                              style={{ width: 28, height: 28, border: '1px solid #e2e8f0', borderRadius: 7, background: '#f8fafc', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11 }}>✎</button>
+                            <button onClick={() => { if (confirm('Delete this expense?')) onDelete(exp.id) }} title="Delete"
+                              style={{ width: 28, height: 28, border: '1px solid #fecaca', borderRadius: 7, background: '#fef2f2', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#dc2626' }}>✕</button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
   )
 }
 
