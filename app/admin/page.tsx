@@ -140,6 +140,14 @@ export default function AdminPage() {
     })
   }
 
+  async function deleteUser(uid: string, email: string) {
+    ask(`Permanently delete user "${email}"? This removes all their data and cannot be undone.`, async () => {
+      const { error } = await supabase.rpc('admin_delete_user', { uid })
+      if (error) { showToast(`Error: ${error.message}`); return }
+      loadView(); showToast('User deleted')
+    })
+  }
+
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000) }
   function fmt(n: number) { return n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toFixed(0)}` }
   function fmtDate(d: string | null) { if (!d) return '—'; return new Date(d).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) }
@@ -601,6 +609,11 @@ export default function AdminPage() {
                                 {u.plan === 'premium' ? 'Downgrade' : 'Upgrade'}
                               </button>
                             </div>
+                            <button
+                              onClick={e => { e.stopPropagation(); deleteUser(u.id, u.email) }}
+                              style={{ padding: '2px 7px', border: '1px solid #7f1d1d', borderRadius: 6, background: '#450a0a', color: '#fca5a5', fontSize: 10, cursor: 'pointer', fontWeight: 600, marginTop: 2 }}>
+                              Delete user
+                            </button>
                           </div>
                         </td>
                       </tr>

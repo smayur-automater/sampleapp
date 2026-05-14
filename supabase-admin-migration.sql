@@ -220,3 +220,33 @@ $$;
 -- INSERT INTO public.admins (user_id, email) VALUES ('your-user-uuid-here', 'your@email.com');
 --
 -- Find your UUID in: Supabase → Authentication → Users → click your user
+
+
+-- ════════════════════════════════════════════════════════════════
+-- Hard delete a user + all their data (run this instead of
+-- deleting directly from Supabase Auth UI)
+-- ════════════════════════════════════════════════════════════════
+
+create or replace function public.admin_delete_user(uid uuid)
+returns json language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then raise exception 'Unauthorized'; end if;
+
+  -- 1. Remove from all households (cascades to expenses via RLS, but we do it explicitly)
+  delete from public.household_members where user_id = uid;
+
+  -- 2. Null out created_by on expenses so they remain (other parent's records)
+  update public.expenses    set created_by = null where created_by = uid;
+  update public.kids        set created_by = null where created_by = uid;
+  update public.categories  set created_by = null where created_by = uid;
+  update public.invites     set invited_by = null where invited_by = uid;
+
+  -- 3. Remove from admins if present
+  delete from public.admins where user_id = uid;
+
+  -- 4. Delete the auth user (requires service role — this function runs as definer)
+  delete from auth.users where id = uid;
+
+  return json_build_object('ok', true, 'deleted_user_id', uid);
+end;
+$$;
