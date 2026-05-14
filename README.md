@@ -1,36 +1,184 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CoParent Pay
+
+**Shared Expenses. Shared Responsibility.**
+
+A production-ready co-parenting shared expense tracker built with Next.js 14, TypeScript, and Supabase.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 14 (App Router), TypeScript, React |
+| Backend / DB | Supabase (PostgreSQL + Auth + Storage + Realtime) |
+| Charts | Recharts |
+| Icons | Lucide React |
+| Hosting | Vercel |
+
+---
+
+## Features
+
+### Free plan
+- Track shared expenses for your children
+- 50/50 or custom split per expense
+- Kids management
+- Category management
+- Invite co-parent via link
+- Receipt photo attachment
+- **10 expense limit**
+
+### Premium plan (admin-assigned)
+- **Unlimited expenses**
+- Smart split rules — auto-apply splits per category
+- Monthly statements with full breakdown
+- Export to CSV and PDF
+- Activity audit trail (real-time)
+
+### Settlement system
+Every expense has one of three states:
+- 🔴 **Outstanding** — not paid yet
+- 🟡 **Partial** — some amount paid
+- 🟢 **Settled** — fully paid
+
+Settle individual expenses or bulk-settle an entire month in one tap.
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### 1. Clone the repo
+
+```bash
+git clone https://github.com/your-username/coparent-pay.git
+cd coparent-pay
+npm install
+```
+
+### 2. Set up Supabase
+
+1. Create a free project at [supabase.com](https://supabase.com)
+2. In Supabase SQL Editor, run these files **in order**:
+   - `supabase-schema.sql` — core tables
+   - `supabase-receipt-migration.sql` — receipt storage
+   - `supabase-admin-migration.sql` — admin panel RPCs
+   - `supabase-premium-migration.sql` — plans, audit log, rules, statements
+   - `supabase-settlement-migration.sql` — settlement states
+
+3. Create a Storage bucket named `receipts` (public)
+
+### 3. Configure environment
+
+```bash
+cp .env.example .env.local
+```
+
+Fill in your Supabase URL and anon key from:
+**Supabase → Settings → API**
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+```
+
+### 4. Run locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy to Vercel
 
-## Learn More
+1. Push to GitHub
+2. Import repo at [vercel.com](https://vercel.com)
+3. Add environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. Deploy
 
-To learn more about Next.js, take a look at the following resources:
+### Fix Google OAuth branding
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+In Google Cloud Console → APIs & Services → OAuth consent screen:
+- Set **App name** to `CoParent Pay`
+- Add your Vercel domain to **Authorized domains**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Admin Panel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Visit `/admin` — only accessible by users in the `admins` table.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Add yourself as admin
+
+Run this in Supabase SQL Editor (replace with your email):
+
+```sql
+INSERT INTO public.admins (user_id, email)
+SELECT id, email FROM auth.users
+WHERE email = 'your@email.com';
+```
+
+### Admin capabilities
+- View all households, members, expenses
+- Delete households or individual expenses
+- Remove members
+- Upgrade/downgrade users between Free and Premium
+- Platform-wide stats dashboard
+
+---
+
+## Project Structure
+
+```
+coparent-pay/
+├── app/
+│   ├── page.tsx              # Login
+│   ├── layout.tsx            # Root layout + metadata
+│   ├── dashboard/page.tsx    # Main dashboard (settlement-centric)
+│   ├── kids/page.tsx         # Children management
+│   ├── parents/page.tsx      # Household & co-parent management
+│   ├── categories/page.tsx   # Expense categories
+│   ├── rules/page.tsx        # Smart split rules (Premium)
+│   ├── statements/page.tsx   # Monthly statements (Premium)
+│   ├── admin/page.tsx        # Admin panel
+│   ├── invite/[code]/        # Invite accept flow
+│   └── auth/callback/        # OAuth callback
+├── components/
+│   ├── Shell.tsx             # App shell + nav
+│   ├── AuditPanel.tsx        # Real-time activity sidebar
+│   ├── CurrencySelect.tsx    # Currency picker
+│   └── CategoryIcon.tsx      # Icon mapper
+├── lib/
+│   ├── supabase.ts           # Supabase client
+│   ├── household.ts          # useHousehold() hook
+│   └── audit.ts              # Audit logging utilities
+├── public/
+│   ├── logo.png              # App logo
+│   ├── icon-192.png          # PWA icon
+│   ├── icon-512.png          # PWA icon
+│   └── apple-touch-icon.png  # iOS icon
+└── supabase-*.sql            # Database migrations
+```
+
+---
+
+## Database Migrations (run in order)
+
+| File | Purpose |
+|------|---------|
+| `supabase-schema.sql` | Core tables: households, members, kids, categories, expenses, invites |
+| `supabase-receipt-migration.sql` | Adds `receipt_url` column + storage bucket |
+| `supabase-admin-migration.sql` | Admins table + all admin RPCs |
+| `supabase-premium-migration.sql` | Plans, expense limit trigger, audit_log, split_rules, monthly_statements |
+| `supabase-settlement-migration.sql` | Settlement fields on expenses + settlements table |
+
+---
+
+## License
+
+MIT

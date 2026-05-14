@@ -77,7 +77,7 @@ export default function LoginPage() {
     page:   { minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: 'system-ui, -apple-system, sans-serif' } as React.CSSProperties,
     card:   { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 20, padding: 28, width: '100%', maxWidth: 420, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' } as React.CSSProperties,
     inp:    { width: '100%', padding: '11px 13px', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 14, color: '#0f172a', background: '#f8fafc', outline: 'none', boxSizing: 'border-box' as const },
-    btn:    { width: '100%', padding: 13, background: '#2563eb', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' } as React.CSSProperties,
+    btn:    { width: '100%', padding: 13, background: '#1a3a6b', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' } as React.CSSProperties,
     label:  { display: 'block', fontSize: 11, fontWeight: 600, color: '#64748b', marginBottom: 5, letterSpacing: '0.06em' } as React.CSSProperties,
     ghost:  { background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', fontSize: 13, padding: '8px 0', width: '100%' } as React.CSSProperties,
   }
@@ -95,15 +95,15 @@ export default function LoginPage() {
 
         {/* Brand */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ width: 52, height: 52, background: '#2563eb', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
-              <circle cx="9" cy="7" r="4" stroke="#fff" strokeWidth="2"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="CoParent Pay" style={{ width: 100, height: 100, objectFit: 'contain', margin: '0 auto 10px', display: 'block' }} />
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px' }}>
+            <span style={{ color: '#1a3a6b' }}>CoParent</span>
+            <span style={{ color: '#2ec4a0' }}> Pay</span>
           </div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px' }}>CoParent</div>
-          <div style={{ fontSize: 14, color: '#64748b', marginTop: 4 }}>Shared expense tracker for your kids</div>
+          <div style={{ fontSize: 13, color: '#64748b', marginTop: 5, fontWeight: 500, letterSpacing: '0.05em' }}>
+            Shared Expenses. Shared Responsibility.
+          </div>
         </div>
 
         <div style={c.card}>

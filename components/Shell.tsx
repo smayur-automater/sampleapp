@@ -37,10 +37,12 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       {/* Top header */}
       <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, height: 56, background: '#fff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 30, height: 30, background: '#2563eb', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Users size={16} color="#fff" strokeWidth={2} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="CoParent Pay" style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }} />
+          <div>
+            <span style={{ fontWeight: 800, fontSize: 15, color: '#1a3a6b', letterSpacing: '-0.3px' }}>CoParent</span>
+            <span style={{ fontWeight: 800, fontSize: 15, color: '#2ec4a0', letterSpacing: '-0.3px' }}> Pay</span>
           </div>
-          <span style={{ fontWeight: 700, fontSize: 15, color: '#0f172a', letterSpacing: '-0.3px' }}>CoParent</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <button onClick={() => setAuditOpen(o => !o)}

@@ -182,12 +182,13 @@ export default function AdminPage() {
       {/* Sidebar */}
       <div style={S.sidebar}>
         <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid #334155' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <div style={{ width: 30, height: 30, background: '#2563eb', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Shield size={16} color="#fff" strokeWidth={2} />
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="CoParent Pay" style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0, filter: 'brightness(1.1)' }} />
             <div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#f1f5f9' }}>CoParent</div>
+              <div style={{ fontWeight: 800, fontSize: 14, color: '#f1f5f9' }}>
+                CoParent<span style={{ color: '#2ec4a0' }}> Pay</span>
+              </div>
               <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase' }}>Admin Panel</div>
             </div>
           </div>
