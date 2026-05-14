@@ -118,3 +118,16 @@ begin
   );
 end;
 $$;
+
+
+-- Fix: paid_by / received_by were NOT NULL + ON DELETE SET NULL (contradictory).
+-- Change to ON DELETE CASCADE so deleting a user removes their settlement records.
+ALTER TABLE public.settlements
+  DROP CONSTRAINT IF EXISTS settlements_paid_by_fkey,
+  DROP CONSTRAINT IF EXISTS settlements_received_by_fkey;
+
+ALTER TABLE public.settlements
+  ADD CONSTRAINT settlements_paid_by_fkey
+    FOREIGN KEY (paid_by) REFERENCES auth.users(id) ON DELETE CASCADE,
+  ADD CONSTRAINT settlements_received_by_fkey
+    FOREIGN KEY (received_by) REFERENCES auth.users(id) ON DELETE CASCADE;

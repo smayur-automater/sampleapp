@@ -32,13 +32,24 @@ export default function LoginPage() {
     if (error) { E(error.message); setGLoading(false) }
   }
 
+  // After any successful auth, check if there's a pending invite to honour
+  function redirectAfterAuth() {
+    const pending = typeof window !== 'undefined' ? localStorage.getItem('pendingInvite') : null
+    if (pending) {
+      localStorage.removeItem('pendingInvite')
+      router.push(`/invite/${pending}`)
+    } else {
+      router.push('/dashboard')
+    }
+  }
+
   async function signIn() {
     if (!email || !pw) { E('Enter email and password'); return }
     setLoading(true); clear()
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: pw })
     setLoading(false)
     if (error) E('Wrong email or password')
-    else router.push('/dashboard')
+    else redirectAfterAuth()
   }
 
   async function signUp() {
@@ -60,7 +71,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token: otp, type: 'email' })
     setLoading(false)
     if (error) E('Invalid or expired code')
-    else router.push('/dashboard')
+    else redirectAfterAuth()
   }
 
   async function forgotPw() {

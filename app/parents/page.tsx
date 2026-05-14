@@ -102,9 +102,10 @@ export default function ParentsPage() {
     }
     setCreating(true); setInviteErr('')
 
-    // Generate a readable 8-char uppercase code
-    const code = Array.from(crypto.getRandomValues(new Uint8Array(4)))
-      .map(b => b.toString(36).toUpperCase()).join('')
+    // Generate a safe 8-char uppercase alphanumeric code (no special chars that break URLs)
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // no ambiguous chars like 0/O, 1/I
+    const bytes = crypto.getRandomValues(new Uint8Array(8))
+    const code = Array.from(bytes).map(b => chars[b % chars.length]).join('')
 
     const { data: inv, error } = await supabase
       .from('invites')

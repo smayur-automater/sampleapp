@@ -11,7 +11,8 @@ create table if not exists public.admins (
 );
 alter table public.admins enable row level security;
 
--- Admins can only see their own row via RLS (real checks use service role)
+-- Drop and recreate policy to avoid "already exists" error on re-run
+drop policy if exists "admins can view own row" on public.admins;
 create policy "admins can view own row" on public.admins
   for select using (user_id = auth.uid());
 
@@ -232,19 +233,24 @@ returns json language plpgsql security definer set search_path = public as $$
 begin
   if not public.is_admin() then raise exception 'Unauthorized'; end if;
 
-  -- 1. Remove from all households (cascades to expenses via RLS, but we do it explicitly)
+  -- 1. Delete settlements where this user was payer or receiver
+  --    (paid_by / received_by are NOT NULL so we can't set them to null)
+  delete from public.settlements where paid_by = uid or received_by = uid;
+
+  -- 2. Remove from household (cascades household membership)
   delete from public.household_members where user_id = uid;
 
-  -- 2. Null out created_by on expenses so they remain (other parent's records)
-  update public.expenses    set created_by = null where created_by = uid;
-  update public.kids        set created_by = null where created_by = uid;
-  update public.categories  set created_by = null where created_by = uid;
-  update public.invites     set invited_by = null where invited_by = uid;
+  -- 3. Null out created_by on records so other parent's data is preserved
+  update public.expenses   set created_by = null, paid_by_user_id = null where created_by = uid;
+  update public.expenses   set paid_by_user_id = null where paid_by_user_id = uid;
+  update public.kids       set created_by = null where created_by = uid;
+  update public.categories set created_by = null where created_by = uid;
+  update public.invites    set invited_by = null where invited_by = uid;
 
-  -- 3. Remove from admins if present
+  -- 4. Remove from admins table if present
   delete from public.admins where user_id = uid;
 
-  -- 4. Delete the auth user (requires service role — this function runs as definer)
+  -- 5. Finally delete the auth user
   delete from auth.users where id = uid;
 
   return json_build_object('ok', true, 'deleted_user_id', uid);
