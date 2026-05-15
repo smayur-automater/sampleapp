@@ -87,7 +87,7 @@ export default function ParentsPage() {
       if (!mb?.household_id) { setLoading(false); return }
 
       const [hhRes, memsRes, invsRes] = await Promise.all([
-        supabase.from('households').select('id, name').eq('id', mb.household_id).single(),
+        supabase.from('households').select('id, name').eq('id', mb.household_id).maybeSingle(),
         supabase.from('household_members')
           .select('user_id, display_name, color, role, relationship')
           .eq('household_id', mb.household_id),
@@ -98,6 +98,7 @@ export default function ParentsPage() {
       ])
 
       if (hhRes.error)   { setErr(hhRes.error.message); setLoading(false); return }
+      if (!hhRes.data)    { setErr('Household not found'); setLoading(false); return }
       if (memsRes.error) { setErr(memsRes.error.message); setLoading(false); return }
 
       setHousehold(hhRes.data)
@@ -161,7 +162,7 @@ export default function ParentsPage() {
 
     const { data: inv, error } = await supabase.from('invites')
       .insert({ household_id: household.id, invited_by: me.id, invited_email: inviteEmail.trim().toLowerCase(), code })
-      .select().single()
+      .select().maybeSingle()
 
     setCreating(false)
     if (error) {
@@ -169,6 +170,7 @@ export default function ParentsPage() {
       return
     }
 
+    if (!inv) { setInviteErr('Failed to create invite — please try again'); return }
     const newInvite = inv as Invite
     setCreated(newInvite)
     setEmailStatus('sending'); setEmailErr('')
@@ -231,7 +233,7 @@ export default function ParentsPage() {
   const myInfo    = members.find(m => m.user_id === me?.id)
   const otherMems = members.filter(m => m.user_id !== me?.id)
 
-  if (loading) return <Shell><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80 }}><div style={{ width: 28, height: 28, border: '2px solid #e2e8f0', borderTopColor: '#1a3a6b', borderRadius: '50%', animation: 'spin .7s linear infinite' }} /><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div></Shell>
+  if (loading) return <Shell><div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 80 }}><div style={{ width: 28, height: 28, border: '2px solid #e2e8f0', borderTopColor: '#0f172a', borderRadius: '50%', animation: 'spin .7s linear infinite' }} /><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div></Shell>
   if (err) return <Shell><div style={{ padding: 24, textAlign: 'center' }}><p style={{ color: '#dc2626', marginBottom: 12 }}>{err}</p><button onClick={load} style={{ padding: '8px 20px', background: '#1a3a6b', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 600 }}>Retry</button></div></Shell>
 
   return (
@@ -375,7 +377,7 @@ export default function ParentsPage() {
                     <CheckIcon style={{ marginTop: 1, flexShrink: 0, width: 16, height: 16, color: '#059669' }} />
                     <div style={{ fontSize: 13, color: '#065f46', lineHeight: 1.5 }}>Invite link created for <strong>{created.invited_email}</strong>. Valid for 7 days.</div>
                   </div>
-                  {emailStatus === 'sending' && <div style={{ padding: '10px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, marginBottom: 12, fontSize: 13, color: '#1e40af', display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 14, height: 14, border: '2px solid #93c5fd', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin .7s linear infinite', flexShrink: 0 }} /><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>Sending email…</div>}
+                  {emailStatus === 'sending' && <div style={{ padding: '10px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, marginBottom: 12, fontSize: 13, color: '#1e40af', display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 14, height: 14, border: '2px solid #93c5fd', borderTopColor: '#0f172a', borderRadius: '50%', animation: 'spin .7s linear infinite', flexShrink: 0 }} /><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>Sending email…</div>}
                   {emailStatus === 'sent' && <div style={{ padding: '10px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, marginBottom: 12, fontSize: 13, color: '#065f46', display: 'flex', alignItems: 'center', gap: 8 }}><CheckIcon style={{ width: 14, height: 14, flexShrink: 0 }} />Email sent to <strong style={{ marginLeft: 3 }}>{created?.invited_email}</strong></div>}
                   {emailStatus === 'failed' && <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, marginBottom: 12, fontSize: 13, color: '#92400e', lineHeight: 1.5 }}><strong>Email not sent</strong> — {emailErr}.<br /><span style={{ fontSize: 12 }}>Use the copy button or share buttons below.</span></div>}
                   <button onClick={() => copyLink(created.code)} style={{ width: '100%', padding: '14px 16px', background: copied ? '#f0fdf4' : '#1a3a6b', color: copied ? '#059669' : '#fff', border: copied ? '1.5px solid #bbf7d0' : 'none', borderRadius: 13, fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, marginBottom: 12, transition: 'all .2s' }}>

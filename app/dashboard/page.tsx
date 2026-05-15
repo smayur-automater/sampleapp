@@ -52,9 +52,9 @@ type Period = typeof PERIODS[number]['key']
 type StatusFilter = 'all' | SettlementStatus
 
 const STATUS_CONFIG: Record<SettlementStatus, { label: string; color: string; bg: string; border: string; Icon: React.ElementType }> = {
-  outstanding: { label: 'Outstanding', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', Icon: ExclamationCircleIcon },
-  partial:     { label: 'Partial',     color: '#d97706', bg: '#fffbeb', border: '#fde68a', Icon: ClockIcon },
-  settled:     { label: 'Settled',     color: '#059669', bg: '#f0fdf4', border: '#bbf7d0', Icon: CheckCircleIcon },
+  outstanding: { label: 'Unpaid',   color: '#dc2626', bg: '#fef2f2', border: '#fecaca', Icon: ExclamationCircleIcon },
+  partial:     { label: 'Partial',  color: '#b45309', bg: '#fffbeb', border: '#fde68a', Icon: ClockIcon },
+  settled:     { label: 'Settled',  color: '#059669', bg: '#f0fdf4', border: '#bbf7d0', Icon: CheckCircleIcon },
 }
 
 const INP: React.CSSProperties = { width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 14, background: '#f8fafc', outline: 'none', color: '#0f172a', boxSizing: 'border-box' }
@@ -330,7 +330,7 @@ export default function DashboardPage() {
 
     // By category
     const byCatMap: Record<string, { name: string; color: string; amount: number }> = {}
-    periodExp.forEach(e => { if (!e.category?.id) return; if (!byCatMap[e.category.id]) byCatMap[e.category.id] = { name: e.category.name, color: cats.find(c => c.id === e.category?.id)?.color ?? '#2563eb', amount: 0 }; byCatMap[e.category.id].amount += Number(e.amount) })
+    periodExp.forEach(e => { if (!e.category?.id) return; if (!byCatMap[e.category.id]) byCatMap[e.category.id] = { name: e.category.name, color: cats.find(c => c.id === e.category?.id)?.color ?? '#374151', amount: 0 }; byCatMap[e.category.id].amount += Number(e.amount) })
 
     // By kid
     const byKidMap: Record<string, { name: string; color: string; amount: number; count: number }> = {}
@@ -350,8 +350,8 @@ export default function DashboardPage() {
 
   const currentMonthYear = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
 
-  if (ctxLoading) return <Shell><div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div style={{ width: 28, height: 28, border: '2px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin .7s linear infinite' }} /><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div></Shell>
-  if (ctxError)   return <Shell><div style={{ padding: 24, textAlign: 'center' }}><p style={{ color: '#dc2626', marginBottom: 12 }}>{ctxError}</p><button onClick={reloadCtx} style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Retry</button></div></Shell>
+  if (ctxLoading) return <Shell><div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div style={{ width: 28, height: 28, border: '2px solid #e2e8f0', borderTopColor: '#0f172a', borderRadius: '50%', animation: 'spin .7s linear infinite' }} /><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div></Shell>
+  if (ctxError)   return <Shell><div style={{ padding: 24, textAlign: 'center' }}><p style={{ color: '#dc2626', marginBottom: 12 }}>{ctxError}</p><button onClick={reloadCtx} style={{ padding: '8px 16px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Retry</button></div></Shell>
 
   return (
     <Shell>
@@ -384,7 +384,7 @@ export default function DashboardPage() {
                 {atLimit && <span style={{ fontSize: 11, fontWeight: 700, color: '#dc2626' }}>Limit reached</span>}
               </div>
               <div style={{ height: 5, background: '#f1f5f9', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${Math.min((usage.expense_count / 10) * 100, 100)}%`, background: atLimit ? '#dc2626' : '#2563eb' }} />
+                <div style={{ height: '100%', width: `${Math.min((usage.expense_count / 10) * 100, 100)}%`, background: atLimit ? '#dc2626' : '#0f172a' }} />
               </div>
             </div>
           </div>
@@ -434,14 +434,14 @@ export default function DashboardPage() {
         {/* Tabs */}
         <div style={{ display: 'flex', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: 3, marginBottom: 14, gap: 2 }}>
           {(['overview','analytics','expenses'] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: '7px 0', border: 'none', borderRadius: 8, background: tab === t ? '#2563eb' : 'transparent', color: tab === t ? '#fff' : '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize' as const }}>{t === 'expenses' ? 'Expenses' : t.charAt(0).toUpperCase() + t.slice(1)}</button>
+            <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: '7px 0', border: 'none', borderRadius: 8, background: tab === t ? '#0f172a' : 'transparent', color: tab === t ? '#fff' : '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize' as const }}>{t === 'expenses' ? 'Expenses' : t.charAt(0).toUpperCase() + t.slice(1)}</button>
           ))}
         </div>
 
         {/* Period pills */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 18, flexWrap: 'wrap' as const }}>
           {PERIODS.map(p => (
-            <button key={p.key} onClick={() => setPeriod(p.key)} style={{ padding: '5px 12px', border: period === p.key ? '1.5px solid #2563eb' : '1px solid #e2e8f0', borderRadius: 99, background: period === p.key ? '#eff6ff' : '#fff', color: period === p.key ? '#2563eb' : '#64748b', fontSize: 12, fontWeight: period === p.key ? 600 : 400, cursor: 'pointer' }}>{p.label}</button>
+            <button key={p.key} onClick={() => setPeriod(p.key)} style={{ padding: '5px 12px', border: period === p.key ? '1.5px solid #0f172a' : '1px solid #e2e8f0', borderRadius: 99, background: period === p.key ? '#0f172a' : '#fff', color: period === p.key ? '#fff' : '#64748b', fontSize: 12, fontWeight: period === p.key ? 600 : 400, cursor: 'pointer' }}>{p.label}</button>
           ))}
         </div>
 
@@ -451,7 +451,7 @@ export default function DashboardPage() {
           {/* KPIs */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
             {[
-              { label: 'Total',           value: `${cs}${stats.total.toFixed(2)}`,  sub: `${stats.count} expenses`, color: '#2563eb' },
+              { label: 'Total',           value: `${cs}${stats.total.toFixed(2)}`,  sub: `${stats.count} expenses`, color: '#64748b' },
               { label: me?.display_name ?? 'Mine',   value: `${cs}${stats.mine.toFixed(2)}`,  sub: `${stats.total > 0 ? (stats.mine/stats.total*100).toFixed(0) : 0}%`, color: me?.color ?? '#059669' },
               { label: co?.display_name ?? 'Theirs', value: `${cs}${stats.theirs.toFixed(2)}`, sub: `${stats.total > 0 ? (stats.theirs/stats.total*100).toFixed(0) : 0}%`, color: co?.color ?? '#94a3b8' },
             ].map(s => (
@@ -468,7 +468,7 @@ export default function DashboardPage() {
 
           {/* Add button */}
           <button onClick={openAdd} disabled={atLimit}
-            style={{ width: '100%', padding: 13, background: atLimit ? '#e2e8f0' : '#2563eb', color: atLimit ? '#94a3b8' : '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: atLimit ? 'not-allowed' : 'pointer', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            style={{ width: '100%', padding: 13, background: atLimit ? '#e2e8f0' : '#0f172a', color: atLimit ? '#94a3b8' : '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: atLimit ? 'not-allowed' : 'pointer', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             {atLimit ? <><LockClosedIcon style={{ width: 15, height: 15 }}/> Limit reached — upgrade to Premium</> : <><PlusIcon strokeWidth={2.5} style={{ width: 18, height: 18 }}/> Add expense</>}
           </button>
 
@@ -509,7 +509,7 @@ export default function DashboardPage() {
                   <div key={exp.id} style={{ background: '#fff', border: `1px solid ${isExpanded ? cfg.color + '44' : '#e2e8f0'}`, borderRadius: 13, overflow: 'hidden' }}>
                     {/* Main row */}
                     <div style={{ padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 11 }}>
-                      <div style={{ width: 38, height: 38, borderRadius: 11, background: exp.kid?.color ?? '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 15, flexShrink: 0 }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 11, background: exp.kid?.color ?? '#374151', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 15, flexShrink: 0 }}>
                         {exp.kid?.name?.[0]?.toUpperCase() ?? '?'}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -534,7 +534,7 @@ export default function DashboardPage() {
                       <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                         {exp.receipt_url && (
                           <button onClick={() => setViewReceipt(exp.receipt_url)} style={{ padding: 5, background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 6, cursor: 'pointer', display: 'flex' }}>
-                            <PaperClipIcon style={{ width: 12, height: 12, color: "#2563eb" }}/>
+                            <PaperClipIcon style={{ width: 12, height: 12, color: "#374151" }}/>
                           </button>
                         )}
                         {isOwner && exp.settlement_status !== 'settled' && (
@@ -798,11 +798,11 @@ export default function DashboardPage() {
               <div><label style={LBL}>Date</label><input type="date" value={form.date} onChange={e => F({ date: e.target.value })} style={INP} /></div>
               <div>
                 <label style={LBL}>Split — {me?.display_name ?? 'You'}: <strong>{form.split_pct}%</strong> · {co?.display_name ?? 'Co-parent'}: <strong>{100 - form.split_pct}%</strong></label>
-                <input type="range" min="0" max="100" step="1" value={form.split_pct} onChange={e => F({ split_pct: parseInt(e.target.value) })} style={{ width: '100%', accentColor: '#2563eb' }} />
+                <input type="range" min="0" max="100" step="1" value={form.split_pct} onChange={e => F({ split_pct: parseInt(e.target.value) })} style={{ width: '100%', accentColor: '#0f172a' }} />
                 <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' as const }}>
                   {[0,25,50,75,100].map(v => (
                     <button key={v} type="button" onClick={() => F({ split_pct: v })}
-                      style={{ padding: '4px 10px', border: form.split_pct === v ? '1.5px solid #2563eb' : '1px solid #e2e8f0', borderRadius: 6, background: form.split_pct === v ? '#eff6ff' : '#f8fafc', color: form.split_pct === v ? '#2563eb' : '#64748b', fontSize: 12, fontWeight: form.split_pct === v ? 700 : 400, cursor: 'pointer' }}>{v}%</button>
+                      style={{ padding: '4px 10px', border: form.split_pct === v ? '1.5px solid #0f172a' : '1px solid #e2e8f0', borderRadius: 6, background: form.split_pct === v ? '#0f172a' : '#f8fafc', color: form.split_pct === v ? '#fff' : '#64748b', fontSize: 12, fontWeight: form.split_pct === v ? 700 : 400, cursor: 'pointer' }}>{v}%</button>
                   ))}
                 </div>
               </div>
@@ -823,7 +823,7 @@ export default function DashboardPage() {
                 </div>
               )}
               {saveErr && <div style={{ padding: '10px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, fontSize: 13, color: '#dc2626' }}>{saveErr}</div>}
-              <button onClick={submitExpense} disabled={saving} style={{ padding: 13, background: saving ? '#93c5fd' : '#2563eb', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer' }}>
+              <button onClick={submitExpense} disabled={saving} style={{ padding: 13, background: saving ? '#94a3b8' : '#0f172a', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer' }}>
                 {saving ? 'Saving…' : editingId ? 'Save changes' : 'Add expense'}
               </button>
             </div>

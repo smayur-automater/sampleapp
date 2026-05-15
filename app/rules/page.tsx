@@ -146,7 +146,7 @@ export default function RulesPage() {
   if (ctxLoading || loading) return (
     <Shell>
       <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-        <div style={{ width: 28, height: 28, border: '2px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin .7s linear infinite' }} />
+        <div style={{ width: 28, height: 28, border: '2px solid #e2e8f0', borderTopColor: '#0f172a', borderRadius: '50%', animation: 'spin .7s linear infinite' }} />
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     </Shell>
@@ -169,7 +169,7 @@ export default function RulesPage() {
             <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0' }}>Auto-apply split rules when adding expenses by category</p>
           </div>
           {isPremium && availableCategories.length > 0 && (
-            <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <button onClick={openAdd} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               <PlusIcon strokeWidth={2.5} style={{ width: 14, height: 14 }}/> Add rule
             </button>
           )}
@@ -212,7 +212,7 @@ export default function RulesPage() {
             <div style={{ fontWeight: 600, fontSize: 15, color: '#334155', marginBottom: 6 }}>No rules yet</div>
             <div style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>Add a rule for each category that has an agreed split</div>
             {isPremium && availableCategories.length > 0 && (
-              <button onClick={openAdd} style={{ padding: '9px 18px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={openAdd} style={{ padding: '9px 18px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                 Add first rule
               </button>
             )}

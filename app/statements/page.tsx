@@ -207,7 +207,7 @@ ${exps.map(e => `<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'num
 
   if (ctxLoading) return (
     <Shell><div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-      <div style={{ width: 28, height: 28, border: '2px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin .7s linear infinite' }} />
+      <div style={{ width: 28, height: 28, border: '2px solid #e2e8f0', borderTopColor: '#0f172a', borderRadius: '50%', animation: 'spin .7s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div></Shell>
   )
@@ -236,7 +236,7 @@ ${exps.map(e => `<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'num
               <button onClick={exportPDF} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 11px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', color: '#374151', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                 <ArrowDownTrayIcon style={{ width: 13, height: 13 }}/> PDF
               </button>
-              <button onClick={emailSummary} disabled={sending} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 11px', background: '#2563eb', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600, cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.6 : 1 }}>
+              <button onClick={emailSummary} disabled={sending} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 11px', background: '#0f172a', border: 'none', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600, cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.6 : 1 }}>
                 <EnvelopeIcon style={{ width: 13, height: 13 }}/> {sending ? 'Sending…' : 'Email'}
               </button>
             </div>
@@ -282,7 +282,7 @@ ${exps.map(e => `<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'num
 
             {loading ? (
               <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-                <div style={{ width: 28, height: 28, border: '2px solid #e2e8f0', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin .7s linear infinite' }} />
+                <div style={{ width: 28, height: 28, border: '2px solid #e2e8f0', borderTopColor: '#0f172a', borderRadius: '50%', animation: 'spin .7s linear infinite' }} />
                 <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
               </div>
             ) : !summary || exps.length === 0 ? (
