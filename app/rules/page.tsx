@@ -45,7 +45,7 @@ export default function RulesPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [rules,      setRules]      = useState<SplitRule[]>([])
   const [usage,      setUsage]      = useState<Usage | null>(null)
-  const [loading,    setLoading]    = useState(true)
+  const [loading,    setLoading]    = useState(false)
   const [modal,      setModal]      = useState(false)
   const [saving,     setSaving]     = useState(false)
   const [err,        setErr]        = useState('')
@@ -62,7 +62,7 @@ export default function RulesPage() {
   const me = ctx?.members.find(m => m.user_id === ctx.myUserId)
   const co = ctx?.members.find(m => m.user_id !== ctx.myUserId)
 
-  useEffect(() => { if (ctx) load() }, [ctx])
+  useEffect(() => { if (ctx) load() }, [ctx]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
     if (!ctx) return
@@ -79,7 +79,7 @@ export default function RulesPage() {
     }))
     setCategories(catData)
     setRules(ruleData)
-    setUsage(usageRes.data)
+    setUsage(usageRes.data as Usage | null)
     setLoading(false)
   }
 

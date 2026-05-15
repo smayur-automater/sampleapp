@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { supabase, isConfigured } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
-type View = 'signin' | 'signup' | 'otp' | 'forgot'
+type View = 'signin' | 'signup' | 'otp' | 'forgot' | 'forgot_sent'
 
 const S: Record<string, React.CSSProperties> = {
   page:  { minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', fontFamily: 'system-ui, -apple-system, sans-serif' },
@@ -48,28 +48,37 @@ export default function LoginPage() {
     setLoading(true); clear()
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: pw })
     setLoading(false)
-    if (error) E('Incorrect email or password. Please try again.')
-    else redirectAfterAuth()
+    if (error) {
+      if (error.message.toLowerCase().includes('email not confirmed')) {
+        // Account exists but email not verified — send OTP to verify
+        await supabase.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: false } })
+        setView('otp')
+        O('Please verify your email — a code has been sent to ' + email.trim())
+      } else {
+        E('Incorrect email or password. Please try again.')
+      }
+    } else {
+      redirectAfterAuth()
+    }
   }
 
-  // ── Sign up ───────────────────────────────────────────────────
+  // ── Sign up: create account with password, then send OTP to verify ─
   async function signUp() {
-    if (!firstName.trim())        { E('Enter your first name'); return }
-    if (!lastName.trim())         { E('Enter your last name'); return }
-    if (!phone.trim())            { E('Enter your phone number'); return }
-    if (!email.trim())            { E('Enter your email address'); return }
-    if (!email.includes('@'))     { E('Enter a valid email address'); return }
-    if (!pw)                      { E('Choose a password'); return }
-    if (pw.length < 6)            { E('Password must be at least 6 characters'); return }
-    if (pw !== pw2)               { E('Passwords do not match'); return }
+    if (!firstName.trim())    { E('Enter your first name'); return }
+    if (!lastName.trim())     { E('Enter your last name'); return }
+    if (!phone.trim())        { E('Enter your phone number'); return }
+    if (!email.trim())        { E('Enter your email address'); return }
+    if (!email.includes('@')) { E('Enter a valid email address'); return }
+    if (!pw)                  { E('Choose a password'); return }
+    if (pw.length < 6)        { E('Password must be at least 6 characters'); return }
+    if (pw !== pw2)           { E('Passwords do not match'); return }
     setLoading(true); clear()
 
-    // Use signInWithOtp which creates the account AND sends a single OTP in one step.
-    // This avoids the rate limit caused by signUp() + signInWithOtp() sending two emails.
-    const { error: e1 } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: {
-        shouldCreateUser: true,
+    // Step 1: Create the account
+    const { data, error: e1 } = await supabase.auth.signUp({
+      email:    email.trim(),
+      password: pw,
+      options:  {
         data: {
           first_name: firstName.trim(),
           last_name:  lastName.trim(),
@@ -78,16 +87,43 @@ export default function LoginPage() {
         },
       },
     })
-    setLoading(false)
+
     if (e1) {
-      E(e1.message.toLowerCase().includes('security purposes')
-        ? 'Please wait 60 seconds before requesting another code.'
-        : e1.message.toLowerCase().includes('already')
+      setLoading(false)
+      E(e1.message.toLowerCase().includes('already registered')
         ? 'An account with this email already exists. Try signing in.'
         : e1.message)
       return
     }
-    setView('otp'); O(`Verification code sent to ${email.trim()}`)
+
+    // Step 2: If Supabase email confirmations are ON, send OTP for verification
+    // If confirmations are OFF, the user is already signed in
+    if (data.session) {
+      // Email confirmation disabled — signed in immediately
+      setLoading(false)
+      redirectAfterAuth()
+      return
+    }
+
+    // Email confirmation required — send OTP code instead of magic link
+    const { error: e2 } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { shouldCreateUser: false },
+    })
+    setLoading(false)
+
+    if (e2) {
+      if (e2.message.toLowerCase().includes('security purposes')) {
+        // Supabase already sent a confirmation email during signUp — go to OTP screen
+        setView('otp')
+        O('A verification code was sent to ' + email.trim() + '. Enter it below.')
+      } else {
+        E('Account created. ' + e2.message + '. Please try signing in.')
+      }
+    } else {
+      setView('otp')
+      O('Verification code sent to ' + email.trim())
+    }
   }
 
   // ── Verify OTP ────────────────────────────────────────────────
@@ -102,9 +138,12 @@ export default function LoginPage() {
 
   async function resendOtp() {
     setLoading(true); clear()
-    const { error } = await supabase.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: false } })
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { shouldCreateUser: false },
+    })
     setLoading(false)
-    if (error) E(error.message)
+    if (error) E('Could not resend: ' + error.message)
     else O('New code sent to ' + email.trim())
   }
 
@@ -117,10 +156,10 @@ export default function LoginPage() {
     })
     setLoading(false)
     if (error) E(error.message)
-    else O('Password reset link sent — check your inbox')
+    else setView('forgot_sent')
   }
 
-  const disabled = { opacity: 0.55, cursor: 'not-allowed' as const }
+  const off = { opacity: 0.55, cursor: 'not-allowed' as const }
 
   return (
     <div style={S.page}>
@@ -140,225 +179,167 @@ export default function LoginPage() {
             <span style={{ color: '#1a3a6b' }}>CoParent</span>
             <span style={{ color: '#2ec4a0' }}> Pay</span>
           </div>
-          <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 4 }}>
-            Shared Expenses. Shared Responsibility.
-          </div>
+          <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 4 }}>Shared Expenses. Shared Responsibility.</div>
         </div>
 
         <div style={S.card}>
 
           {/* ══ SIGN IN ══ */}
-          {view === 'signin' && (
-            <>
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', marginBottom: 20 }}>Sign in</div>
-
-              <div style={S.row}>
-                <label style={S.lbl}>Email address</label>
-                <input
-                  type="email" value={email} autoFocus
-                  onChange={e => { setEmail(e.target.value); clear() }}
-                  onKeyDown={e => e.key === 'Enter' && signIn()}
-                  placeholder="you@example.com"
-                  style={S.inp}
-                />
-              </div>
-
-              <div style={{ marginBottom: 6 }}>
-                <label style={S.lbl}>Password</label>
-                <input
-                  type="password" value={pw}
-                  onChange={e => { setPw(e.target.value); clear() }}
-                  onKeyDown={e => e.key === 'Enter' && signIn()}
-                  placeholder="••••••••"
-                  style={S.inp}
-                />
-              </div>
-
-              <div style={{ textAlign: 'right', marginBottom: 18 }}>
-                <button onClick={() => { setView('forgot'); clear() }} style={{ ...S.ghost, display: 'inline', padding: 0, fontSize: 13, color: '#1a3a6b' }}>
-                  Forgot password?
-                </button>
-              </div>
-
-              {error && <Alert type="error">{error}</Alert>}
-              {ok    && <Alert type="ok">{ok}</Alert>}
-
-              <button onClick={signIn} disabled={loading} style={{ ...S.btn, ...(loading ? disabled : {}) }}>
-                {loading ? 'Signing in…' : 'Sign in'}
+          {view === 'signin' && (<>
+            <div style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', marginBottom: 20 }}>Sign in</div>
+            <div style={S.row}>
+              <label style={S.lbl}>Email address</label>
+              <input type="email" value={email} autoFocus
+                onChange={e => { setEmail(e.target.value); clear() }}
+                onKeyDown={e => e.key === 'Enter' && signIn()}
+                placeholder="you@example.com" style={S.inp} />
+            </div>
+            <div style={{ marginBottom: 4 }}>
+              <label style={S.lbl}>Password</label>
+              <input type="password" value={pw}
+                onChange={e => { setPw(e.target.value); clear() }}
+                onKeyDown={e => e.key === 'Enter' && signIn()}
+                placeholder="••••••••" style={S.inp} />
+            </div>
+            <div style={{ textAlign: 'right', marginBottom: 18 }}>
+              <button onClick={() => { setView('forgot'); clear() }}
+                style={{ ...S.ghost, display: 'inline', padding: 0, fontSize: 13, color: '#1a3a6b' }}>
+                Forgot password?
               </button>
-
-              <div style={{ textAlign: 'center', marginTop: 18, fontSize: 13, color: '#64748b' }}>
-                Don&apos;t have an account?{' '}
-                <button onClick={() => { setView('signup'); clear() }} style={{ ...S.ghost, display: 'inline', padding: 0, color: '#1a3a6b', fontWeight: 700 }}>
-                  Create one
-                </button>
-              </div>
-            </>
-          )}
+            </div>
+            {error && <Alert type="error">{error}</Alert>}
+            {ok    && <Alert type="ok">{ok}</Alert>}
+            <button onClick={signIn} disabled={loading} style={{ ...S.btn, ...(loading ? off : {}) }}>
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+            <div style={{ textAlign: 'center', marginTop: 18, fontSize: 13, color: '#64748b' }}>
+              Don&apos;t have an account?{' '}
+              <button onClick={() => { setView('signup'); clear() }}
+                style={{ ...S.ghost, display: 'inline', padding: 0, color: '#1a3a6b', fontWeight: 700 }}>
+                Create one
+              </button>
+            </div>
+          </>)}
 
           {/* ══ CREATE ACCOUNT ══ */}
-          {view === 'signup' && (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                <button onClick={() => { setView('signin'); clear() }} style={{ ...S.ghost, padding: 0, color: '#1a3a6b', fontSize: 20, width: 'auto', lineHeight: 1 }}>←</button>
-                <div style={{ fontSize: 20, fontWeight: 800, color: '#0f172a' }}>Create account</div>
+          {view === 'signup' && (<>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+              <button onClick={() => { setView('signin'); clear() }}
+                style={{ ...S.ghost, padding: 0, color: '#1a3a6b', fontSize: 22, width: 'auto', lineHeight: 1 }}>←</button>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#0f172a' }}>Create account</div>
+            </div>
+            <div style={S.grid2}>
+              <div>
+                <label style={S.lbl}>First name</label>
+                <input value={firstName} autoFocus onChange={e => { setFirstName(e.target.value); clear() }} placeholder="Sarah" style={S.inp} />
               </div>
-
-              {/* First + Last */}
-              <div style={S.grid2}>
-                <div>
-                  <label style={S.lbl}>First name</label>
-                  <input
-                    value={firstName} autoFocus
-                    onChange={e => { setFirstName(e.target.value); clear() }}
-                    placeholder="Sarah"
-                    style={S.inp}
-                  />
-                </div>
-                <div>
-                  <label style={S.lbl}>Last name</label>
-                  <input
-                    value={lastName}
-                    onChange={e => { setLastName(e.target.value); clear() }}
-                    placeholder="Smith"
-                    style={S.inp}
-                  />
-                </div>
+              <div>
+                <label style={S.lbl}>Last name</label>
+                <input value={lastName} onChange={e => { setLastName(e.target.value); clear() }} placeholder="Smith" style={S.inp} />
               </div>
-
-              {/* Phone */}
-              <div style={S.row}>
-                <label style={S.lbl}>Phone number</label>
-                <input
-                  type="tel" value={phone}
-                  onChange={e => { setPhone(e.target.value); clear() }}
-                  placeholder="+61 400 000 000"
-                  style={S.inp}
-                />
-              </div>
-
-              {/* Email */}
-              <div style={S.row}>
-                <label style={S.lbl}>Email address</label>
-                <input
-                  type="email" value={email}
-                  onChange={e => { setEmail(e.target.value); clear() }}
-                  placeholder="you@example.com"
-                  style={S.inp}
-                />
-              </div>
-
-              {/* Password */}
-              <div style={S.row}>
-                <label style={S.lbl}>Password</label>
-                <input
-                  type="password" value={pw}
-                  onChange={e => { setPw(e.target.value); clear() }}
-                  placeholder="At least 6 characters"
-                  style={S.inp}
-                />
-              </div>
-
-              {/* Confirm password */}
-              <div style={{ marginBottom: 18 }}>
-                <label style={S.lbl}>Confirm password</label>
-                <input
-                  type="password" value={pw2}
-                  onChange={e => { setPw2(e.target.value); clear() }}
-                  onKeyDown={e => e.key === 'Enter' && signUp()}
-                  placeholder="Re-enter password"
-                  style={S.inp}
-                />
-              </div>
-
-              {error && <Alert type="error">{error}</Alert>}
-              {ok    && <Alert type="ok">{ok}</Alert>}
-
-              <button onClick={signUp} disabled={loading} style={{ ...S.btn, ...(loading ? disabled : {}) }}>
-                {loading ? 'Creating account…' : 'Create account →'}
-              </button>
-
-              <div style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: '#94a3b8', lineHeight: 1.6 }}>
-                A 6-digit verification code will be sent to your email address to confirm your account.
-              </div>
-            </>
-          )}
+            </div>
+            <div style={S.row}>
+              <label style={S.lbl}>Phone number</label>
+              <input type="tel" value={phone} onChange={e => { setPhone(e.target.value); clear() }} placeholder="+61 400 000 000" style={S.inp} />
+            </div>
+            <div style={S.row}>
+              <label style={S.lbl}>Email address</label>
+              <input type="email" value={email} onChange={e => { setEmail(e.target.value); clear() }} placeholder="you@example.com" style={S.inp} />
+            </div>
+            <div style={S.row}>
+              <label style={S.lbl}>Password</label>
+              <input type="password" value={pw} onChange={e => { setPw(e.target.value); clear() }} placeholder="At least 6 characters" style={S.inp} />
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <label style={S.lbl}>Confirm password</label>
+              <input type="password" value={pw2}
+                onChange={e => { setPw2(e.target.value); clear() }}
+                onKeyDown={e => e.key === 'Enter' && signUp()}
+                placeholder="Re-enter password" style={S.inp} />
+            </div>
+            {error && <Alert type="error">{error}</Alert>}
+            {ok    && <Alert type="ok">{ok}</Alert>}
+            <button onClick={signUp} disabled={loading} style={{ ...S.btn, ...(loading ? off : {}) }}>
+              {loading ? 'Creating account…' : 'Create account →'}
+            </button>
+            <p style={{ textAlign: 'center', marginTop: 14, fontSize: 12, color: '#94a3b8', lineHeight: 1.6 }}>
+              A 6-digit verification code will be emailed to confirm your account.
+            </p>
+          </>)}
 
           {/* ══ OTP VERIFICATION ══ */}
-          {view === 'otp' && (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <button onClick={() => { setView('signup'); clear() }} style={{ ...S.ghost, padding: 0, color: '#1a3a6b', fontSize: 20, width: 'auto', lineHeight: 1 }}>←</button>
-                <div style={{ fontSize: 20, fontWeight: 800, color: '#0f172a' }}>Check your email</div>
-              </div>
-
-              <div style={{ fontSize: 14, color: '#64748b', marginBottom: 24, lineHeight: 1.65 }}>
-                We sent a 6-digit code to{' '}
-                <strong style={{ color: '#0f172a' }}>{email}</strong>.
-                Enter it below to verify your account.
-              </div>
-
-              {/* Big OTP input */}
-              <div style={{ marginBottom: 18 }}>
-                <label style={S.lbl}>Verification code</label>
-                <input
-                  value={otp} autoFocus maxLength={6}
-                  onChange={e => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); clear() }}
-                  onKeyDown={e => e.key === 'Enter' && verifyOtp()}
-                  placeholder="000000"
-                  style={{ ...S.inp, fontSize: 32, letterSpacing: 16, textAlign: 'center', fontFamily: 'monospace', fontWeight: 700 }}
-                />
-              </div>
-
-              {error && <Alert type="error">{error}</Alert>}
-              {ok    && <Alert type="ok">{ok}</Alert>}
-
-              <button onClick={verifyOtp} disabled={loading || otp.length < 6} style={{ ...S.btn, ...(loading || otp.length < 6 ? disabled : {}) }}>
-                {loading ? 'Verifying…' : 'Verify email →'}
+          {view === 'otp' && (<>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <button onClick={() => { setView('signup'); clear() }}
+                style={{ ...S.ghost, padding: 0, color: '#1a3a6b', fontSize: 22, width: 'auto', lineHeight: 1 }}>←</button>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#0f172a' }}>Check your email</div>
+            </div>
+            <p style={{ fontSize: 14, color: '#64748b', marginBottom: 20, lineHeight: 1.65 }}>
+              We sent a 6-digit code to <strong style={{ color: '#0f172a' }}>{email}</strong>. Enter it below to verify your account.
+            </p>
+            {ok    && <Alert type="ok">{ok}</Alert>}
+            {error && <Alert type="error">{error}</Alert>}
+            <div style={{ marginBottom: 18 }}>
+              <label style={S.lbl}>Verification code</label>
+              <input value={otp} autoFocus maxLength={6}
+                onChange={e => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); clear() }}
+                onKeyDown={e => e.key === 'Enter' && verifyOtp()}
+                placeholder="000000"
+                style={{ ...S.inp, fontSize: 32, letterSpacing: 16, textAlign: 'center', fontFamily: 'monospace', fontWeight: 700 }} />
+            </div>
+            <button onClick={verifyOtp} disabled={loading || otp.length < 6}
+              style={{ ...S.btn, ...(loading || otp.length < 6 ? off : {}) }}>
+              {loading ? 'Verifying…' : 'Verify & sign in →'}
+            </button>
+            <div style={{ textAlign: 'center', marginTop: 14 }}>
+              <button onClick={resendOtp} disabled={loading}
+                style={{ ...S.ghost, display: 'inline', color: '#1a3a6b', padding: 0, fontSize: 13 }}>
+                Didn&apos;t get it? Resend code
               </button>
-
-              <div style={{ textAlign: 'center', marginTop: 14 }}>
-                <button onClick={resendOtp} disabled={loading} style={{ ...S.ghost, display: 'inline', color: '#1a3a6b', padding: 0, fontSize: 13 }}>
-                  Didn&apos;t receive it? Resend code
-                </button>
-              </div>
-            </>
-          )}
+            </div>
+          </>)}
 
           {/* ══ FORGOT PASSWORD ══ */}
-          {view === 'forgot' && (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <button onClick={() => { setView('signin'); clear() }} style={{ ...S.ghost, padding: 0, color: '#1a3a6b', fontSize: 20, width: 'auto', lineHeight: 1 }}>←</button>
-                <div style={{ fontSize: 20, fontWeight: 800, color: '#0f172a' }}>Reset password</div>
-              </div>
+          {view === 'forgot' && (<>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <button onClick={() => { setView('signin'); clear() }}
+                style={{ ...S.ghost, padding: 0, color: '#1a3a6b', fontSize: 22, width: 'auto', lineHeight: 1 }}>←</button>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#0f172a' }}>Reset password</div>
+            </div>
+            <p style={{ fontSize: 14, color: '#64748b', marginBottom: 20, lineHeight: 1.65 }}>
+              Enter your email and we&apos;ll send a link to reset your password.
+            </p>
+            <div style={{ marginBottom: 18 }}>
+              <label style={S.lbl}>Email address</label>
+              <input type="email" value={email} autoFocus
+                onChange={e => { setEmail(e.target.value); clear() }}
+                onKeyDown={e => e.key === 'Enter' && forgotPw()}
+                placeholder="you@example.com" style={S.inp} />
+            </div>
+            {error && <Alert type="error">{error}</Alert>}
+            <button onClick={forgotPw} disabled={loading} style={{ ...S.btn, ...(loading ? off : {}) }}>
+              {loading ? 'Sending…' : 'Send reset link'}
+            </button>
+          </>)}
 
-              <div style={{ fontSize: 14, color: '#64748b', marginBottom: 20, lineHeight: 1.65 }}>
-                Enter your email address and we&apos;ll send you a link to reset your password.
-              </div>
-
-              <div style={{ marginBottom: 18 }}>
-                <label style={S.lbl}>Email address</label>
-                <input
-                  type="email" value={email} autoFocus
-                  onChange={e => { setEmail(e.target.value); clear() }}
-                  onKeyDown={e => e.key === 'Enter' && forgotPw()}
-                  placeholder="you@example.com"
-                  style={S.inp}
-                />
-              </div>
-
-              {error && <Alert type="error">{error}</Alert>}
-              {ok    && <Alert type="ok">{ok}</Alert>}
-
-              <button onClick={forgotPw} disabled={loading} style={{ ...S.btn, ...(loading ? disabled : {}) }}>
-                {loading ? 'Sending…' : 'Send reset link'}
+          {/* ══ FORGOT SENT ══ */}
+          {view === 'forgot_sent' && (<>
+            <div style={{ textAlign: 'center', padding: '16px 0' }}>
+              <div style={{ fontSize: 48, marginBottom: 14 }}>📧</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>Check your inbox</div>
+              <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.65, marginBottom: 24 }}>
+                A password reset link has been sent to <strong style={{ color: '#0f172a' }}>{email}</strong>. Click the link in the email to set a new password.
+              </p>
+              <button onClick={() => { setView('signin'); clear() }}
+                style={{ ...S.btn, width: 'auto', padding: '11px 24px', margin: '0 auto', display: 'block', fontSize: 14 }}>
+                Back to sign in
               </button>
-            </>
-          )}
+            </div>
+          </>)}
 
         </div>
 
+        {/* Supabase OTP tip */}
         <div style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: '#94a3b8' }}>
           CoParent Pay · Secure sign-in
         </div>

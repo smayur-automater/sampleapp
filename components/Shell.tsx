@@ -13,7 +13,7 @@ const TABS = [
   { path: '/kids',       label: 'Kids'       },
   { path: '/parents',    label: 'Parents'    },
   { path: '/categories', label: 'Categories' },
-  { path: '/rules',      label: 'Rules'      },
+  { path: '/rules',      label: 'Expense Rules' },
   { path: '/statements', label: 'Statements' },
 ]
 

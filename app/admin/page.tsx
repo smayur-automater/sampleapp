@@ -618,15 +618,23 @@ export default function AdminPage() {
                             <span style={S.badge(u.email_confirmed_at ? '#34d399' : '#fb923c')}>
                               {u.email_confirmed_at ? 'Verified' : 'Unverified'}
                             </span>
-                            <div style={{ display: 'flex', gap: 4 }}>
+                            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                               <span style={S.badge(u.plan === 'premium' ? '#f59e0b' : '#64748b')}>
                                 {u.plan === 'premium' ? '★ Premium' : 'Free'}
                               </span>
-                              <button
-                                onClick={e => { e.stopPropagation(); setPlan(u.id, u.plan === 'premium' ? 'free' : 'premium', u.display_name ?? u.email) }}
-                                style={{ padding: '1px 7px', border: '1px solid #334155', borderRadius: 6, background: '#1e293b', color: '#94a3b8', fontSize: 10, cursor: 'pointer', fontWeight: 600 }}>
-                                {u.plan === 'premium' ? 'Downgrade' : 'Upgrade'}
-                              </button>
+                              {u.plan === 'premium' ? (
+                                <button
+                                  onClick={e => { e.stopPropagation(); setPlan(u.id, 'free', u.display_name ?? u.email) }}
+                                  style={{ padding: '2px 8px', border: '1px solid #f59e0b', borderRadius: 6, background: 'transparent', color: '#f59e0b', fontSize: 10, cursor: 'pointer', fontWeight: 700 }}>
+                                  ↓ Downgrade
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={e => { e.stopPropagation(); setPlan(u.id, 'premium', u.display_name ?? u.email) }}
+                                  style={{ padding: '2px 8px', border: '1px solid #34d399', borderRadius: 6, background: '#064e3b', color: '#34d399', fontSize: 10, cursor: 'pointer', fontWeight: 700 }}>
+                                  ↑ Upgrade
+                                </button>
+                              )}
                             </div>
                             <button
                               onClick={e => { e.stopPropagation(); deleteUser(u.id, u.email) }}

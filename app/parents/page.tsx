@@ -379,7 +379,16 @@ export default function ParentsPage() {
                   </div>
                   {emailStatus === 'sending' && <div style={{ padding: '10px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, marginBottom: 12, fontSize: 13, color: '#1e40af', display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 14, height: 14, border: '2px solid #93c5fd', borderTopColor: '#0f172a', borderRadius: '50%', animation: 'spin .7s linear infinite', flexShrink: 0 }} /><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>Sending email…</div>}
                   {emailStatus === 'sent' && <div style={{ padding: '10px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, marginBottom: 12, fontSize: 13, color: '#065f46', display: 'flex', alignItems: 'center', gap: 8 }}><CheckIcon style={{ width: 14, height: 14, flexShrink: 0 }} />Email sent to <strong style={{ marginLeft: 3 }}>{created?.invited_email}</strong></div>}
-                  {emailStatus === 'failed' && <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, marginBottom: 12, fontSize: 13, color: '#92400e', lineHeight: 1.5 }}><strong>Email not sent</strong> — {emailErr}.<br /><span style={{ fontSize: 12 }}>Use the copy button or share buttons below.</span></div>}
+                  {emailStatus === 'failed' && (
+                    <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, marginBottom: 12, fontSize: 13, color: '#92400e', lineHeight: 1.5 }}>
+                      <strong>Auto-email unavailable</strong> — use the Email button below to send via your email app.
+                      <div style={{ marginTop: 6 }}>
+                        <button onClick={() => shareEmail(created)} style={{ padding: '5px 12px', background: '#92400e', color: '#fff', border: 'none', borderRadius: 7, fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>
+                          Open email app →
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <button onClick={() => copyLink(created.code)} style={{ width: '100%', padding: '14px 16px', background: copied ? '#f0fdf4' : '#1a3a6b', color: copied ? '#059669' : '#fff', border: copied ? '1.5px solid #bbf7d0' : 'none', borderRadius: 13, fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, marginBottom: 12, transition: 'all .2s' }}>
                     {copied ? <CheckIcon style={{ width: 18, height: 18 }} /> : <ClipboardDocumentIcon style={{ width: 18, height: 18 }} />}
                     {copied ? 'Copied!' : 'Copy invite link'}
