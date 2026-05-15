@@ -40,7 +40,7 @@ interface Expense {
   kid:      { id: string; name: string; color: string } | null
   category: { id: string; name: string } | null
 }
-interface Usage { plan: 'free'|'premium'; expense_count: number; can_add: boolean }
+interface Usage { plan: 'free'|'premium'; count: number; can_add: boolean; limit: number | null }
 
 // ── Helpers ────────────────────────────────────────────────────────
 const sym = (code: string) => CURRENCIES.find(c => c.code === code)?.symbol ?? '$'
@@ -114,13 +114,13 @@ export default function DashboardPage() {
           .order('created_at', { ascending: false }),
         supabase.from('kids').select('id,name,color').eq('household_id', ctx.household_id).order('name'),
         supabase.from('categories').select('id,name,color').eq('household_id', ctx.household_id).order('name'),
-        supabase.rpc('get_my_usage').maybeSingle(),
+        supabase.rpc('get_my_usage'),
         supabase.from('split_rules').select('category_id,split_pct,is_optional').eq('household_id', ctx.household_id),
       ])
       setExpenses((e.data ?? []) as unknown as Expense[])
       setKids(k.data ?? [])
       setCats(c.data ?? [])
-      if (!u.error) setUsage(u.data as Usage | null)
+      if (!u.error && u.data) setUsage(u.data as Usage)
       const rulesMap: Record<string, { split_pct: number; is_optional: boolean }> = {}
       ;(r.data ?? []).forEach((rule: any) => { rulesMap[rule.category_id] = { split_pct: rule.split_pct, is_optional: rule.is_optional } })
       setSplitRules(rulesMap)
@@ -380,11 +380,11 @@ export default function DashboardPage() {
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Free plan · {usage.expense_count} / 10 expenses</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Free plan · {usage.count} / 10 expenses</span>
                 {atLimit && <span style={{ fontSize: 11, fontWeight: 700, color: '#dc2626' }}>Limit reached</span>}
               </div>
               <div style={{ height: 5, background: '#f1f5f9', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${Math.min((usage.expense_count / 10) * 100, 100)}%`, background: atLimit ? '#dc2626' : '#0f172a' }} />
+                <div style={{ height: '100%', width: `${Math.min((usage.count / 10) * 100, 100)}%`, background: atLimit ? '#dc2626' : '#0f172a' }} />
               </div>
             </div>
           </div>

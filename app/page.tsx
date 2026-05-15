@@ -64,10 +64,12 @@ export default function LoginPage() {
     if (pw !== pw2)               { E('Passwords do not match'); return }
     setLoading(true); clear()
 
-    const { error: e1 } = await supabase.auth.signUp({
-      email:    email.trim(),
-      password: pw,
-      options:  {
+    // Use signInWithOtp which creates the account AND sends a single OTP in one step.
+    // This avoids the rate limit caused by signUp() + signInWithOtp() sending two emails.
+    const { error: e1 } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: {
+        shouldCreateUser: true,
         data: {
           first_name: firstName.trim(),
           last_name:  lastName.trim(),
@@ -76,20 +78,16 @@ export default function LoginPage() {
         },
       },
     })
+    setLoading(false)
     if (e1) {
-      setLoading(false)
-      E(e1.message.toLowerCase().includes('already') ? 'An account with this email already exists. Try signing in.' : e1.message)
+      E(e1.message.toLowerCase().includes('security purposes')
+        ? 'Please wait 60 seconds before requesting another code.'
+        : e1.message.toLowerCase().includes('already')
+        ? 'An account with this email already exists. Try signing in.'
+        : e1.message)
       return
     }
-
-    // Send OTP for email verification
-    const { error: e2 } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { shouldCreateUser: false },
-    })
-    setLoading(false)
-    if (e2) E('Account created but could not send verification code: ' + e2.message)
-    else { setView('otp'); O(`Verification code sent to ${email.trim()}`) }
+    setView('otp'); O(`Verification code sent to ${email.trim()}`)
   }
 
   // ── Verify OTP ────────────────────────────────────────────────
