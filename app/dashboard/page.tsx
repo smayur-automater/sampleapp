@@ -350,6 +350,21 @@ export default function DashboardPage() {
 
   const currentMonthYear = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
 
+  // Brand new user — household still being created by the trigger
+  // Show a friendly setup screen instead of an error
+  if (!ctxLoading && !ctx && !ctxError) return (
+    <Shell>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 24px', textAlign: 'center', fontFamily: 'system-ui,sans-serif' }}>
+        <div style={{ width: 48, height: 48, border: '3px solid #e2e8f0', borderTopColor: '#0f172a', borderRadius: '50%', animation: 'spin .7s linear infinite', marginBottom: 20 }} />
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+        <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>Setting up your account…</div>
+        <div style={{ fontSize: 14, color: '#64748b', lineHeight: 1.6, maxWidth: 320 }}>
+          We&apos;re creating your household and default categories. This takes just a moment.
+        </div>
+      </div>
+    </Shell>
+  )
+
   if (ctxLoading) return <Shell><div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><div style={{ width: 28, height: 28, border: '2px solid #e2e8f0', borderTopColor: '#0f172a', borderRadius: '50%', animation: 'spin .7s linear infinite' }} /><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div></Shell>
   if (ctxError)   return <Shell><div style={{ padding: 24, textAlign: 'center' }}><p style={{ color: '#dc2626', marginBottom: 12 }}>{ctxError}</p><button onClick={reloadCtx} style={{ padding: '8px 16px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Retry</button></div></Shell>
 
