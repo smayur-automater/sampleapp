@@ -43,11 +43,11 @@ export default function KidsPage() {
     setLoading(true)
     const { data, error } = await supabase
       .from('kids')
-      .select('id, name, dob, color, gender, created_by')
+      .select('id, name, dob, color, created_by')
       .eq('household_id', ctx.household_id)
       .order('name')
     if (error) console.error('kids load error:', error.message)
-    setKids((data ?? []).map(k => ({ ...k, gender: k.gender ?? 'Unknown' })))
+    setKids((data ?? []).map((k: any) => ({ ...k, gender: (k as any).gender ?? 'Unknown' })))
     setLoading(false)
   }, [ctx])
 

@@ -89,7 +89,7 @@ export default function ParentsPage() {
       const [hhRes, memsRes, invsRes] = await Promise.all([
         supabase.from('households').select('id, name').eq('id', mb.household_id).maybeSingle(),
         supabase.from('household_members')
-          .select('user_id, display_name, color, role, relationship')
+          .select('user_id, display_name, color, role')
           .eq('household_id', mb.household_id),
         supabase.from('invites').select('id, code, invited_email, expires_at, accepted')
           .eq('household_id', mb.household_id).eq('accepted', false)
@@ -104,11 +104,11 @@ export default function ParentsPage() {
       setHousehold(hhRes.data)
 
       // Parse first/last from display_name if no explicit fields
-      const mems = (memsRes.data ?? []).map(m => {
+      const mems = (memsRes.data ?? []).map((m: any) => {
         const parts = (m.display_name ?? '').trim().split(' ')
         return {
           ...m,
-          relationship: m.relationship ?? 'Parent',
+          relationship: (m as any).relationship ?? 'Parent',
           first_name: parts[0] ?? '',
           last_name: parts.slice(1).join(' ') ?? '',
         }
