@@ -16,7 +16,7 @@ import {
   StarIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline'
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
 import { useHousehold } from '@/lib/household'
@@ -102,8 +102,6 @@ export default function DashboardPage() {
   const me = ctx?.members.find(m => m.user_id === ctx.myUserId)
   const co = ctx?.members.find(m => m.user_id !== ctx.myUserId)
 
-  useEffect(() => { if (ctx) loadData() }, [ctx])
-
   const loadData = useCallback(async () => {
     if (!ctx) return
     setPageLoad(true)
@@ -132,9 +130,21 @@ export default function DashboardPage() {
     setPageLoad(false)
   }, [ctx])
 
+  // Run loadData when ctx first becomes available (not on every ctx change)
+  const ctxIdRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (ctx && ctx.household_id !== ctxIdRef.current) {
+      ctxIdRef.current = ctx.household_id
+      loadData()
+    }
+  }, [ctx, loadData])
+
   // ── Add / Edit expense ─────────────────────────────────────────
   function openAdd() {
-    if (usage && !usage.can_add) return
+    // Only block if we definitively know plan is free AND over limit
+    if (usage && usage.plan === 'free' && usage.can_add === false) {
+      setSaveErr('Free plan limit reached (10 expenses). Upgrade to Premium to add more.'); return
+    }
     setEditingId(null); setForm(EMPTY); setReceiptFile(null); setReceiptPreview(null); setSaveErr(''); setExpenseModal(true)
   }
   function openEdit(exp: Expense) {

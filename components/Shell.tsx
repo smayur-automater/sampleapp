@@ -4,7 +4,7 @@ import {
   ArrowLeftStartOnRectangleIcon,
 } from '@heroicons/react/24/outline'
 import { useRouter, usePathname } from 'next/navigation'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import AuditPanel from '@/components/AuditPanel'
 
@@ -21,28 +21,38 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const router      = useRouter()
   const pathname    = usePathname()
   const [auditOpen, setAuditOpen] = useState(false)
-  const subRef      = useRef<{ unsubscribe: () => void } | null>(null)
+  // Store router in a ref so the effect doesn't re-run when router changes
+  const routerRef   = useRef(router)
+  routerRef.current = router
 
   useEffect(() => {
+    // Run exactly once on mount — never re-run
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
-          router.replace('/')
+        // Only redirect to login on genuine sign-out, not on token refresh
+        if (event === 'SIGNED_OUT') {
+          routerRef.current.replace('/')
         }
       }
     )
-    subRef.current = subscription
     return () => subscription.unsubscribe()
-  }, [router])
+  }, []) // empty deps — intentional, routerRef handles the stable reference
+
+  async function signOut() {
+    await supabase.auth.signOut()
+    router.replace('/')
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
       {/* ── TOP BAR ── */}
-      <header style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200, background: '#fff', borderBottom: '1px solid #e2e8f0' }}>
-
+      <header style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
+        background: '#fff', borderBottom: '1px solid #e2e8f0',
+      }}>
         {/* Row 1: brand + actions */}
-        <div style={{ height: 52, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px' }}>
+        <div style={{ height: 52, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px' }}>
           {/* Brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -51,26 +61,20 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               CoParent<span style={{ color: '#2ec4a0' }}> Pay</span>
             </span>
           </div>
-
           {/* Actions */}
           <div style={{ display: 'flex', gap: 6 }}>
             <button
               onClick={() => setAuditOpen(o => !o)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
-                padding: '5px 11px',
-                border: `1px solid ${auditOpen ? '#2563eb' : '#e2e8f0'}`,
-                borderRadius: 8,
-                background: auditOpen ? '#eff6ff' : '#fff',
-                fontSize: 12, fontWeight: 600,
-                color: auditOpen ? '#2563eb' : '#64748b',
-                cursor: 'pointer',
+                padding: '5px 11px', border: `1px solid ${auditOpen ? '#2563eb' : '#e2e8f0'}`,
+                borderRadius: 8, background: auditOpen ? '#eff6ff' : '#fff',
+                fontSize: 12, fontWeight: 600, color: auditOpen ? '#2563eb' : '#64748b', cursor: 'pointer',
               }}>
-              <BellAlertIcon style={{ width: 14, height: 14 }} />
-              Activity
+              <BellAlertIcon style={{ width: 14, height: 14 }} /> Activity
             </button>
             <button
-              onClick={async () => { await supabase.auth.signOut(); router.replace('/') }}
+              onClick={signOut}
               title="Sign out"
               style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', fontSize: 12, fontWeight: 600, color: '#64748b', cursor: 'pointer' }}>
               <ArrowLeftStartOnRectangleIcon style={{ width: 14, height: 14 }} />
@@ -78,10 +82,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* Row 2: tab navigation */}
+        {/* Row 2: tabs */}
         <div style={{ borderTop: '1px solid #f1f5f9', overflowX: 'auto', scrollbarWidth: 'none' } as React.CSSProperties}>
           <style>{`.tab-scroll::-webkit-scrollbar{display:none}`}</style>
-          <div className="tab-scroll" style={{ display: 'flex', overflowX: 'auto', scrollbarWidth: 'none' } as React.CSSProperties}>
+          <div className="tab-scroll" style={{ display: 'flex', width: '100%', scrollbarWidth: 'none' } as React.CSSProperties}>
             {TABS.map(({ path, label }) => {
               const active = pathname === path
               return (
@@ -89,13 +93,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                   key={path}
                   onClick={() => router.push(path)}
                   style={{
-                    flexShrink: 0, padding: '9px 18px',
-                    border: 'none', background: 'none', cursor: 'pointer',
-                    fontSize: 13, fontWeight: active ? 700 : 500,
-                    color: active ? '#1a3a6b' : '#64748b',
-                    whiteSpace: 'nowrap',
+                    flexShrink: 0, padding: '9px 18px', border: 'none', background: 'none',
+                    cursor: 'pointer', fontSize: 13, fontWeight: active ? 700 : 500,
+                    color: active ? '#1a3a6b' : '#64748b', whiteSpace: 'nowrap',
                     borderBottom: active ? '2.5px solid #1a3a6b' : '2.5px solid transparent',
-                    transition: 'all 0.15s',
+                    transition: 'color 0.15s',
                   }}>
                   {label}
                 </button>
@@ -107,7 +109,6 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
       <AuditPanel open={auditOpen} onClose={() => setAuditOpen(false)} />
 
-      {/* Content — offset below the 2-row header (52 + 38 = 90px) */}
       <main style={{ paddingTop: 90, minHeight: '100vh' }}>
         {children}
       </main>

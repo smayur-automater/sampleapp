@@ -11,10 +11,21 @@ create table if not exists public.admins (
 );
 alter table public.admins enable row level security;
 
--- Drop and recreate policy to avoid "already exists" error on re-run
+-- RLS policies for admins table
 drop policy if exists "admins can view own row" on public.admins;
+drop policy if exists "superuser insert"        on public.admins;
+drop policy if exists "superuser delete"        on public.admins;
+
+-- Logged-in users can see their own row
 create policy "admins can view own row" on public.admins
   for select using (user_id = auth.uid());
+
+-- SQL Editor / service role (no auth.uid) can insert and delete
+create policy "superuser insert" on public.admins
+  for insert with check (auth.uid() is null or auth.uid() = user_id);
+
+create policy "superuser delete" on public.admins
+  for delete using (auth.uid() is null or auth.uid() = user_id);
 
 -- 2. Helper: is current user an admin?
 create or replace function public.is_admin()
