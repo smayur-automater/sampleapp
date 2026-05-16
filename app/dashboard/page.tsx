@@ -74,6 +74,7 @@ export default function DashboardPage() {
   const [cats,        setCats]        = useState<Category[]>([])
   const [usage,       setUsage]       = useState<Usage | null>(null)
   const [splitRules,  setSplitRules]  = useState<Record<string, { split_pct: number; is_optional: boolean }>>({})
+  const [kidRules,    setKidRules]    = useState<Record<string, { split_pct: number; is_optional: boolean }>>({})
   const [currency,    setCurrency]    = useState('AUD')
   const [period,      setPeriod]      = useState<Period>('month')
   const [statusFilter,setStatusFilter]= useState<StatusFilter>('all')
@@ -115,15 +116,20 @@ export default function DashboardPage() {
         supabase.from('kids').select('id,name,color').eq('household_id', ctx.household_id).order('name'),
         supabase.from('categories').select('id,name,color').eq('household_id', ctx.household_id).order('name'),
         supabase.rpc('get_my_usage'),
-        supabase.from('split_rules').select('category_id,split_pct,is_optional').eq('household_id', ctx.household_id),
+        supabase.from('split_rules').select('category_id,kid_id,split_pct,is_optional').eq('household_id', ctx.household_id),
       ])
       setExpenses((e.data ?? []) as unknown as Expense[])
       setKids(k.data ?? [])
       setCats(c.data ?? [])
       if (!u.error && u.data) setUsage(u.data as Usage)
       const rulesMap: Record<string, { split_pct: number; is_optional: boolean }> = {}
-      ;(r.data ?? []).forEach((rule: any) => { rulesMap[rule.category_id] = { split_pct: rule.split_pct, is_optional: rule.is_optional } })
+      const kidRulesMap: Record<string, { split_pct: number; is_optional: boolean }> = {}
+      ;(r.data ?? []).forEach((rule: any) => {
+        if (rule.category_id) rulesMap[rule.category_id] = { split_pct: rule.split_pct, is_optional: rule.is_optional }
+        if (rule.kid_id)      kidRulesMap[rule.kid_id]   = { split_pct: rule.split_pct, is_optional: rule.is_optional }
+      })
       setSplitRules(rulesMap)
+      setKidRules(kidRulesMap)
     } catch (err) {
       console.error('loadData error:', err)
     }
@@ -141,11 +147,19 @@ export default function DashboardPage() {
 
   // ── Add / Edit expense ─────────────────────────────────────────
   function openAdd() {
-    // Only block if we definitively know plan is free AND over limit
     if (usage && usage.plan === 'free' && usage.can_add === false) {
       setSaveErr('Free plan limit reached (10 expenses). Upgrade to Premium to add more.'); return
     }
-    setEditingId(null); setForm(EMPTY); setReceiptFile(null); setReceiptPreview(null); setSaveErr(''); setExpenseModal(true)
+    // Auto-select if only one kid or one category — minimises clicks
+    const autoKid  = kids.length === 1  ? kids[0].id  : ''
+    const autoCat  = cats.length === 1  ? cats[0].id  : ''
+    const autoPaid = ctx?.myUserId ?? ''
+    const autoSplit = (autoKid && kidRules[autoKid] && !kidRules[autoKid].is_optional) ? kidRules[autoKid].split_pct
+                    : (autoCat && splitRules[autoCat] && !splitRules[autoCat].is_optional) ? splitRules[autoCat].split_pct
+                    : 50
+    setEditingId(null)
+    setForm({ ...EMPTY, kid_id: autoKid, category_id: autoCat, paid_by_user_id: autoPaid, split_pct: autoSplit })
+    setReceiptFile(null); setReceiptPreview(null); setSaveErr(''); setExpenseModal(true)
   }
   function openEdit(exp: Expense) {
     setEditingId(exp.id)
@@ -614,7 +628,7 @@ export default function DashboardPage() {
 
         {/* ── ANALYTICS ───────────────────────────────────── */}
         {tab === 'analytics' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
 
             {/* Settlement state pie */}
             {stats.outstandingTotal + stats.partialTotal + stats.settledTotal > 0 && (
@@ -774,43 +788,55 @@ export default function DashboardPage() {
               <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: 0 }}>{editingId ? 'Edit expense' : 'Add expense'}</h3>
               <button onClick={() => setExpenseModal(false)} style={{ width: 32, height: 32, background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><XMarkIcon style={{ width: 16, height: 16, color: "#64748b" }}/></button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div><label style={LBL}>Description *</label><input value={form.description} onChange={e => F({ description: e.target.value })} placeholder="e.g. School excursion" style={INP} autoFocus /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* Row 1: Description + Amount + Currency on one line */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 90px', gap: 8 }}>
+                <div><label style={LBL}>Description *</label><input value={form.description} onChange={e => F({ description: e.target.value })} placeholder="e.g. School excursion" style={INP} autoFocus /></div>
                 <div><label style={LBL}>Amount *</label><input type="number" value={form.amount} onChange={e => F({ amount: e.target.value })} placeholder="0.00" step="0.01" min="0" style={{ ...INP, fontVariantNumeric: 'tabular-nums' }} /></div>
                 <div><label style={LBL}>Currency</label><select value={form.currency} onChange={e => F({ currency: e.target.value })} style={{ ...INP, cursor: 'pointer' }}>{CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>)}</select></div>
               </div>
-              <div>
-                <label style={LBL}>Child *</label>
-                <select value={form.kid_id} onChange={e => F({ kid_id: e.target.value })} style={{ ...INP, cursor: 'pointer', color: form.kid_id ? '#0f172a' : '#94a3b8' }}>
-                  <option value="">Select child…</option>
-                  {kids.map(k => <option key={k.id} value={k.id}>{k.name}</option>)}
-                </select>
+              {/* Row 2: Child + Category side by side */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div>
+                  <label style={LBL}>Child *</label>
+                  <select value={form.kid_id} onChange={e => {
+                    const kidId = e.target.value
+                    const rule = kidRules[kidId]
+                    F({ kid_id: kidId, ...(rule && !rule.is_optional ? { split_pct: rule.split_pct } : {}) })
+                  }} style={{ ...INP, cursor: 'pointer', color: form.kid_id ? '#0f172a' : '#94a3b8' }}>
+                    <option value="">Child…</option>
+                    {kids.map(k => <option key={k.id} value={k.id}>{k.name}</option>)}
+                  </select>
+                  {form.kid_id && kidRules[form.kid_id] && (
+                    <div style={{ marginTop: 3, fontSize: 11, color: '#059669' }}>⚡ {kidRules[form.kid_id].split_pct}/{100 - kidRules[form.kid_id].split_pct} rule</div>
+                  )}
+                </div>
+                <div>
+                  <label style={LBL}>Category *</label>
+                  <select value={form.category_id} onChange={e => {
+                    const catId = e.target.value
+                    const rule = splitRules[catId]
+                    F({ category_id: catId, ...(rule && !rule.is_optional ? { split_pct: rule.split_pct } : {}) })
+                  }} style={{ ...INP, cursor: 'pointer', color: form.category_id ? '#0f172a' : '#94a3b8' }}>
+                    <option value="">Category…</option>
+                    {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                  {form.category_id && splitRules[form.category_id] && (
+                    <div style={{ marginTop: 3, fontSize: 11, color: '#059669' }}>⚡ {splitRules[form.category_id].split_pct}/{100 - splitRules[form.category_id].split_pct} rule</div>
+                  )}
+                </div>
               </div>
-              <div>
-                <label style={LBL}>Category *</label>
-                <select value={form.category_id} onChange={e => {
-                  const catId = e.target.value
-                  const rule = splitRules[catId]
-                  F({ category_id: catId, ...(rule && !rule.is_optional ? { split_pct: rule.split_pct } : {}) })
-                }} style={{ ...INP, cursor: 'pointer', color: form.category_id ? '#0f172a' : '#94a3b8' }}>
-                  <option value="">Select category…</option>
-                  {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                {form.category_id && splitRules[form.category_id] && (
-                  <div style={{ marginTop: 4, fontSize: 11, color: splitRules[form.category_id].is_optional ? '#d97706' : '#059669' }}>
-                    ⚡ {splitRules[form.category_id].is_optional ? 'Optional expense' : `Smart rule: ${splitRules[form.category_id].split_pct}/${100 - splitRules[form.category_id].split_pct}`}
-                  </div>
-                )}
+              {/* Row 3: Paid by + Date side by side */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div>
+                  <label style={LBL}>Paid by</label>
+                  <select value={form.paid_by_user_id} onChange={e => F({ paid_by_user_id: e.target.value })} style={{ ...INP, cursor: 'pointer' }}>
+                    <option value="">Not specified</option>
+                    {ctx?.members.map(m => <option key={m.user_id} value={m.user_id}>{m.display_name}{m.user_id === ctx.myUserId ? ' (you)' : ''}</option>)}
+                  </select>
+                </div>
+                <div><label style={LBL}>Date</label><input type="date" value={form.date} onChange={e => F({ date: e.target.value })} style={INP} /></div>
               </div>
-              <div>
-                <label style={LBL}>Paid by</label>
-                <select value={form.paid_by_user_id} onChange={e => F({ paid_by_user_id: e.target.value })} style={{ ...INP, cursor: 'pointer' }}>
-                  <option value="">Not specified</option>
-                  {ctx?.members.map(m => <option key={m.user_id} value={m.user_id}>{m.display_name}{m.user_id === ctx.myUserId ? ' (you)' : ''}</option>)}
-                </select>
-              </div>
-              <div><label style={LBL}>Date</label><input type="date" value={form.date} onChange={e => F({ date: e.target.value })} style={INP} /></div>
               <div>
                 <label style={LBL}>Split — {me?.display_name ?? 'You'}: <strong>{form.split_pct}%</strong> · {co?.display_name ?? 'Co-parent'}: <strong>{100 - form.split_pct}%</strong></label>
                 <input type="range" min="0" max="100" step="1" value={form.split_pct} onChange={e => F({ split_pct: parseInt(e.target.value) })} style={{ width: '100%', accentColor: '#0f172a' }} />
@@ -855,14 +881,22 @@ export default function DashboardPage() {
               <button onClick={() => setSettleModal(null)} style={{ width: 32, height: 32, background: '#f1f5f9', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><XMarkIcon style={{ width: 16, height: 16, color: "#64748b" }}/></button>
             </div>
 
-            {/* Expense summary */}
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 14px', marginBottom: 18 }}>
-              <div style={{ fontWeight: 700, fontSize: 15, color: '#0f172a', marginBottom: 4 }}>{settleModal.description}</div>
-              <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#64748b' }}>
-                <span>Total: <strong style={{ color: '#0f172a' }}>{sym(settleModal.currency)}{Number(settleModal.amount).toFixed(2)}</strong></span>
-                <span>Owed: <strong style={{ color: '#dc2626' }}>{sym(settleModal.currency)}{expenseOwed(settleModal).toFixed(2)}</strong></span>
-                <span>Settled: <strong style={{ color: '#059669' }}>{sym(settleModal.currency)}{Number(settleModal.settled_amount ?? 0).toFixed(2)}</strong></span>
+            {/* Balance hero — prominently shown */}
+            <div style={{ background: '#0f172a', borderRadius: 14, padding: '18px 20px', marginBottom: 18, textAlign: 'center' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+                Balance to settle
               </div>
+              <div style={{ fontSize: 42, fontWeight: 800, color: '#4ade80', letterSpacing: '-1.5px' }}>
+                {sym(settleModal.currency)}{(expenseOwed(settleModal) - Number(settleModal.settled_amount ?? 0)).toFixed(2)}
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>
+                of {sym(settleModal.currency)}{Number(settleModal.amount).toFixed(2)} total · {sym(settleModal.currency)}{Number(settleModal.settled_amount ?? 0).toFixed(2)} already settled
+              </div>
+            </div>
+            {/* Expense name */}
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>{settleModal.description}</div>
+              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{settleModal.kid?.name && `${settleModal.kid.name} · `}{settleModal.category?.name}</div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

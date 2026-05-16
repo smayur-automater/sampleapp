@@ -141,7 +141,7 @@ export default function KidsPage() {
                     </div>
                   </div>
 
-                  {isOwner ? (
+                  {(isOwner || true) ? ( // any household member can edit kids
                     <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                       <button onClick={() => openEdit(kid)} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '7px 11px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, cursor: 'pointer', fontSize: 12, color: '#374151', fontWeight: 600 }}>
                         <PencilIcon style={{ width: 12, height: 12 }} /> Edit

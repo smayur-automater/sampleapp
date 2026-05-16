@@ -373,17 +373,18 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                       <div style={{ marginBottom: 14 }}>
                         <div style={{ fontSize: 15, fontWeight: 700, color: 'rgba(255,255,255,0.8)' }}>Premium Plan</div>
                         <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', marginTop: 2 }}>
-                          $4.99 <span style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.6)' }}>/ month</span>
+                          $7.00 <span style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.6)' }}>/ month</span>
                         </div>
                       </div>
                       {[
-                        { text: 'Unlimited shared expenses',     star: true  },
-                        { text: 'Smart expense split rules',     star: true  },
-                        { text: 'Monthly statements & reports',  star: true  },
-                        { text: 'Receipt photo attachments',     star: true  },
-                        { text: 'Expense history & analytics',   star: true  },
-                        { text: 'Priority email support',        star: true  },
-                        { text: 'All Free plan features',        star: false },
+                        { text: 'Unlimited shared expenses (Free = 10 max)',  star: true  },
+                        { text: 'Smart split rules by category and child',    star: true  },
+                        { text: 'Monthly statements and expense reports',     star: true  },
+                        { text: 'Receipt photo attachments',                  star: true  },
+                        { text: 'Full expense history and analytics charts',  star: true  },
+                        { text: 'Export expenses to CSV',                     star: true  },
+                        { text: 'Priority support from CoParent Pay team',   star: true  },
+                        { text: 'All Free plan features included',            star: false },
                       ].map(f => (
                         <div key={f.text} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                           <CheckCircleIcon style={{ width: 16, height: 16, color: '#2ec4a0', flexShrink: 0 }} />
