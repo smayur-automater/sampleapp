@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 export default function InvitePage() {
-  const params = useRouter ? useParams() : null
+  const params = useParams()
   const router = useRouter()
   const code   = ((params?.code as string) ?? '').toUpperCase()
 
