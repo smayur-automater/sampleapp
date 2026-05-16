@@ -110,8 +110,19 @@ export default function AdminPage() {
 
   async function loadDetail(hhId: string) {
     setDetailLoading(true)
-    const { data } = await supabase.rpc('admin_get_household_detail', { hh_id: hhId })
-    setDetail(data); setDetailLoading(false)
+    try {
+      const { data, error } = await supabase.rpc('admin_get_household_detail', { hh_id: hhId })
+      if (error) { console.error('loadDetail error:', error); setDetailLoading(false); return }
+      // Ensure all arrays exist to prevent .map() crashes
+      if (data) {
+        data.members  = data.members  ?? []
+        data.kids     = data.kids     ?? []
+        data.expenses = data.expenses ?? []
+        data.invites  = data.invites  ?? []
+      }
+      setDetail(data)
+    } catch(e) { console.error('loadDetail exception:', e) }
+    setDetailLoading(false)
   }
 
   function ask(msg: string, action: () => void) { setConfirm({ msg, action }) }
@@ -583,9 +594,9 @@ export default function AdminPage() {
                   ) : detail ? (
                     <>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                        <div style={{ fontWeight: 700, fontSize: 15, color: '#f1f5f9' }}>{detail.household.name}</div>
+                        <div style={{ fontWeight: 700, fontSize: 15, color: '#f1f5f9' }}>{detail?.household?.name ?? ''}</div>
                         <div style={{ display: 'flex', gap: 6 }}>
-                          <button onClick={() => deleteHousehold(detail.household.id, detail.household.name)}
+                          <button onClick={() => deleteHousehold(detail?.household?.id, detail?.household?.name ?? '')}
                             style={{ padding: '5px 10px', border: '1px solid #7f1d1d', borderRadius: 7, background: '#450a0a', color: '#fca5a5', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
                             Delete household
                           </button>
@@ -598,7 +609,7 @@ export default function AdminPage() {
 
                       {/* Members */}
                       <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Members</div>
-                      {detail.members.map(m => (
+                      {(detail?.members ?? []).map(m => (
                         <div key={m.user_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #334155' }}>
                           <div style={{ width: 28, height: 28, borderRadius: 8, background: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
                             {m.display_name?.[0]?.toUpperCase()}
@@ -607,7 +618,7 @@ export default function AdminPage() {
                             <div style={{ fontSize: 13, color: '#f1f5f9' }}>{m.display_name}</div>
                             <div style={{ fontSize: 11, color: '#475569' }}>{m.email}</div>
                           </div>
-                          <button onClick={() => removeMember(detail.household.id, m.user_id, m.display_name)}
+                          <button onClick={() => removeMember(detail?.household?.id, m.user_id, m.display_name)}
                             style={{ padding: '3px 8px', border: '1px solid #334155', borderRadius: 6, background: 'transparent', color: '#64748b', fontSize: 11, cursor: 'pointer' }}>
                             Remove
                           </button>
@@ -615,11 +626,11 @@ export default function AdminPage() {
                       ))}
 
                       {/* Recent expenses */}
-                      {detail.expenses && detail.expenses.length > 0 && (
+                      {(detail?.expenses?.length ?? 0) > 0 && (
                         <>
                           <div style={{ fontSize: 11, fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '16px 0 8px' }}>Recent expenses</div>
                           <div style={{ maxHeight: 200, overflowY: 'auto' }}>
-                            {detail.expenses.slice(0, 20).map(e => (
+                            {(detail?.expenses ?? []).slice(0, 20).map(e => (
                               <div key={e.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #1e293b' }}>
                                 <div>
                                   <div style={{ fontSize: 12, color: '#cbd5e1' }}>{e.description}</div>
@@ -627,7 +638,7 @@ export default function AdminPage() {
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                   <span style={{ fontSize: 12, color: '#f1f5f9', fontWeight: 600 }}>{e.currency} {fmt(e.amount)}</span>
-                                  <button onClick={() => deleteExpense(e.id, e.description, detail.household.id)}
+                                  <button onClick={() => deleteExpense(e.id, e.description, detail?.household?.id)}
                                     style={{ width: 22, height: 22, background: '#450a0a', border: '1px solid #7f1d1d', borderRadius: 5, color: '#fca5a5', cursor: 'pointer', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     ✕
                                   </button>

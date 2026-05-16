@@ -50,8 +50,13 @@ export default function Page() {
 
   function redirect() {
     const inv = typeof window!=='undefined' ? localStorage.getItem('pendingInvite') : null
-    if (inv) { localStorage.removeItem('pendingInvite'); router.push(`/invite/${inv}`) }
-    else router.push('/dashboard')
+    if (inv) {
+      // Keep the code in localStorage — the invite page will read it
+      // Don't remove it here; remove it only after successful join
+      router.replace(`/invite/${inv}`)
+    } else {
+      router.replace('/dashboard')
+    }
   }
 
   async function signIn() {
