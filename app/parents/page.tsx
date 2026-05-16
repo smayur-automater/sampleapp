@@ -104,16 +104,13 @@ export default function ParentsPage() {
       setHousehold(hhRes.data)
 
       // Parse first/last from display_name if no explicit fields
-      const mems: Member[] = (memsRes.data ?? []).map((m: Record<string, any>) => {
+      const mems = (memsRes.data ?? []).map((m: any) => {
         const parts = (m.display_name ?? '').trim().split(' ')
         return {
-          user_id:      m.user_id as string,
-          display_name: m.display_name as string,
-          color:        (m.color as string) ?? '#1a3a6b',
-          role:         (m.role as string) ?? 'parent',
-          relationship: (m.relationship as string) ?? 'Parent',
-          first_name:   parts[0] ?? '',
-          last_name:    parts.slice(1).join(' ') ?? '',
+          ...m,
+          relationship: (m as any).relationship ?? 'Parent',
+          first_name: parts[0] ?? '',
+          last_name: parts.slice(1).join(' ') ?? '',
         }
       })
       setMembers(mems)
