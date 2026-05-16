@@ -104,13 +104,16 @@ export default function ParentsPage() {
       setHousehold(hhRes.data)
 
       // Parse first/last from display_name if no explicit fields
-      const mems = (memsRes.data ?? []).map((m: any) => {
+      const mems: Member[] = (memsRes.data ?? []).map((m: Record<string, any>) => {
         const parts = (m.display_name ?? '').trim().split(' ')
         return {
-          ...m,
-          relationship: (m as any).relationship ?? 'Parent',
-          first_name: parts[0] ?? '',
-          last_name: parts.slice(1).join(' ') ?? '',
+          user_id:      m.user_id as string,
+          display_name: m.display_name as string,
+          color:        (m.color as string) ?? '#1a3a6b',
+          role:         (m.role as string) ?? 'parent',
+          relationship: (m.relationship as string) ?? 'Parent',
+          first_name:   parts[0] ?? '',
+          last_name:    parts.slice(1).join(' ') ?? '',
         }
       })
       setMembers(mems)
@@ -173,15 +176,39 @@ export default function ParentsPage() {
     if (!inv) { setInviteErr('Failed to create invite — please try again'); return }
     const newInvite = inv as Invite
     setCreated(newInvite)
+
+    // Send email via Next.js API route (server-side Zoho SMTP — no edge function needed)
     setEmailStatus('sending'); setEmailErr('')
     try {
-      const { data, error: fnErr } = await supabase.functions.invoke('send-invite', {
-        body: { invite_id: newInvite.id, invite_code: newInvite.code, to_email: inviteEmail.trim().toLowerCase() },
+      const myMember = (await supabase
+        .from('household_members')
+        .select('display_name')
+        .eq('user_id', me.id)
+        .eq('household_id', household.id)
+        .maybeSingle()).data
+      const senderName = myMember?.display_name ?? me.email.split('@')[0]
+
+      const res = await fetch('/api/send-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to_email:    inviteEmail.trim().toLowerCase(),
+          invite_code: newInvite.code,
+          sender_name: senderName,
+          app_url:     window.location.origin,
+        }),
       })
-      if (fnErr) { setEmailStatus('failed'); setEmailErr('Copy the link below and share manually') }
-      else if (data?.ok) setEmailStatus('sent')
-      else { setEmailStatus('failed'); setEmailErr(data?.error ?? 'Email service error') }
-    } catch { setEmailStatus('failed'); setEmailErr('Copy the link below and share manually') }
+      const result = await res.json()
+      if (res.ok && result.ok) {
+        setEmailStatus('sent')
+      } else {
+        setEmailStatus('failed')
+        setEmailErr(result.error ?? 'Email failed — check SMTP settings in Vercel')
+      }
+    } catch (e: any) {
+      setEmailStatus('failed')
+      setEmailErr('Could not reach email server')
+    }
 
     await logAudit({ household_id: household.id, user_id: me.id, actor_name: me.email.split('@')[0], action: 'parent.invite', entity: inviteEmail.trim() })
     load()
@@ -377,18 +404,11 @@ export default function ParentsPage() {
                     <CheckIcon style={{ marginTop: 1, flexShrink: 0, width: 16, height: 16, color: '#059669' }} />
                     <div style={{ fontSize: 13, color: '#065f46', lineHeight: 1.5 }}>Invite link created for <strong>{created.invited_email}</strong>. Valid for 7 days.</div>
                   </div>
-                  {emailStatus === 'sending' && <div style={{ padding: '10px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, marginBottom: 12, fontSize: 13, color: '#1e40af', display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 14, height: 14, border: '2px solid #93c5fd', borderTopColor: '#0f172a', borderRadius: '50%', animation: 'spin .7s linear infinite', flexShrink: 0 }} /><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>Sending email…</div>}
+
+                  {emailStatus === 'sending' && <div style={{ padding: '10px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, marginBottom: 12, fontSize: 13, color: '#1e40af', display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 14, height: 14, border: '2px solid #93c5fd', borderTopColor: '#0f172a', borderRadius: '50%', animation: 'spin .7s linear infinite', flexShrink: 0 }} /><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>Sending email to {created?.invited_email}…</div>}
                   {emailStatus === 'sent' && <div style={{ padding: '10px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, marginBottom: 12, fontSize: 13, color: '#065f46', display: 'flex', alignItems: 'center', gap: 8 }}><CheckIcon style={{ width: 14, height: 14, flexShrink: 0 }} />Email sent to <strong style={{ marginLeft: 3 }}>{created?.invited_email}</strong></div>}
-                  {emailStatus === 'failed' && (
-                    <div style={{ padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, marginBottom: 12, fontSize: 13, color: '#92400e', lineHeight: 1.5 }}>
-                      <strong>Auto-email unavailable</strong> — use the Email button below to send via your email app.
-                      <div style={{ marginTop: 6 }}>
-                        <button onClick={() => shareEmail(created)} style={{ padding: '5px 12px', background: '#92400e', color: '#fff', border: 'none', borderRadius: 7, fontSize: 12, cursor: 'pointer', fontWeight: 700 }}>
-                          Open email app →
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  {emailStatus === 'failed' && <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, marginBottom: 12, fontSize: 13, color: '#dc2626', lineHeight: 1.5 }}><strong>Email failed</strong> — {emailErr}. Use the share buttons below.</div>}
+
                   <button onClick={() => copyLink(created.code)} style={{ width: '100%', padding: '14px 16px', background: copied ? '#f0fdf4' : '#1a3a6b', color: copied ? '#059669' : '#fff', border: copied ? '1.5px solid #bbf7d0' : 'none', borderRadius: 13, fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, marginBottom: 12, transition: 'all .2s' }}>
                     {copied ? <CheckIcon style={{ width: 18, height: 18 }} /> : <ClipboardDocumentIcon style={{ width: 18, height: 18 }} />}
                     {copied ? 'Copied!' : 'Copy invite link'}

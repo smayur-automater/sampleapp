@@ -47,7 +47,7 @@ export default function KidsPage() {
       .eq('household_id', ctx.household_id)
       .order('name')
     if (error) console.error('kids load error:', error.message)
-    setKids((data ?? []).map((k: any) => ({ ...k, gender: (k as any).gender ?? 'Unknown' })))
+    setKids((data ?? []).map((k: Record<string,any>) => ({ id:k.id, name:k.name, dob:k.dob??null, color:k.color??'#475569', gender:k.gender??'Unknown', created_by:k.created_by??null })))
     setLoading(false)
   }, [ctx])
 
