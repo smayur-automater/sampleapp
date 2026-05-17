@@ -230,12 +230,12 @@ export default function DashboardPage() {
     const cs = sym(currency)
     if (Math.abs(stats.balance) < 0.01) { showToast('No outstanding balance to settle'); return }
     // payer is who owes money, receiver is who is owed
-    const payer    = stats.balance >= 0 ? co.user_id  : me.user_id
-    const receiver = stats.balance >= 0 ? me.user_id  : co.user_id
+    // I (me) am the one requesting settlement — I am the payer in the SQL so
+    // pending_approval_by = me → the banner shows to co-parent only
     const currentMY = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`
     if (!confirm(`Send settlement request of ${cs}${Math.abs(stats.balance).toFixed(2)} to ${co.display_name} for approval?`)) return
     const {error} = await supabase.rpc('record_settlement',{
-      hh_id:ctx.household_id, paid_by_uid:payer, recv_by_uid:receiver,
+      hh_id:ctx.household_id, paid_by_uid:me.user_id, recv_by_uid:co.user_id,
       amt:Math.abs(stats.balance), curr:currency,
       note_text:`Monthly settlement`,
       settle_date:new Date().toISOString().split('T')[0],
