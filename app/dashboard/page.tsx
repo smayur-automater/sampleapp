@@ -405,7 +405,7 @@ export default function DashboardPage() {
 
         {/* ── PENDING APPROVALS BANNER ── */}
         {pendingMyApproval.length>0&&(
-          <div style={{background:'#fff',border:'1px solid #e2e8f0',borderBLeft:'3px solid #374151',borderRadius:6,padding:'14px 16px',marginBottom:14}}>
+          <div style={{background:'#fff',border:'1px solid #e2e8f0',borderLeft:'3px solid #374151',borderRadius:6,padding:'14px 16px',marginBottom:14}}>
             <div style={{fontSize:12,fontWeight:700,color:'#374151',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:10}}>
               Settlement approval required from {co?.display_name??'Co-parent'} · {pendingMyApproval.length} item{pendingMyApproval.length>1?'s':''}
             </div>
