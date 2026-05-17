@@ -1,18 +1,12 @@
+'use client'
 import React from 'react'
-
-export const metadata = {
-  title: 'Privacy Policy — CoParent Pay',
-  description: 'Privacy Policy for CoParent Pay by Xfiniti Technology Pty Ltd',
-}
+import Shell from '@/components/Shell'
 
 export default function PrivacyPolicy() {
   return (
-    <div style={{ minHeight:'100vh', background:'#fff', fontFamily:'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif', color:'#111827' }}>
-      <div style={{ borderBottom:'1px solid #e5e7eb', padding:'16px 24px', display:'flex', alignItems:'center', gap:12 }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt="CoParent Pay" style={{ width:32, height:32, objectFit:'contain' }} />
-        <span style={{ fontWeight:700, fontSize:16, color:'#111827' }}>CoParent Pay</span>
-      </div>
+    <Shell>
+    <div style={{ background:'#fff', fontFamily:'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif', color:'#111827' }}>
+      
 
       <div style={{ maxWidth:760, margin:'0 auto', padding:'48px 24px 80px' }}>
         <h1 style={{ fontSize:32, fontWeight:800, color:'#111827', marginBottom:6 }}>Privacy Policy</h1>
@@ -119,7 +113,7 @@ export default function PrivacyPolicy() {
             <p style={{ margin:'0 0 4px', fontSize:14, color:'#374151' }}>Australia</p>
             <p style={{ margin:'0 0 0', fontSize:14, color:'#374151' }}>Email: <a href="mailto:info@xfiniti.com.au" style={{ color:'#1d4ed8' }}>info@xfiniti.com.au</a> — we respond within 30 days</p>
           </div>
-          <P>If you believe we have not handled your personal information appropriately, you may lodge a complaint with the <strong>Office of the Australian Information Commissioner (OAIC)</strong> at <a href="https://www.oaic.gov.au" style={{ color:'#1d4ed8' }}>oaic.gov.au</a>, or your local data protection authority (EEA residents), or the California Attorney General (California residents).</P>
+
         </S>
 
         <div style={{ marginTop:48, paddingTop:24, borderTop:'1px solid #e5e7eb', fontSize:12, color:'#9ca3af' }}>
@@ -128,6 +122,7 @@ export default function PrivacyPolicy() {
         </div>
       </div>
     </div>
+    </Shell>
   )
 }
 

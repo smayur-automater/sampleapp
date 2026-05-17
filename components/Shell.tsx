@@ -20,9 +20,12 @@ const TABS = [
   { path: '/categories', label: 'Categories'    },
   { path: '/rules',      label: 'Expense Rules' },
   { path: '/statements', label: 'Statements'    },
-  { path: '/plan',       label: 'Plan'        },
-  { path: '/support',    label: 'Support'     },
-  { path: '/privacy',    label: 'Privacy'     },
+  { path: '/plan',       label: 'Plan'          },
+]
+
+const FOOTER_LINKS = [
+  { path: '/support', label: 'Support' },
+  { path: '/privacy', label: 'Privacy Policy' },
 ]
 
 interface Profile {
@@ -209,7 +212,19 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       </header>
 
       <AuditPanel open={audit} onClose={() => setAudit(false)} />
-      <main style={{ paddingTop: 90 }}>{children}</main>
+      <main style={{ paddingTop: 90, paddingBottom: 56 }}>{children}</main>
+
+      {/* ── FOOTER ── */}
+      <footer style={{ borderTop: '1px solid #e5e7eb', background: '#fff', padding: '12px 24px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 20 }}>
+        {FOOTER_LINKS.map(({ path, label }) => (
+          <button key={path} onClick={() => router.push(path)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500, color: '#9ca3af', padding: 0 }}>
+            {label}
+          </button>
+        ))}
+        <span style={{ fontSize: 12, color: '#e5e7eb' }}>|</span>
+        <span style={{ fontSize: 12, color: '#d1d5db' }}>&copy; {new Date().getFullYear()} CoParent Pay</span>
+      </footer>
 
       {/* ── PROFILE / UPGRADE PANEL ── */}
       {panel && (
