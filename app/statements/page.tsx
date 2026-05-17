@@ -768,7 +768,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                 )}
                 {/* Legend */}
                 <div style={{display:'flex',flexWrap:'wrap',gap:12,marginTop:10,justifyContent:'center'}}>
-                  {custData.map((d,i)=>(
+                  {custData.map((d:{name:string;value:number;color:string},i:number)=>(
                     <div key={i} style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'#6b7280'}}>
                       <div style={{width:9,height:9,borderRadius:2,background:d.color||CHART_COLORS[i%CHART_COLORS.length]}}/>
                       {d.name}: ${d.value.toFixed(2)}
