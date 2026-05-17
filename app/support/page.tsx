@@ -43,7 +43,7 @@ export default function SupportPage() {
 
         {sent ? (
           <div style={{background:'#f0fdf4',border:'2px solid #bbf7d0',borderRadius:16,padding:'40px 32px',textAlign:'center'}}>
-            <div style={{fontSize:48,marginBottom:16}}>✅</div>
+            
             <div style={{fontSize:20,fontWeight:800,color:'#059669',marginBottom:8}}>Message sent!</div>
             <p style={{fontSize:14,color:'#64748b',lineHeight:1.6,marginBottom:20}}>
               Thanks for reaching out. We&apos;ll reply to <strong>{form.email}</strong> within 24 hours.
@@ -96,7 +96,7 @@ export default function SupportPage() {
 
         {/* Direct contact */}
         <div style={{marginTop:24,padding:'16px 18px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:12,display:'flex',gap:12,alignItems:'flex-start'}}>
-          <span style={{fontSize:20}}>📧</span>
+          
           <div>
             <div style={{fontSize:14,fontWeight:700,color:'#0f172a',marginBottom:2}}>Direct contact</div>
             <div style={{fontSize:13,color:'#64748b'}}>You can also email us directly at <a href="mailto:info@xfiniti.com.au" style={{color:'#1a3a6b',fontWeight:600}}>info@xfiniti.com.au</a></div>

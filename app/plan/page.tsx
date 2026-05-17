@@ -79,7 +79,7 @@ export default function PlanPage() {
           {/* PREMIUM */}
           <div style={{background:'#1a3a6b',border:'2px solid #1a3a6b',borderRadius:16,padding:'20px',position:'relative',overflow:'hidden'}}>
             {plan==='premium'&&<div style={{position:'absolute',top:14,right:14,padding:'3px 10px',background:'#2ec4a0',color:'#fff',borderRadius:99,fontSize:11,fontWeight:700}}>Active</div>}
-            <div style={{position:'absolute',top:14,right:plan==='premium'?70:14,padding:'3px 10px',background:'rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.9)',borderRadius:99,fontSize:11,fontWeight:700}}>⭐ Recommended</div>
+            <div style={{position:'absolute',top:14,right:plan==='premium'?70:14,padding:'3px 10px',background:'rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.9)',borderRadius:99,fontSize:11,fontWeight:700}}>Recommended</div>
             <div style={{fontSize:16,fontWeight:800,color:'rgba(255,255,255,0.7)',marginBottom:4,marginTop:8}}>Premium</div>
             <div style={{fontSize:28,fontWeight:800,color:'#fff',marginBottom:4}}>$7<span style={{fontSize:13,fontWeight:400,color:'rgba(255,255,255,0.55)'}}> / month</span></div>
             <div style={{fontSize:12,color:'rgba(255,255,255,0.5)',marginBottom:18}}>Unlock everything</div>

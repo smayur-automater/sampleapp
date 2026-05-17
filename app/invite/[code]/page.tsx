@@ -98,7 +98,7 @@ export default function InvitePage() {
         {/* NOT SIGNED IN */}
         {status === 'login_needed' && (
           <>
-            <div style={{ fontSize: 44, marginBottom: 14 }}>👋</div>
+            
             <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', marginBottom: 10 }}>
               You&apos;ve been invited!
             </h2>
@@ -124,7 +124,7 @@ export default function InvitePage() {
         {/* SUCCESS */}
         {status === 'success' && (
           <>
-            <div style={{ fontSize: 48, marginBottom: 14 }}>🎉</div>
+            
             <h2 style={{ fontSize: 20, fontWeight: 800, color: '#059669', marginBottom: 8 }}>
               You&apos;re in!
             </h2>
@@ -141,7 +141,7 @@ export default function InvitePage() {
         {/* ERROR */}
         {status === 'error' && (
           <>
-            <div style={{ fontSize: 44, marginBottom: 14 }}>⚠️</div>
+            
             <h2 style={{ fontSize: 20, fontWeight: 800, color: '#dc2626', marginBottom: 8 }}>
               Couldn&apos;t join
             </h2>

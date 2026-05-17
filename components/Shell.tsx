@@ -20,8 +20,8 @@ const TABS = [
   { path: '/categories', label: 'Categories'    },
   { path: '/rules',      label: 'Expense Rules' },
   { path: '/statements', label: 'Statements'    },
-  { path: '/plan',       label: '⭐ Plan'        },
-  { path: '/support',    label: '💬 Support'     },
+  { path: '/plan',       label: 'Plan'        },
+  { path: '/support',    label: 'Support'     },
 ]
 
 interface Profile {
@@ -174,7 +174,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             {profile && (
               <button onClick={() => { setPanel('profile'); setSaveOk(''); setSaveErr(''); setPwOk(''); setPwErr(''); setChangePw(false) }}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px 4px 4px', border: '1px solid #e2e8f0', borderRadius: 99, background: '#fff', cursor: 'pointer' }}>
-                <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#1a3a6b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
+                <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
                   {profile.initials}
                 </div>
                 <span style={{ fontSize: 12, fontWeight: 600, color: '#374151', maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -228,7 +228,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                 </button>
                 <button onClick={() => setPanel('upgrade')}
                   style={{ padding: '7px 14px', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: panel === 'upgrade' ? 700 : 500, background: panel === 'upgrade' ? '#fff' : 'transparent', color: panel === 'upgrade' ? '#d97706' : '#64748b', boxShadow: panel === 'upgrade' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <StarIcon style={{ width: 13, height: 13 }} /> {isPremium ? 'Premium' : 'Upgrade'}
+                  {isPremium ? 'Premium' : 'Upgrade'}
                 </button>
               </div>
               <button onClick={() => setPanel(null)}
@@ -243,7 +243,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
                 {/* Avatar */}
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-                  <div style={{ width: 70, height: 70, borderRadius: '50%', background: '#1a3a6b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 26 }}>
+                  <div style={{ width: 70, height: 70, borderRadius: '50%', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 26 }}>
                     {profile.initials}
                   </div>
                 </div>
@@ -251,7 +251,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                 {/* Plan badge */}
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
                   {isPremium
-                    ? <span style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 12px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 99, fontSize: 12, fontWeight: 700, color: '#d97706' }}>★ Premium plan</span>
+                    ? <span style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 12px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 99, fontSize: 12, fontWeight: 700, color: '#d97706' }}>Premium plan</span>
                     : <button onClick={() => setPanel('upgrade')} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 99, fontSize: 12, fontWeight: 600, color: '#64748b', cursor: 'pointer' }}>Free plan · <span style={{ color: '#1a3a6b', fontWeight: 700 }}>Upgrade →</span></button>
                   }
                 </div>
@@ -281,7 +281,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                   </div>
 
                   {/* Save feedback */}
-                  {saveOk  && <div style={{ padding: '9px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 9, fontSize: 13, color: '#059669' }}>✓ {saveOk}</div>}
+                  {saveOk  && <div style={{ padding: '9px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 9, fontSize: 13, color: '#059669' }}>{saveOk}</div>}
                   {saveErr && <div style={{ padding: '9px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 9, fontSize: 13, color: '#dc2626' }}>{saveErr}</div>}
 
                   <button onClick={saveProfile} disabled={saving}
@@ -308,7 +308,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                           <input type="password" value={pw2} onChange={e => { setPw2(e.target.value); setPwErr('') }} placeholder="Re-enter password" style={INP} />
                         </div>
                         {pwErr && <div style={{ padding: '9px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 9, fontSize: 13, color: '#dc2626' }}>{pwErr}</div>}
-                        {pwOk  && <div style={{ padding: '9px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 9, fontSize: 13, color: '#059669' }}>✓ {pwOk}</div>}
+                        {pwOk  && <div style={{ padding: '9px 12px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 9, fontSize: 13, color: '#059669' }}>{pwOk}</div>}
                         <button onClick={changePassword} disabled={pwSaving}
                           style={{ padding: 13, background: pwSaving ? '#94a3b8' : '#1a3a6b', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: pwSaving ? 'not-allowed' : 'pointer' }}>
                           {pwSaving ? 'Updating…' : 'Update password'}
@@ -368,7 +368,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                     </div>
 
                     {/* Premium tier */}
-                    <div style={{ background: '#1a3a6b', border: '2px solid #1a3a6b', borderRadius: 14, padding: 18, marginBottom: 20, position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ background: '#0f172a', border: '2px solid #1a3a6b', borderRadius: 14, padding: 18, marginBottom: 20, position: 'relative', overflow: 'hidden' }}>
                       <div style={{ position: 'absolute', top: 12, right: 12, padding: '3px 10px', background: '#2ec4a0', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#fff' }}>
                         RECOMMENDED
                       </div>
@@ -410,7 +410,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                       window.open(`mailto:info@xfiniti.com.au?subject=${subject}&body=${body}`)
                     }}
                       style={{ width: '100%', padding: 14, background: '#d97706', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                      ✉️ Request Premium upgrade
+                      Request Premium upgrade
                     </button>
                   </>
                 )}

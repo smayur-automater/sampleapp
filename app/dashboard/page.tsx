@@ -193,34 +193,36 @@ export default function DashboardPage() {
   }
 
   async function submitSettlement() {
-    if (!settleModal||!ctx) return
+    if (!settleModal||!ctx||!co||!me) return
     const amt = parseFloat(settleForm.amount)
     if (isNaN(amt)||amt<=0) return
     setSettling(true)
-    const payer    = settleModal.created_by===ctx.myUserId ? co?.user_id : ctx.myUserId
-    const receiver = settleModal.created_by===ctx.myUserId ? ctx.myUserId : co?.user_id
-    if (!payer||!receiver) { setSettling(false); return }
+    // The person clicking Settle is the one making the payment (payer = me)
+    // pending_approval_by is set to paid_by_uid (me) in the SQL
+    // so the OTHER parent (co) sees the approval banner
     const {error} = await supabase.rpc('record_settlement',{
-      hh_id:ctx.household_id, paid_by_uid:payer, recv_by_uid:receiver,
+      hh_id:ctx.household_id,
+      paid_by_uid:ctx.myUserId,   // I am paying
+      recv_by_uid:co.user_id,      // co-parent receives / confirms
       amt, curr:settleModal.currency, note_text:settleForm.note||null,
       settle_date:settleForm.settlement_date, exp_id:settleModal.id, month_yr:null,
     })
     setSettling(false)
     if (error) { alert(error.message); return }
     setSettleModal(null); loadData()
-    showToast(`Settlement sent to ${co?.display_name??'co-parent'} for approval`)
+    showToast(`Settlement request sent to ${co.display_name} for approval`)
   }
 
   async function approveSettlement(expId: string) {
     const {error} = await supabase.rpc('approve_settlement', {exp_id:expId})
     if (error) { alert(error.message); return }
-    loadData(); showToast('Settlement approved ✓')
+    loadData(); showToast('Settlement approved')
   }
 
   async function rejectSettlement(expId: string) {
     const {error} = await supabase.rpc('reject_settlement', {exp_id:expId})
     if (error) { alert(error.message); return }
-    loadData(); showToast('Settlement rejected — marked as unpaid')
+    loadData(); showToast('Settlement rejected')
   }
 
   async function requestMonthSettlement() {
@@ -275,8 +277,34 @@ export default function DashboardPage() {
     filtered.forEach(e => { myShare += Number(e.amount)*(e.created_by===ctx?.myUserId?e.split_pct:100-e.split_pct)/100 })
     const theirs = total - myShare
     const mePaid = me ? filtered.filter(e=>e.paid_by_user_id===me.user_id).reduce((s,e)=>s+Number(e.amount),0) : 0
-    // balance = what I've paid minus what I should pay. Positive = co owes me; negative = I owe co
-    const balance = mePaid - myShare
+    // Balance = money I've paid minus my share, BUT exclude already settled/pending amounts
+    // settled_amount tracks what has been paid toward each expense
+    // balance only counts OUTSTANDING (unpaid) portion
+    let settledByMe = 0
+    filtered.forEach(e => {
+      // If I paid this expense and it's been settled, subtract the settled portion from what co owes me
+      if (e.paid_by_user_id===ctx?.myUserId && (e.settlement_status==='settled'||e.settlement_status==='pending_approval')) {
+        settledByMe += Number(e.settled_amount??0)
+      }
+    })
+    // Simpler and more accurate: sum outstanding owed amounts across all unsettled expenses
+    let outstandingOwed = 0
+    filtered.forEach(e => {
+      if (e.settlement_status==='outstanding'||e.settlement_status==='partial') {
+        const iMine = e.created_by===ctx?.myUserId
+        const myPortion = Number(e.amount)*(iMine?e.split_pct:100-e.split_pct)/100
+        const theirPortion = Number(e.amount) - myPortion
+        // If I paid this expense, co owes me theirPortion (minus what's settled)
+        if (e.paid_by_user_id===ctx?.myUserId) {
+          outstandingOwed += theirPortion - Number(e.settled_amount??0)
+        }
+        // If co paid, I owe them myPortion (minus what's settled)
+        if (e.paid_by_user_id!==ctx?.myUserId && e.paid_by_user_id!=null) {
+          outstandingOwed -= myPortion - Number(e.settled_amount??0)
+        }
+      }
+    })
+    const balance = outstandingOwed
 
     const outstanding    = filtered.filter(e=>e.settlement_status==='outstanding')
     const settledArr     = filtered.filter(e=>e.settlement_status==='settled')
@@ -331,8 +359,8 @@ export default function DashboardPage() {
     <Shell><div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'80px 24px',textAlign:'center',fontFamily:'system-ui,sans-serif'}}>
       <div style={{width:48,height:48,border:'3px solid #e2e8f0',borderTopColor:'#0f172a',borderRadius:'50%',animation:'spin .7s linear infinite',marginBottom:20}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{fontSize:18,fontWeight:700,color:'#0f172a',marginBottom:8}}>Setting up your account…</div>
-      <div style={{fontSize:14,color:'#64748b',lineHeight:1.6}}>Creating your household and categories.</div>
+      <div style={{fontSize:18,fontWeight:700,color:'#0f172a',marginBottom:8}}>Initialising account</div>
+      <div style={{fontSize:14,color:'#64748b',lineHeight:1.6}}>Setting up your household. This may take a moment.</div>
     </div></Shell>
   )
   if (ctxLoading) return <Shell><div style={{display:'flex',justifyContent:'center',padding:60}}><div style={{width:28,height:28,border:'2px solid #e2e8f0',borderTopColor:'#0f172a',borderRadius:'50%',animation:'spin .7s linear infinite'}}/><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div></Shell>
@@ -348,9 +376,9 @@ export default function DashboardPage() {
           <div>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
               <h1 style={{fontSize:20,fontWeight:800,color:'#0f172a',margin:0}}>
-                Hello, {me?.display_name?.split(' ')[0]??'there'} 👋
+                Welcome back, {me?.display_name??''}
               </h1>
-              {isPremium&&<span style={{display:'flex',alignItems:'center',gap:3,padding:'2px 8px',background:'#fef3c7',border:'1px solid #fde68a',borderRadius:99,fontSize:11,fontWeight:700,color:'#d97706'}}><StarIcon style={{width:10,height:10}}/> Premium</span>}
+              {isPremium&&<span style={{display:'flex',alignItems:'center',gap:4,padding:'2px 10px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:4,fontSize:11,fontWeight:600,color:'#374151',letterSpacing:'0.04em',textTransform:'uppercase'}}><StarIcon style={{width:10,height:10}}/> Premium</span>}
             </div>
             <p style={{fontSize:13,color:'#64748b',margin:'2px 0 0'}}>{co?`Shared with ${co.display_name}`:'Your household'}</p>
           </div>
@@ -377,9 +405,9 @@ export default function DashboardPage() {
 
         {/* ── PENDING APPROVALS BANNER ── */}
         {pendingMyApproval.length>0&&(
-          <div style={{background:'#f5f3ff',border:'2px solid #7c3aed',borderRadius:14,padding:'14px 16px',marginBottom:14}}>
-            <div style={{fontSize:13,fontWeight:800,color:'#7c3aed',marginBottom:10}}>
-              🔔 {co?.display_name??'Co-parent'} is requesting settlement approval · {pendingMyApproval.length} item{pendingMyApproval.length>1?'s':''}
+          <div style={{background:'#fff',border:'1px solid #e2e8f0',borderBLeft:'3px solid #374151',borderRadius:6,padding:'14px 16px',marginBottom:14}}>
+            <div style={{fontSize:12,fontWeight:700,color:'#374151',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:10}}>
+              Settlement approval required from {co?.display_name??'Co-parent'} · {pendingMyApproval.length} item{pendingMyApproval.length>1?'s':''}
             </div>
             {pendingMyApproval.map(exp=>(
               <div key={exp.id} style={{background:'#fff',borderRadius:10,padding:'10px 12px',marginBottom:8,display:'flex',alignItems:'center',gap:10}}>
@@ -405,24 +433,24 @@ export default function DashboardPage() {
           </div>
         )}
         {awaitingTheirApproval.length>0&&(
-          <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:12,padding:'10px 14px',marginBottom:14,fontSize:13,color:'#92400e'}}>
-            ⏳ <strong>{awaitingTheirApproval.length} settlement{awaitingTheirApproval.length>1?'s':''}</strong> sent to {co?.display_name??'co-parent'} — waiting for approval
+          <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:6,padding:'10px 14px',marginBottom:14,fontSize:13,color:'#374151',display:'flex',alignItems:'center'}}>
+            <ClockIcon style={{width:13,height:13,marginRight:5,display:'inline',verticalAlign:'middle'}}/><strong>{awaitingTheirApproval.length} settlement{awaitingTheirApproval.length>1?'s':''}</strong> submitted to {co?.display_name??'co-parent'} — pending their approval
           </div>
         )}
 
         {/* ── BALANCE HERO ── */}
         {me&&co&&(
-          <div style={{background:stats.balance>=0?'#fff4f4':'#f0f9ff',border:`2px solid ${stats.balance>=0?'#fecaca':'#bae6fd'}`,borderRadius:16,padding:'20px',marginBottom:14}}>
+          <div style={{background:'#fff',border:'1px solid #e2e8f0',borderLeft:`3px solid ${stats.balance>=0?'#dc2626':'#374151'}`,borderRadius:6,padding:'20px',marginBottom:14}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12}}>
               <div style={{flex:1}}>
-                <div style={{fontSize:13,fontWeight:700,color:'#64748b',marginBottom:4}}>
-                  {stats.balance>=0 ? 'You are owed' : 'You owe'}
+                <div style={{fontSize:11,fontWeight:600,color:'#6b7280',marginBottom:4,textTransform:'uppercase',letterSpacing:'0.06em'}}>
+                  {stats.balance>=0 ? 'Outstanding receivable' : 'Outstanding payable'}
                 </div>
                 <div style={{fontSize:42,fontWeight:800,color:stats.balance>=0?'#dc2626':'#1a3a6b',letterSpacing:'-1.5px',marginBottom:6}}>
                   {cs}{Math.abs(stats.balance).toFixed(2)}
                 </div>
                 <div style={{fontSize:12,color:'#94a3b8',marginBottom:12}}>
-                  {stats.balance>=0?`${co.display_name} owes you this amount`:`You owe ${co.display_name} this amount`}
+                  {stats.balance>=0?`${co.display_name} owes you`:`You owe ${co.display_name}`}
                   {' · '}{period==='month'?new Date().toLocaleDateString('en-AU',{month:'long',year:'numeric'}):period==='3month'?'Last 3 months':period==='year'?'This year':'All time'}
                 </div>
                 {/* Progress bar */}
@@ -442,16 +470,16 @@ export default function DashboardPage() {
               {Math.abs(stats.balance)>0.01&&(
                 <div style={{display:'flex',flexDirection:'column',gap:8,flexShrink:0,minWidth:160}}>
                   <button onClick={requestMonthSettlement}
-                    style={{padding:'12px 16px',background:'#059669',color:'#fff',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:7}}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+                    style={{padding:'10px 16px',background:'#0f172a',color:'#fff',border:'none',borderRadius:4,fontSize:13,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6,letterSpacing:'0.02em'}}>
+                    <ArrowDownTrayIcon style={{width:14,height:14}}/>
                     Request Settlement
                   </button>
                 </div>
               )}
               {Math.abs(stats.balance)<=0.01&&stats.count>0&&(
-                <div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 14px',background:'#f0fdf4',borderRadius:10,flexShrink:0}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 14px',background:'#f0fdf4',borderRadius:4,border:'1px solid #d1fae5',flexShrink:0}}>
                   <CheckCircleIcon style={{width:18,height:18,color:'#059669'}}/>
-                  <span style={{fontSize:13,fontWeight:600,color:'#059669'}}>All settled 🎉</span>
+                  <span style={{fontSize:13,fontWeight:600,color:'#059669'}}>All settled</span>
                 </div>
               )}
             </div>
@@ -467,7 +495,7 @@ export default function DashboardPage() {
           ]).map(({status,count,total})=>{
             const cfg = STATUS_CONFIG[status]
             return (
-              <div key={status} style={{background:cfg.bg,border:`1px solid ${cfg.border}`,borderRadius:12,padding:'12px 10px'}}>
+              <div key={status} style={{background:'#fff',border:'1px solid #e2e8f0',borderBottom:`2px solid ${cfg.color}`,borderRadius:6,padding:'12px 10px'}}>
                 <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:5}}>
                   <cfg.Icon style={{width:12,height:12,color:cfg.color}}/>
                   <span style={{fontSize:10,fontWeight:700,color:cfg.color,textTransform:'uppercase',letterSpacing:'0.04em'}}>{cfg.label}</span>
@@ -482,7 +510,7 @@ export default function DashboardPage() {
         {/* ── TABS ── */}
         <div style={{display:'flex',background:'#fff',border:'1px solid #e2e8f0',borderRadius:10,padding:3,marginBottom:12,gap:2}}>
           {(['overview','analytics','expenses'] as const).map(t=>(
-            <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:'7px 0',border:'none',borderRadius:8,background:tab===t?'#0f172a':'transparent',color:tab===t?'#fff':'#64748b',fontSize:13,fontWeight:600,cursor:'pointer',textTransform:'capitalize'}}>
+            <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:'7px 0',border:'none',borderRadius:8,background:tab===t?'#0f172a':'transparent',color:tab===t?'#fff':'#64748b',fontSize:12,fontWeight:600,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.05em'}}>
               {t.charAt(0).toUpperCase()+t.slice(1)}
             </button>
           ))}
@@ -491,7 +519,7 @@ export default function DashboardPage() {
         {/* Period pills */}
         <div style={{display:'flex',gap:6,marginBottom:16,flexWrap:'wrap'}}>
           {PERIODS.map(p=>(
-            <button key={p.key} onClick={()=>setPeriod(p.key)} style={{padding:'5px 12px',border:period===p.key?'1.5px solid #0f172a':'1px solid #e2e8f0',borderRadius:99,background:period===p.key?'#0f172a':'#fff',color:period===p.key?'#fff':'#64748b',fontSize:12,fontWeight:period===p.key?600:400,cursor:'pointer'}}>
+            <button key={p.key} onClick={()=>setPeriod(p.key)} style={{padding:'5px 12px',border:period===p.key?'1px solid #0f172a':'1px solid #e2e8f0',borderRadius:3,background:period===p.key?'#0f172a':'#fff',color:period===p.key?'#fff':'#64748b',fontSize:12,fontWeight:period===p.key?600:400,cursor:'pointer'}}>
               {p.label}
             </button>
           ))}
@@ -507,9 +535,8 @@ export default function DashboardPage() {
               {label:co?.display_name??'Theirs', value:`${cs}${stats.theirs.toFixed(2)}`,  sub:`${stats.total>0?(stats.theirs/stats.total*100).toFixed(0):0}% share`, color:co?.color??'#94a3b8'},
             ].map(s=>(
               <div key={s.label} style={{background:'#fff',border:'1px solid #e2e8f0',borderRadius:12,padding:'12px'}}>
-                <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:5}}>
-                  <div style={{width:6,height:6,borderRadius:'50%',background:s.color}}/>
-                  <span style={{fontSize:10,fontWeight:600,color:'#94a3b8',letterSpacing:'0.05em',textTransform:'uppercase',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{s.label}</span>
+                <div style={{marginBottom:5}}>
+                  <span style={{fontSize:10,fontWeight:600,color:'#94a3b8',letterSpacing:'0.05em',textTransform:'uppercase',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'block'}}>{s.label}</span>
                 </div>
                 <div style={{fontSize:16,fontWeight:700,color:'#0f172a'}}>{s.value}</div>
                 <div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{s.sub}</div>
@@ -519,8 +546,8 @@ export default function DashboardPage() {
 
           {/* Add button */}
           <button onClick={openAdd} disabled={atLimit}
-            style={{width:'100%',padding:13,background:atLimit?'#e2e8f0':'#0f172a',color:atLimit?'#94a3b8':'#fff',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:atLimit?'not-allowed':'pointer',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-            {atLimit?<><LockClosedIcon style={{width:15,height:15}}/> Limit reached — upgrade to Premium</>:<><PlusIcon strokeWidth={2.5} style={{width:18,height:18}}/> Add expense</>}
+            style={{width:'100%',padding:'11px 16px',background:atLimit?'#f1f5f9':'#0f172a',color:atLimit?'#9ca3af':'#fff',border:'none',borderRadius:4,fontSize:14,fontWeight:600,cursor:atLimit?'not-allowed':'pointer',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            {atLimit?<><LockClosedIcon style={{width:14,height:14}}/> Expense limit reached — upgrade to Premium</>:<><PlusIcon style={{width:15,height:15}}/> Add expense</>}
           </button>
 
           <div style={{fontSize:11,fontWeight:700,color:'#94a3b8',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:10}}>
@@ -530,8 +557,7 @@ export default function DashboardPage() {
           {pageLoad?<div style={{textAlign:'center',padding:40,color:'#94a3b8'}}>Loading…</div>
           :filtered.length===0?(
             <div style={{background:'#fff',border:'1px solid #e2e8f0',borderRadius:14,padding:'36px 24px',textAlign:'center'}}>
-              <BanknotesIcon style={{margin:'0 auto 12px',display:'block',width:32,height:32,color:'#cbd5e1'}}/>
-              <p style={{fontSize:14,color:'#64748b',margin:0}}>No expenses this period</p>
+              <p style={{fontSize:14,color:'#9ca3af',margin:0}}>No expenses for this period.</p>
             </div>
           ):(
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
@@ -556,25 +582,25 @@ export default function DashboardPage() {
                           <span>{exp.category?.name}</span>
                           <span>·</span>
                           <span>{new Date(exp.date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</span>
-                          {payer&&<><span>·</span><span style={{fontWeight:600,color:payer.user_id===ctx?.myUserId?'#1a3a6b':'#059669'}}>{payer.user_id===ctx?.myUserId?'You':payer.display_name} paid</span></>}
+                          {payer&&<><span>·</span><span style={{fontWeight:500,color:'#6b7280'}}>{payer.user_id===ctx?.myUserId?'You':payer.display_name} paid</span></>}
                         </div>
                       </div>
                       <div style={{textAlign:'right',flexShrink:0}}>
                         <div style={{fontWeight:700,fontSize:14,color:'#0f172a'}}>{sym(exp.currency)}{Number(exp.amount).toFixed(2)}</div>
                         <div style={{fontSize:10,color:'#94a3b8'}}>{exp.split_pct}/{100-exp.split_pct}</div>
                       </div>
-                      <div style={{display:'flex',alignItems:'center',gap:3,padding:'3px 7px',borderRadius:99,background:cfg.bg,border:`1px solid ${cfg.border}`,flexShrink:0}}>
+                      <div style={{display:'flex',alignItems:'center',gap:3,padding:'2px 7px',borderRadius:3,background:cfg.bg,border:`1px solid ${cfg.border}`,flexShrink:0}}>
                         <cfg.Icon style={{width:11,height:11,color:cfg.color}}/>
                         <span style={{fontSize:10,fontWeight:700,color:cfg.color}}>{cfg.label}</span>
                       </div>
                       <div style={{display:'flex',gap:3,flexShrink:0}}>
                         {exp.receipt_url&&<button onClick={()=>setViewReceipt(exp.receipt_url)} style={{padding:4,background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:6,cursor:'pointer',display:'flex'}}><PaperClipIcon style={{width:12,height:12,color:'#374151'}}/></button>}
                         {isOwner&&exp.settlement_status==='outstanding'&&<button onClick={()=>openEdit(exp)} style={{padding:4,background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:6,cursor:'pointer',display:'flex'}}><PencilIcon style={{width:12,height:12,color:'#64748b'}}/></button>}
-                        {exp.settlement_status==='outstanding'&&<button onClick={()=>openSettle(exp)} style={{padding:'3px 7px',background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:6,cursor:'pointer',fontSize:10,fontWeight:700,color:'#059669',display:'flex',alignItems:'center',gap:2}}><CheckCircleIcon style={{width:11,height:11}}/> Settle</button>}
+                        {exp.settlement_status==='outstanding'&&<button onClick={()=>openSettle(exp)} style={{padding:'3px 8px',background:'#fff',border:'1px solid #d1d5db',borderRadius:3,cursor:'pointer',fontSize:11,fontWeight:500,color:'#374151',display:'flex',alignItems:'center',gap:3}}>Settle</button>}
                         {canApprove&&(
                           <>
-                            <button onClick={()=>approveSettlement(exp.id)} style={{padding:'3px 7px',background:'#059669',border:'none',borderRadius:6,cursor:'pointer',fontSize:10,fontWeight:700,color:'#fff',display:'flex',alignItems:'center',gap:2}}><HandThumbUpIcon style={{width:11,height:11}}/> Approve</button>
-                            <button onClick={()=>rejectSettlement(exp.id)} style={{padding:'3px 7px',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:6,cursor:'pointer',fontSize:10,fontWeight:700,color:'#dc2626',display:'flex',alignItems:'center',gap:2}}><HandThumbDownIcon style={{width:11,height:11}}/> Reject</button>
+                            <button onClick={()=>approveSettlement(exp.id)} style={{padding:'3px 8px',background:'#059669',border:'none',borderRadius:3,cursor:'pointer',fontSize:11,fontWeight:600,color:'#fff',display:'flex',alignItems:'center',gap:3}}><HandThumbUpIcon style={{width:11,height:11}}/> Approve</button>
+                            <button onClick={()=>rejectSettlement(exp.id)} style={{padding:'3px 8px',background:'#fff',border:'1px solid #fecaca',borderRadius:3,cursor:'pointer',fontSize:11,fontWeight:600,color:'#dc2626',display:'flex',alignItems:'center',gap:3}}><HandThumbDownIcon style={{width:11,height:11}}/> Reject</button>
                           </>
                         )}
                         <button onClick={()=>setExpandedId(isExp?null:exp.id)} style={{padding:4,background:'none',border:'none',cursor:'pointer',display:'flex'}}>
@@ -584,7 +610,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     {isExp&&(
-                      <div style={{padding:'10px 14px 14px',background:cfg.bg,borderTop:`1px solid ${cfg.border}`}}>
+                      <div style={{padding:'10px 14px 14px',background:'#f8fafc',borderTop:'1px solid #e2e8f0'}}>
                         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:8}}>
                           <div><div style={{fontSize:10,fontWeight:600,color:'#94a3b8',textTransform:'uppercase',marginBottom:2}}>Owed</div><div style={{fontSize:14,fontWeight:700,color:'#0f172a'}}>{sym(exp.currency)}{owed.toFixed(2)}</div></div>
                           <div><div style={{fontSize:10,fontWeight:600,color:'#94a3b8',textTransform:'uppercase',marginBottom:2}}>Settled</div><div style={{fontSize:14,fontWeight:700,color:'#059669'}}>{sym(exp.currency)}{Number(exp.settled_amount??0).toFixed(2)}</div></div>
@@ -592,7 +618,7 @@ export default function DashboardPage() {
                         </div>
                         {exp.settlement_status==='pending_approval'&&(
                           <div style={{fontSize:12,color:'#7c3aed',padding:'6px 10px',background:'#f5f3ff',borderRadius:8,marginBottom:8}}>
-                            ⏳ Settlement of {cs}{Number(exp.pending_approval_amount??0).toFixed(2)} awaiting {exp.pending_approval_by===ctx?.myUserId?(co?.display_name??'co-parent'):'your'} approval
+                            Settlement of {cs}{Number(exp.pending_approval_amount??0).toFixed(2)} pending approval from {exp.pending_approval_by===ctx?.myUserId?(co?.display_name??'co-parent'):'your'} approval
                           </div>
                         )}
                         {exp.settlement_note&&<div style={{fontSize:12,color:cfg.color,fontStyle:'italic',marginBottom:6}}>Note: {exp.settlement_note}</div>}
@@ -612,7 +638,7 @@ export default function DashboardPage() {
           <div style={{display:'flex',flexDirection:'column',gap:14}}>
             {/* Monthly bar */}
             {stats.monthly.length>0&&(
-              <div style={{background:'#fff',border:'1px solid #e2e8f0',borderRadius:14,padding:'16px 18px'}}>
+              <div style={{background:'#fff',border:'1px solid #e2e8f0',borderRadius:4,padding:'16px 18px'}}>
                 <div style={{fontSize:11,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:14}}>Monthly spend</div>
                 <ResponsiveContainer width="100%" height={180}>
                   <BarChart data={stats.monthly} barSize={26} margin={{top:0,right:4,bottom:0,left:-10}}>
@@ -660,7 +686,7 @@ export default function DashboardPage() {
                 <ChartCard title={drillCat?`${stats.byCat.find(c=>c.id===drillCat)?.name??''} (click to clear)`:'By category · tap to drill'}>
                   {drillCat?(
                     <>
-                      <button onClick={()=>setDrillCat(null)} style={{fontSize:11,color:'#1a3a6b',background:'none',border:'none',cursor:'pointer',marginBottom:6,display:'block',fontWeight:700}}>← All categories</button>
+                      <button onClick={()=>setDrillCat(null)} style={{fontSize:11,color:'#374151',background:'none',border:'none',cursor:'pointer',marginBottom:6,display:'block',fontWeight:600,textDecoration:'underline'}}>← All categories</button>
                       <div style={{maxHeight:140,overflowY:'auto'}}>
                         {filtered.filter(e=>e.category?.id===drillCat).map(e=>(
                           <div key={e.id} style={{display:'flex',justifyContent:'space-between',fontSize:11,padding:'4px 0',borderBottom:'1px solid #f1f5f9'}}>
@@ -687,7 +713,7 @@ export default function DashboardPage() {
                 <ChartCard title={drillKid?`${stats.byKid.find(k=>k.id===drillKid)?.name??''} (click to clear)`:'By child · tap to drill'}>
                   {drillKid?(
                     <>
-                      <button onClick={()=>setDrillKid(null)} style={{fontSize:11,color:'#1a3a6b',background:'none',border:'none',cursor:'pointer',marginBottom:6,display:'block',fontWeight:700}}>← All children</button>
+                      <button onClick={()=>setDrillKid(null)} style={{fontSize:11,color:'#374151',background:'none',border:'none',cursor:'pointer',marginBottom:6,display:'block',fontWeight:600,textDecoration:'underline'}}>← All children</button>
                       <div style={{maxHeight:140,overflowY:'auto'}}>
                         {filtered.filter(e=>e.kid?.id===drillKid).map(e=>(
                           <div key={e.id} style={{display:'flex',justifyContent:'space-between',fontSize:11,padding:'4px 0',borderBottom:'1px solid #f1f5f9'}}>
@@ -795,7 +821,7 @@ export default function DashboardPage() {
             </div>
             <div style={{background:'#0f172a',borderRadius:14,padding:'16px 20px',marginBottom:14,textAlign:'center'}}>
               <div style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.5)',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:4}}>Balance to settle</div>
-              <div style={{fontSize:40,fontWeight:800,color:'#4ade80',letterSpacing:'-1.5px'}}>
+              <div style={{fontSize:38,fontWeight:700,color:'#4ade80',letterSpacing:'-1px'}}>
                 {sym(settleModal.currency)}{(expenseOwed(settleModal)-Number(settleModal.settled_amount??0)).toFixed(2)}
               </div>
               <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:3}}>of {sym(settleModal.currency)}{Number(settleModal.amount).toFixed(2)} total</div>
@@ -809,10 +835,10 @@ export default function DashboardPage() {
               <div><label style={LBL}>Date</label><input type="date" value={settleForm.settlement_date} onChange={e=>setSettleForm(p=>({...p,settlement_date:e.target.value}))} style={INP}/></div>
               <div><label style={LBL}>Note (optional)</label><input value={settleForm.note} onChange={e=>setSettleForm(p=>({...p,note:e.target.value}))} placeholder="e.g. Bank transfer" style={INP}/></div>
               <div style={{padding:'9px 12px',background:'#fffbeb',border:'1px solid #fde68a',borderRadius:8,fontSize:12,color:'#92400e'}}>
-                📩 Sends approval request to <strong>{co?.display_name??'co-parent'}</strong>
+                This will notify <strong>{co?.display_name??'co-parent'}</strong> to review and approve this settlement.
               </div>
               <button onClick={submitSettlement} disabled={settling}
-                style={{padding:13,background:settling?'#6ee7b7':'#059669',color:'#fff',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:settling?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                style={{padding:'12px 16px',background:settling?'#6ee7b7':'#059669',color:'#fff',border:'none',borderRadius:4,fontSize:14,fontWeight:600,cursor:settling?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:7}}>
                 <CheckCircleIcon style={{width:17,height:17}}/> {settling?'Sending…':'Send for approval'}
               </button>
             </div>
@@ -838,7 +864,7 @@ export default function DashboardPage() {
 
       {/* Toast */}
       {toast&&(
-        <div style={{position:'fixed',bottom:24,left:'50%',transform:'translateX(-50%)',zIndex:600,background:'#0f172a',color:'#fff',padding:'10px 18px',borderRadius:99,fontSize:13,fontWeight:600,display:'flex',alignItems:'center',gap:7,boxShadow:'0 4px 12px rgba(0,0,0,0.2)',whiteSpace:'nowrap'}}>
+        <div style={{position:'fixed',bottom:24,left:'50%',transform:'translateX(-50%)',zIndex:600,background:'#0f172a',color:'#fff',padding:'10px 18px',borderRadius:3,fontSize:13,fontWeight:500,display:'flex',alignItems:'center',gap:8,boxShadow:'0 2px 8px rgba(0,0,0,0.15)',whiteSpace:'nowrap'}}>
           <CheckCircleIcon style={{width:14,height:14,color:'#4ade80'}}/> {toast}
         </div>
       )}
@@ -870,7 +896,7 @@ function ExpensesTab({ expenses, ctx, cs, STATUS_CONFIG, onEdit, onSettle, onApp
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12,gap:8,flexWrap:'wrap'}}>
         <div style={{display:'flex',background:'#f1f5f9',borderRadius:9,padding:2,gap:1}}>
           {(['date','category','payer'] as const).map(g=>(
-            <button key={g} onClick={()=>setGroupBy(g)} style={{padding:'5px 11px',border:'none',borderRadius:7,fontSize:12,fontWeight:600,cursor:'pointer',background:groupBy===g?'#fff':'transparent',color:groupBy===g?'#0f172a':'#64748b',boxShadow:groupBy===g?'0 1px 2px rgba(0,0,0,0.08)':'none'}}>
+            <button key={g} onClick={()=>setGroupBy(g)} style={{padding:'5px 11px',border:'none',borderRadius:7,fontSize:12,fontWeight:600,cursor:'pointer',background:groupBy===g?'#0f172a':'transparent',color:groupBy===g?'#fff':'#64748b',boxShadow:'none'}}>
               {g.charAt(0).toUpperCase()+g.slice(1)}
             </button>
           ))}
@@ -885,8 +911,8 @@ function ExpensesTab({ expenses, ctx, cs, STATUS_CONFIG, onEdit, onSettle, onApp
         const total  = g.items.reduce((s:number,e:any)=>s+e.amount,0)
         return (
           <div key={key} style={{marginBottom:10}}>
-            <button onClick={()=>setExpanded(p=>({...p,[key]:!p[key]}))} style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:'#fff',border:'1px solid #e2e8f0',borderRadius:isOpen?'12px 12px 0 0':12,cursor:'pointer',borderBottom:isOpen?'1px solid #f1f5f9':'1px solid #e2e8f0'}}>
-              <div style={{width:10,height:10,borderRadius:'50%',background:g.color,flexShrink:0}}/>
+            <button onClick={()=>setExpanded(p=>({...p,[key]:!p[key]}))} style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'9px 14px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:0,cursor:'pointer',borderBottom:isOpen?'1px solid #e2e8f0':'1px solid #e2e8f0'}}>
+              
               <span style={{flex:1,textAlign:'left',fontSize:13,fontWeight:700,color:'#0f172a'}}>{g.label}</span>
               <span style={{fontSize:12,color:'#64748b',fontWeight:600}}>{g.items.length} · {cs}{total.toFixed(2)}</span>
               <span style={{fontSize:11,color:'#94a3b8'}}>{isOpen?'▲':'▼'}</span>
@@ -906,7 +932,7 @@ function ExpensesTab({ expenses, ctx, cs, STATUS_CONFIG, onEdit, onSettle, onApp
                         <div style={{fontSize:11,color:'#94a3b8',marginTop:2,display:'flex',gap:5,flexWrap:'wrap',alignItems:'center'}}>
                           {exp.category&&<span style={{background:(exp.category.color??'#94a3b8')+'20',color:exp.category.color??'#94a3b8',padding:'1px 6px',borderRadius:99,fontWeight:600}}>{exp.category.name}</span>}
                           {exp.kid&&<span style={{background:(exp.kid.color??'#94a3b8')+'20',color:exp.kid.color??'#94a3b8',padding:'1px 6px',borderRadius:99,fontWeight:600}}>{exp.kid.name}</span>}
-                          {payer&&<span style={{fontWeight:600,color:payer.user_id===ctx?.myUserId?'#1a3a6b':'#059669'}}>{payer.user_id===ctx?.myUserId?'You':payer.display_name} paid</span>}
+                          {payer&&<span style={{fontWeight:500,color:'#6b7280'}}>{payer.user_id===ctx?.myUserId?'You':payer.display_name} paid</span>}
                         </div>
                       </div>
                       <div style={{textAlign:'right'}}>
@@ -916,14 +942,14 @@ function ExpensesTab({ expenses, ctx, cs, STATUS_CONFIG, onEdit, onSettle, onApp
                         </span>
                       </div>
                       <div style={{display:'flex',gap:4,flexShrink:0,justifyContent:'flex-end'}}>
-                        {exp.settlement_status==='outstanding'&&<button onClick={()=>onSettle(exp)} title="Settle" style={{width:28,height:28,border:'1px solid #bbf7d0',borderRadius:7,background:'#f0fdf4',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12}}>✓</button>}
+                        {exp.settlement_status==='outstanding'&&<button onClick={()=>onSettle(exp)} title="Settle" style={{width:26,height:26,border:'1px solid #d1d5db',borderRadius:3,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#374151'}}>✓</button>}
                         {canApprove&&<>
-                          <button onClick={()=>onApprove(exp.id)} style={{width:28,height:28,border:'none',borderRadius:7,background:'#059669',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:11}}>✓</button>
-                          <button onClick={()=>onReject(exp.id)} style={{width:28,height:28,border:'1px solid #fecaca',borderRadius:7,background:'#fef2f2',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#dc2626',fontSize:11}}>✕</button>
+                          <button onClick={()=>onApprove(exp.id)} style={{width:26,height:26,border:'none',borderRadius:3,background:'#059669',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:11}}>✓</button>
+                          <button onClick={()=>onReject(exp.id)} style={{width:26,height:26,border:'1px solid #fecaca',borderRadius:3,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#dc2626',fontSize:11}}>✕</button>
                         </>}
                         {isOwner&&<>
-                          <button onClick={()=>onEdit(exp)} title="Edit" style={{width:28,height:28,border:'1px solid #e2e8f0',borderRadius:7,background:'#f8fafc',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11}}>✎</button>
-                          <button onClick={()=>{if(confirm('Delete?'))onDelete(exp.id)}} title="Delete" style={{width:28,height:28,border:'1px solid #fecaca',borderRadius:7,background:'#fef2f2',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#dc2626'}}>✕</button>
+                          <button onClick={()=>onEdit(exp)} title="Edit" style={{width:26,height:26,border:'1px solid #e2e8f0',borderRadius:3,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#374151'}}>✎</button>
+                          <button onClick={()=>{if(confirm('Delete?'))onDelete(exp.id)}} title="Delete" style={{width:26,height:26,border:'1px solid #fecaca',borderRadius:3,background:'#fff',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:'#dc2626'}}>✕</button>
                         </>}
                       </div>
                     </div>
@@ -939,7 +965,7 @@ function ExpensesTab({ expenses, ctx, cs, STATUS_CONFIG, onEdit, onSettle, onApp
 }
 function ChartCard({title,children}:{title:string;children:React.ReactNode}) {
   return (
-    <div style={{background:'#fff',border:'1px solid #e2e8f0',borderRadius:14,padding:'14px 16px'}}>
+    <div style={{background:'#fff',border:'1px solid #e2e8f0',borderRadius:4,padding:'14px 16px'}}>
       <div style={{fontSize:11,fontWeight:700,color:'#94a3b8',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:12}}>{title}</div>
       {children}
     </div>

@@ -123,7 +123,7 @@ export default function KidsPage() {
                     {kid.name[0].toUpperCase()}
                     {/* Gender badge */}
                     <div style={{ position: 'absolute', bottom: -4, right: -4, width: 20, height: 20, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                      {GENDER_ICON[gender]}
+                      
                     </div>
                   </div>
 
@@ -132,7 +132,7 @@ export default function KidsPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
                       {/* Gender pill */}
                       <span style={{ fontSize: 11, fontWeight: 700, color: GENDER_COLOR[gender], background: GENDER_COLOR[gender] + '15', padding: '2px 8px', borderRadius: 99, border: `1px solid ${GENDER_COLOR[gender]}30` }}>
-                        {GENDER_ICON[gender]} {gender}
+                         {gender}
                       </span>
                       {/* Age / DOB */}
                       <span style={{ fontSize: 12, color: '#64748b' }}>
@@ -180,7 +180,7 @@ export default function KidsPage() {
                 <div style={{ width: 68, height: 68, borderRadius: 20, background: form.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 28, position: 'relative' }}>
                   {form.name?.[0]?.toUpperCase() || '?'}
                   <div style={{ position: 'absolute', bottom: -5, right: -5, width: 24, height: 24, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, border: '1px solid #e2e8f0' }}>
-                    {GENDER_ICON[form.gender]}
+                    
                   </div>
                 </div>
               </div>

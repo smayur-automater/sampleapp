@@ -304,7 +304,7 @@ function RuleCard({ rule, onDelete, label, dotColor }: { rule: SplitRule; onDele
         <div style={{ fontSize:14, fontWeight:700, color:'#0f172a' }}>{label}</div>
         <div style={{ fontSize:12, color:'#64748b', marginTop:2 }}>
           {rule.is_optional
-            ? <span style={{ color:'#d97706', fontWeight:600 }}>⚡ Optional expense</span>
+            ? <span style={{ color:'#d97706', fontWeight:600 }}>Optional expense</span>
             : <span><strong style={{ color:'#0f172a' }}>{rule.split_pct}%</strong> / <strong style={{ color:'#64748b' }}>{100 - rule.split_pct}%</strong> split</span>
           }
         </div>
