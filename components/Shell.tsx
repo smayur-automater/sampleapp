@@ -24,7 +24,8 @@ const TABS = [
 ]
 
 const FOOTER_LINKS = [
-  { path: '/support', label: 'Support' },
+  { path: '/about',   label: 'About Us'      },
+  { path: '/support', label: 'Support'        },
   { path: '/privacy', label: 'Privacy Policy' },
 ]
 
