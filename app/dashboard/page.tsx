@@ -10,7 +10,7 @@ import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
 import { useHousehold } from '@/lib/household'
 import { CURRENCIES } from '@/components/CurrencySelect'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, Legend } from 'recharts'
 import { logAudit } from '@/lib/audit'
 
 type SettlementStatus = 'outstanding' | 'partial' | 'pending_approval' | 'settled'
@@ -69,6 +69,8 @@ export default function DashboardPage() {
   const [pageLoad,   setPageLoad]   = useState(false)
   const [drillCat,   setDrillCat]   = useState<string|null>(null)
   const [drillKid,   setDrillKid]   = useState<string|null>(null)
+  const [custChart,  setCustChart]   = useState<'bar'|'pie'|'line'>('bar')
+  const [custMetric, setCustMetric]  = useState<'category'|'kid'|'member'|'status'>('category')
 
   const [expenseModal,  setExpenseModal]  = useState(false)
   const [editingId,     setEditingId]     = useState<string|null>(null)
@@ -673,110 +675,302 @@ export default function DashboardPage() {
           )}
         </>)}
 
-        {/* ══ ANALYTICS ══ */}
+        {/* ══ ANALYTICS ══════════════════════════════════════════ */}
         {tab==='analytics'&&(
-          <div style={{display:'flex',flexDirection:'column',gap:14}}>
-            {/* Monthly bar */}
-            {stats.monthly.length>0&&(
-              <div style={{background:'#fff',border:'1px solid #e2e8f0',borderRadius:4,padding:'16px 18px'}}>
-                <div style={{fontSize:11,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:14}}>Monthly spend</div>
-                <ResponsiveContainer width="100%" height={180}>
-                  <BarChart data={stats.monthly} barSize={26} margin={{top:0,right:4,bottom:0,left:-10}}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false}/>
-                    <XAxis dataKey="month" tick={{fontSize:11,fill:'#94a3b8'}} axisLine={false} tickLine={false}/>
-                    <YAxis tick={{fontSize:11,fill:'#94a3b8'}} axisLine={false} tickLine={false} tickFormatter={v=>`${cs}${v}`}/>
-                    <Tooltip formatter={(v:any)=>`${cs}${Number(v).toFixed(2)}`}/>
-                    <Bar dataKey="settled" name="Settled" fill="#059669" radius={[4,4,0,0]} stackId="a"/>
-                    <Bar dataKey="outstanding" name="Outstanding" fill="#fca5a5" radius={[4,4,0,0]} stackId="a"/>
-                  </BarChart>
-                </ResponsiveContainer>
-                <div style={{display:'flex',gap:16,justifyContent:'center',marginTop:6}}>
-                  {[{c:'#059669',l:'Settled'},{c:'#fca5a5',l:'Outstanding'}].map(x=>(
-                    <div key={x.l} style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'#64748b'}}>
-                      <div style={{width:10,height:10,borderRadius:2,background:x.c}}/>{x.l}
-                    </div>
-                  ))}
+          <div style={{display:'flex',flexDirection:'column',gap:16}}>
+
+            {/* ── 1. FINANCIAL SUMMARY CARDS ── */}
+            <div>
+              <div style={{fontSize:10,fontWeight:700,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:10}}>Financial summary · {PERIODS.find(p=>p.key===period)?.label}</div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
+                {/* Total */}
+                <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:6,padding:'14px 16px'}}>
+                  <div style={{fontSize:10,fontWeight:600,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>Total expenses</div>
+                  <div style={{fontSize:22,fontWeight:700,color:'#111827',letterSpacing:'-0.5px'}}>{cs}{stats.total.toFixed(2)}</div>
+                  <div style={{fontSize:11,color:'#9ca3af',marginTop:3}}>{stats.count} expense{stats.count!==1?'s':''}</div>
                 </div>
+                {/* Balance */}
+                <div style={{background:'#fff',border:`1px solid ${Math.abs(stats.balance)>0.01?(stats.balance>=0?'#d1fae5':'#fecaca'):'#e5e7eb'}`,borderLeft:`3px solid ${Math.abs(stats.balance)>0.01?(stats.balance>=0?'#059669':'#dc2626'):'#e5e7eb'}`,borderRadius:6,padding:'14px 16px'}}>
+                  <div style={{fontSize:10,fontWeight:600,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>
+                    {Math.abs(stats.balance)>0.01?(stats.balance>=0?'Outstanding receivable':'Outstanding payable'):'Balance'}
+                  </div>
+                  <div style={{fontSize:22,fontWeight:700,color:Math.abs(stats.balance)>0.01?(stats.balance>=0?'#059669':'#dc2626'):'#9ca3af',letterSpacing:'-0.5px'}}>
+                    {Math.abs(stats.balance)>0.01?`${cs}${Math.abs(stats.balance).toFixed(2)}`:'Settled'}
+                  </div>
+                  <div style={{fontSize:11,color:'#9ca3af',marginTop:3}}>
+                    {Math.abs(stats.balance)>0.01?(stats.balance>=0?`${co?.display_name??'Co-parent'} owes you`:`You owe ${co?.display_name??'co-parent'}`):'No outstanding balance'}
+                  </div>
+                </div>
+                {/* Parent A */}
+                {me&&(
+                  <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:6,padding:'14px 16px'}}>
+                    <div style={{fontSize:10,fontWeight:600,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>{me.display_name}</div>
+                    <div style={{fontSize:22,fontWeight:700,color:'#111827',letterSpacing:'-0.5px'}}>{cs}{stats.mePaid.toFixed(2)}</div>
+                    <div style={{display:'flex',alignItems:'center',gap:6,marginTop:4}}>
+                      <div style={{flex:1,height:3,background:'#f3f4f6',borderRadius:2,overflow:'hidden'}}>
+                        <div style={{height:'100%',width:`${stats.total>0?(stats.mePaid/stats.total*100):0}%`,background:'#2563eb',borderRadius:2}}/>
+                      </div>
+                      <span style={{fontSize:10,fontWeight:600,color:'#6b7280'}}>{stats.total>0?(stats.mePaid/stats.total*100).toFixed(0):0}%</span>
+                    </div>
+                  </div>
+                )}
+                {/* Parent B */}
+                {co&&(
+                  <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:6,padding:'14px 16px'}}>
+                    <div style={{fontSize:10,fontWeight:600,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>{co.display_name}</div>
+                    <div style={{fontSize:22,fontWeight:700,color:'#111827',letterSpacing:'-0.5px'}}>{cs}{stats.theirs.toFixed(2)}</div>
+                    <div style={{display:'flex',alignItems:'center',gap:6,marginTop:4}}>
+                      <div style={{flex:1,height:3,background:'#f3f4f6',borderRadius:2,overflow:'hidden'}}>
+                        <div style={{height:'100%',width:`${stats.total>0?(stats.theirs/stats.total*100):0}%`,background:'#059669',borderRadius:2}}/>
+                      </div>
+                      <span style={{fontSize:10,fontWeight:600,color:'#6b7280'}}>{stats.total>0?(stats.theirs/stats.total*100).toFixed(0):0}%</span>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-            {/* 2-col pies */}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-              {stats.splitData.length===2&&stats.total>0&&(
-                <ChartCard title="Cost split">
-                  <ResponsiveContainer width="100%" height={140}>
-                    <PieChart>
-                      <Pie data={stats.splitData} cx="50%" cy="50%" outerRadius={58} dataKey="value" labelLine={false} label={PieLabel}>
-                        {stats.splitData.map((d,i)=><Cell key={i} fill={d.color}/>)}
-                      </Pie>
-                      <Tooltip formatter={(v:any)=>`${cs}${Number(v).toFixed(2)}`}/>
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div style={{display:'flex',flexDirection:'column',gap:5,marginTop:6}}>
-                    {stats.splitData.map(d=>(
-                      <div key={d.name} style={{display:'flex',alignItems:'center',gap:6,fontSize:11}}>
-                        <div style={{width:8,height:8,borderRadius:'50%',background:d.color,flexShrink:0}}/>
-                        <span style={{flex:1,color:'#64748b'}}>{d.name.split(' ')[0]}</span>
-                        <span style={{fontWeight:700,color:'#0f172a'}}>{cs}{d.value.toFixed(0)}</span>
+            </div>
+
+            {/* ── 2. CATEGORY BREAKDOWN ── */}
+            {stats.byCat.length>0&&(
+              <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:6,padding:'16px'}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:14}}>Category breakdown</div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,alignItems:'center'}}>
+                  {/* Bar list */}
+                  <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                    {stats.byCat.slice(0,6).map(cat=>(
+                      <div key={cat.id} onClick={()=>setDrillCat(drillCat===cat.id?null:cat.id)}
+                        style={{cursor:'pointer',padding:'6px 8px',borderRadius:4,background:drillCat===cat.id?'#f3f4f6':'transparent',border:drillCat===cat.id?'1px solid #e5e7eb':'1px solid transparent'}}>
+                        <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                          <div style={{display:'flex',alignItems:'center',gap:6}}>
+                            <div style={{width:8,height:8,borderRadius:'50%',background:cat.color||'#374151',flexShrink:0}}/>
+                            <span style={{fontSize:12,fontWeight:drillCat===cat.id?700:500,color:'#111827'}}>{cat.name}</span>
+                          </div>
+                          <span style={{fontSize:12,fontWeight:700,color:'#111827'}}>{cs}{cat.amount.toFixed(2)}</span>
+                        </div>
+                        <div style={{height:3,background:'#f3f4f6',borderRadius:2,overflow:'hidden'}}>
+                          <div style={{height:'100%',width:`${stats.total>0?(cat.amount/stats.total*100):0}%`,background:cat.color||'#374151',borderRadius:2,transition:'width 0.3s'}}/>
+                        </div>
+                        <div style={{fontSize:10,color:'#9ca3af',marginTop:3}}>{stats.total>0?(cat.amount/stats.total*100).toFixed(0):0}% of total</div>
                       </div>
                     ))}
                   </div>
-                </ChartCard>
-              )}
-              {stats.byCat.length>0&&(
-                <ChartCard title={drillCat?`${stats.byCat.find(c=>c.id===drillCat)?.name??''} (click to clear)`:'By category · tap to drill'}>
+                  {/* Pie */}
                   {drillCat?(
-                    <>
-                      <button onClick={()=>setDrillCat(null)} style={{fontSize:11,color:'#374151',background:'none',border:'none',cursor:'pointer',marginBottom:6,display:'block',fontWeight:600,textDecoration:'underline'}}>← All categories</button>
-                      <div style={{maxHeight:140,overflowY:'auto'}}>
+                    <div>
+                      <div style={{fontSize:11,fontWeight:700,color:'#374151',marginBottom:6}}>
+                        {stats.byCat.find(c=>c.id===drillCat)?.name} expenses
+                      </div>
+                      <div style={{maxHeight:180,overflowY:'auto',display:'flex',flexDirection:'column',gap:0}}>
                         {filtered.filter(e=>e.category?.id===drillCat).map(e=>(
-                          <div key={e.id} style={{display:'flex',justifyContent:'space-between',fontSize:11,padding:'4px 0',borderBottom:'1px solid #f1f5f9'}}>
-                            <span style={{color:'#0f172a'}}>{e.description}</span>
-                            <span style={{fontWeight:600}}>{cs}{Number(e.amount).toFixed(2)}</span>
+                          <div key={e.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 0',borderBottom:'1px solid #f3f4f6'}}>
+                            <div>
+                              <div style={{fontSize:12,color:'#111827',fontWeight:500}}>{e.description}</div>
+                              <div style={{fontSize:10,color:'#9ca3af'}}>{new Date(e.date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div>
+                            </div>
+                            <div style={{textAlign:'right'}}>
+                              <div style={{fontSize:12,fontWeight:700,color:'#111827'}}>{cs}{Number(e.amount).toFixed(2)}</div>
+                              <div style={{fontSize:9,padding:'1px 5px',borderRadius:3,background:e.settlement_status==='settled'?'#f0fdf4':e.settlement_status==='pending_approval'?'#f5f3ff':'#fef2f2',color:e.settlement_status==='settled'?'#059669':e.settlement_status==='pending_approval'?'#7c3aed':'#dc2626',display:'inline-block',marginTop:1}}>{e.settlement_status}</div>
+                            </div>
                           </div>
                         ))}
                       </div>
-                    </>
+                      <button onClick={()=>setDrillCat(null)} style={{marginTop:8,fontSize:11,color:'#6b7280',background:'none',border:'none',cursor:'pointer',padding:0,textDecoration:'underline'}}>← Back to all categories</button>
+                    </div>
                   ):(
-                    <ResponsiveContainer width="100%" height={140}>
+                    <ResponsiveContainer width="100%" height={180}>
                       <PieChart>
-                        <Pie data={stats.byCat} cx="50%" cy="50%" outerRadius={58} dataKey="amount" labelLine={false} label={PieLabel}
+                        <Pie data={stats.byCat} cx="50%" cy="50%" innerRadius={40} outerRadius={72} dataKey="amount" labelLine={false}
                           onClick={(d:any)=>setDrillCat(d.id)} style={{cursor:'pointer'}}>
-                          {stats.byCat.map((d,i)=><Cell key={i} fill={d.color}/>)}
+                          {stats.byCat.map((d,i)=><Cell key={i} fill={d.color||'#374151'}/>)}
                         </Pie>
-                        <Tooltip formatter={(v:any)=>`${cs}${Number(v).toFixed(2)}`}/>
+                        <Tooltip formatter={(v:any)=>`${cs}${Number(v).toFixed(2)}`} contentStyle={{fontSize:12,border:'1px solid #e5e7eb',borderRadius:4}}/>
                       </PieChart>
                     </ResponsiveContainer>
                   )}
-                </ChartCard>
-              )}
-              {stats.byKid.length>0&&(
-                <ChartCard title={drillKid?`${stats.byKid.find(k=>k.id===drillKid)?.name??''} (click to clear)`:'By child · tap to drill'}>
-                  {drillKid?(
-                    <>
-                      <button onClick={()=>setDrillKid(null)} style={{fontSize:11,color:'#374151',background:'none',border:'none',cursor:'pointer',marginBottom:6,display:'block',fontWeight:600,textDecoration:'underline'}}>← All children</button>
-                      <div style={{maxHeight:140,overflowY:'auto'}}>
-                        {filtered.filter(e=>e.kid?.id===drillKid).map(e=>(
-                          <div key={e.id} style={{display:'flex',justifyContent:'space-between',fontSize:11,padding:'4px 0',borderBottom:'1px solid #f1f5f9'}}>
-                            <div><div style={{color:'#0f172a'}}>{e.description}</div><div style={{fontSize:10,color:'#94a3b8'}}>{e.category?.name}</div></div>
-                            <span style={{fontWeight:600}}>{cs}{Number(e.amount).toFixed(2)}</span>
-                          </div>
-                        ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── 3. MONTHLY TREND ── */}
+            {stats.monthly.length>0&&(
+              <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:6,padding:'16px'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                  <div style={{fontSize:10,fontWeight:700,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.07em'}}>Monthly trend</div>
+                  <div style={{display:'flex',gap:12}}>
+                    {[{c:'#d1fae5',l:'Settled'},{c:'#fca5a5',l:'Outstanding'}].map(x=>(
+                      <div key={x.l} style={{display:'flex',alignItems:'center',gap:5,fontSize:10,color:'#9ca3af'}}>
+                        <div style={{width:10,height:10,borderRadius:2,background:x.c}}/>{x.l}
                       </div>
-                    </>
-                  ):(
-                    <ResponsiveContainer width="100%" height={140}>
-                      <PieChart>
-                        <Pie data={stats.byKid} cx="50%" cy="50%" outerRadius={58} dataKey="amount" labelLine={false} label={PieLabel}
-                          onClick={(d:any)=>setDrillKid(d.id)} style={{cursor:'pointer'}}>
-                          {stats.byKid.map((d,i)=><Cell key={i} fill={d.color}/>)}
-                        </Pie>
-                        <Tooltip formatter={(v:any)=>`${cs}${Number(v).toFixed(2)}`}/>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  )}
-                </ChartCard>
-              )}
+                    ))}
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={160}>
+                  <BarChart data={stats.monthly} barSize={24} margin={{top:0,right:4,bottom:0,left:-12}}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false}/>
+                    <XAxis dataKey="month" tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false}/>
+                    <YAxis tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false} tickFormatter={v=>`${cs}${v}`}/>
+                    <Tooltip contentStyle={{fontSize:12,border:'1px solid #e5e7eb',borderRadius:4}} formatter={(v:any)=>`${cs}${Number(v).toFixed(2)}`}/>
+                    <Bar dataKey="settled"     name="Settled"     fill="#d1fae5" radius={[2,2,0,0]} stackId="a"/>
+                    <Bar dataKey="outstanding" name="Outstanding" fill="#fca5a5" radius={[2,2,0,0]} stackId="a"/>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {/* ── 4. SETTLEMENT TIMELINE ── */}
+            {(()=>{
+              const events = expenses
+                .filter(e=>e.currency===currency)
+                .filter(e=>e.settlement_status==='settled'||e.settlement_status==='pending_approval')
+                .sort((a,b)=>{
+                  const da = a.settled_at||a.pending_approval_at||a.created_at
+                  const db = b.settled_at||b.pending_approval_at||b.created_at
+                  return new Date(db).getTime()-new Date(da).getTime()
+                })
+                .slice(0,10)
+              if (events.length===0) return null
+              return (
+                <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:6,padding:'16px'}}>
+                  <div style={{fontSize:10,fontWeight:700,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:14}}>Settlement history</div>
+                  <div style={{display:'flex',flexDirection:'column',gap:0}}>
+                    {events.map((exp,idx)=>{
+                      const isPending = exp.settlement_status==='pending_approval'
+                      const date = isPending ? exp.pending_approval_at : exp.settled_at
+                      const payer   = ctx?.members.find(m=>m.user_id===(isPending?exp.pending_approval_by:exp.paid_by_user_id))
+                      const amt     = isPending ? Number(exp.pending_approval_amount??0) : Number(exp.settled_amount??0)
+                      return (
+                        <div key={exp.id} style={{display:'flex',gap:12,paddingBottom:12,marginBottom:12,borderBottom:idx<events.length-1?'1px solid #f3f4f6':'none'}}>
+                          {/* Timeline dot */}
+                          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:0,flexShrink:0}}>
+                            <div style={{width:10,height:10,borderRadius:'50%',background:isPending?'#7c3aed':'#059669',marginTop:3,flexShrink:0}}/>
+                            {idx<events.length-1&&<div style={{width:1,flex:1,background:'#f3f4f6',minHeight:20,marginTop:4}}/>}
+                          </div>
+                          {/* Content */}
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
+                              <div style={{minWidth:0}}>
+                                <div style={{fontSize:12,fontWeight:600,color:'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{exp.description}</div>
+                                <div style={{fontSize:11,color:'#9ca3af',marginTop:2}}>
+                                  {isPending?'Settlement requested':'Settlement approved'}
+                                  {payer?` · ${payer.display_name}`:''}
+                                </div>
+                                {date&&<div style={{fontSize:10,color:'#d1d5db',marginTop:2}}>{new Date(date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>}
+                              </div>
+                              <div style={{textAlign:'right',flexShrink:0}}>
+                                <div style={{fontSize:13,fontWeight:700,color:'#111827'}}>{cs}{amt.toFixed(2)}</div>
+                                <span style={{fontSize:9,fontWeight:700,padding:'2px 6px',borderRadius:3,background:isPending?'#f5f3ff':'#f0fdf4',color:isPending?'#7c3aed':'#059669',border:`1px solid ${isPending?'#ddd6fe':'#d1fae5'}`,display:'inline-block',marginTop:2}}>
+                                  {isPending?'Pending approval':'Settled'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* ── 5. CUSTOM CHART BUILDER ── */}
+            <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:6,padding:'16px'}}>
+              <div style={{marginBottom:14}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:2}}>Custom chart builder</div>
+                <div style={{fontSize:11,color:'#9ca3af'}}>Visualise any dimension of your expense data</div>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
+                <div>
+                  <div style={{fontSize:10,fontWeight:600,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:5}}>Chart type</div>
+                  <div style={{display:'flex',background:'#f3f4f6',borderRadius:4,padding:2,gap:1}}>
+                    {(['bar','pie','line'] as const).map(t=>(
+                      <button key={t} onClick={()=>setCustChart(t)}
+                        style={{flex:1,padding:'6px 0',border:'none',borderRadius:3,background:custChart===t?'#fff':'transparent',color:custChart===t?'#111827':'#9ca3af',fontSize:11,fontWeight:custChart===t?700:500,cursor:'pointer',textTransform:'capitalize',boxShadow:custChart===t?'0 1px 2px rgba(0,0,0,0.06)':'none'}}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div style={{fontSize:10,fontWeight:600,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:5}}>Group by</div>
+                  <div style={{display:'flex',background:'#f3f4f6',borderRadius:4,padding:2,gap:1}}>
+                    {([
+                      {v:'category',l:'Category'},
+                      {v:'kid',l:'Child'},
+                      {v:'member',l:'Parent'},
+                      {v:'status',l:'Status'},
+                    ] as {v:'category'|'kid'|'member'|'status',l:string}[]).map(({v,l})=>(
+                      <button key={v} onClick={()=>setCustMetric(v)}
+                        style={{flex:1,padding:'6px 0',border:'none',borderRadius:3,background:custMetric===v?'#111827':'transparent',color:custMetric===v?'#fff':'#9ca3af',fontSize:10,fontWeight:custMetric===v?700:500,cursor:'pointer',boxShadow:custMetric===v?'0 1px 2px rgba(0,0,0,0.06)':'none'}}>
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {(()=>{
+                const custData: {name:string;value:number;color:string}[] = custMetric==='category'
+                  ? stats.byCat.map(c=>({name:c.name,value:c.amount,color:c.color||'#374151'}))
+                  : custMetric==='kid'
+                  ? stats.byKid.map(k=>({name:k.name,value:k.amount,color:k.color||'#374151'}))
+                  : custMetric==='member'
+                  ? stats.splitData.map(d=>({name:d.name.split(' ')[0],value:d.value,color:d.color}))
+                  : custMetric==='status'
+                  ? [
+                      {name:'Settled',value:stats.settledAmt,color:'#059669'},
+                      {name:'Pending',value:stats.pendingAmt,color:'#7c3aed'},
+                      {name:'Unpaid',value:stats.outstandingAmt,color:'#dc2626'},
+                    ].filter(d=>d.value>0)
+                  : []
+                if (custData.length===0) return <div style={{textAlign:'center',padding:'32px 0',color:'#9ca3af',fontSize:13}}>No data for this period</div>
+                return (
+                  <>
+                    {custChart==='bar'&&(
+                      <ResponsiveContainer width="100%" height={180}>
+                        <BarChart data={custData} barSize={28} margin={{top:0,right:4,bottom:0,left:-12}}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false}/>
+                          <XAxis dataKey="name" tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false}/>
+                          <YAxis tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false} tickFormatter={v=>`${cs}${v}`}/>
+                          <Tooltip contentStyle={{fontSize:12,border:'1px solid #e5e7eb',borderRadius:4}} formatter={(v:any)=>`${cs}${Number(v).toFixed(2)}`}/>
+                          <Bar dataKey="value" name="Amount" radius={[3,3,0,0]}>
+                            {custData.map((d:{name:string;value:number;color:string},i:number)=><Cell key={i} fill={d.color}/>)}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                    {custChart==='pie'&&(
+                      <ResponsiveContainer width="100%" height={180}>
+                        <PieChart>
+                          <Pie data={custData} cx="50%" cy="50%" innerRadius={40} outerRadius={72} dataKey="value" labelLine={false} label={PieLabel}>
+                            {custData.map((d:{name:string;value:number;color:string},i:number)=><Cell key={i} fill={d.color}/>)}
+                          </Pie>
+                          <Tooltip contentStyle={{fontSize:12,border:'1px solid #e5e7eb',borderRadius:4}} formatter={(v:any)=>`${cs}${Number(v).toFixed(2)}`}/>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )}
+                    {custChart==='line'&&(
+                      <ResponsiveContainer width="100%" height={180}>
+                        <LineChart data={custData} margin={{top:0,right:4,bottom:0,left:-12}}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false}/>
+                          <XAxis dataKey="name" tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false}/>
+                          <YAxis tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false} tickFormatter={v=>`${cs}${v}`}/>
+                          <Tooltip contentStyle={{fontSize:12,border:'1px solid #e5e7eb',borderRadius:4}} formatter={(v:any)=>`${cs}${Number(v).toFixed(2)}`}/>
+                          <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={{r:3,fill:'#2563eb'}} activeDot={{r:5}}/>
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
+                    <div style={{display:'flex',flexWrap:'wrap',gap:12,marginTop:12,justifyContent:'center'}}>
+                      {custData.map((d:{name:string;value:number;color:string},i:number)=>(
+                        <div key={i} style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'#6b7280'}}>
+                          <div style={{width:8,height:8,borderRadius:2,background:d.color,flexShrink:0}}/>
+                          {d.name}: {cs}{d.value.toFixed(2)}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )
+              })()}
             </div>
+
           </div>
         )}
 
