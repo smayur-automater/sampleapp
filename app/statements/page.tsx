@@ -740,7 +740,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                       <YAxis tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false} tickFormatter={v=>`$${v}`}/>
                       <Tooltip formatter={(v:any)=>`$${Number(v).toFixed(2)}`}/>
                       <Bar dataKey="value" name="Amount" radius={[3,3,0,0]}>
-                        {custData.map((d,i)=><Cell key={i} fill={d.color||CHART_COLORS[i%CHART_COLORS.length]}/>)}
+                        {custData.map((d: {name:string;value:number;color:string},i:number)=><Cell key={i} fill={d.color||CHART_COLORS[i%CHART_COLORS.length]}/>) }
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
@@ -749,7 +749,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                   <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
                       <Pie data={custData} cx="50%" cy="50%" outerRadius={80} dataKey="value" labelLine={false} label={PL}>
-                        {custData.map((d,i)=><Cell key={i} fill={d.color||CHART_COLORS[i%CHART_COLORS.length]}/>)}
+                        {custData.map((d: {name:string;value:number;color:string},i:number)=><Cell key={i} fill={d.color||CHART_COLORS[i%CHART_COLORS.length]}/>) }
                       </Pie>
                       <Tooltip formatter={(v:any)=>`$${Number(v).toFixed(2)}`}/>
                     </PieChart>
