@@ -20,6 +20,8 @@ const TABS = [
   { path: '/categories', label: 'Categories'    },
   { path: '/rules',      label: 'Expense Rules' },
   { path: '/statements', label: 'Statements'    },
+  { path: '/plan',       label: '⭐ Plan'        },
+  { path: '/support',    label: '💬 Support'     },
 ]
 
 interface Profile {
