@@ -28,7 +28,7 @@ interface Expense {
   kid:      { id: string; name: string; color: string } | null
   category: { id: string; name: string; color: string } | null
 }
-interface Usage { plan: 'free'|'premium'; count: number; can_add: boolean; limit: number|null }
+interface Usage { plan: 'free'|'premium'; count: number; can_add: boolean; limit: number|null; trial_active: boolean; trial_days_left: number; trial_expired: boolean }
 
 const sym    = (code: string) => CURRENCIES.find(c => c.code === code)?.symbol ?? '$'
 const PERIODS = [
@@ -127,7 +127,7 @@ export default function DashboardPage() {
   }, [ctx, loadData])
 
   function openAdd() {
-    if (usage && usage.plan==='free' && !usage.can_add) { setSaveErr('Free plan limit reached. Upgrade to Premium.'); return }
+    if (trialExpired && !isPremium) { setSaveErr('Your 7-day trial has ended. Please upgrade to Premium to add expenses.'); return }
     const autoKid  = kids.length===1 ? kids[0].id  : ''
     const autoCat  = cats.length===1 ? cats[0].id  : ''
     const autoSplit = (autoKid && kidRules[autoKid] && !kidRules[autoKid].is_optional) ? kidRules[autoKid].split_pct
@@ -352,8 +352,11 @@ export default function DashboardPage() {
     }
   }, [filtered, expenses, me, co, ctx, cats, currency])
 
-  const isPremium = usage?.plan==='premium'
-  const atLimit   = usage ? !usage.can_add : false
+  const isPremium   = usage?.plan==='premium'
+  const trialActive = usage?.trial_active ?? true
+  const trialDays   = usage?.trial_days_left ?? 7
+  const trialExpired = usage?.trial_expired ?? false
+  const atLimit     = trialExpired && !isPremium
 
   if (!ctxLoading&&!ctx&&!ctxError) return (
     <Shell><div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'80px 24px',textAlign:'center',fontFamily:'system-ui,sans-serif'}}>
@@ -365,6 +368,34 @@ export default function DashboardPage() {
   )
   if (ctxLoading) return <Shell><div style={{display:'flex',justifyContent:'center',padding:60}}><div style={{width:28,height:28,border:'2px solid #e2e8f0',borderTopColor:'#0f172a',borderRadius:'50%',animation:'spin .7s linear infinite'}}/><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div></Shell>
   if (ctxError)   return <Shell><div style={{padding:24,textAlign:'center'}}><p style={{color:'#dc2626',marginBottom:12}}>{ctxError}</p><button onClick={reloadCtx} style={{padding:'8px 16px',background:'#0f172a',color:'#fff',border:'none',borderRadius:8,cursor:'pointer'}}>Retry</button></div></Shell>
+
+  // Trial expired wall
+  if (trialExpired && !isPremium && !ctxLoading) return (
+    <Shell>
+      <div style={{maxWidth:480,margin:'80px auto',padding:'0 24px',textAlign:'center',fontFamily:'system-ui,sans-serif'}}>
+        <div style={{background:'#fff',border:'1px solid #e2e8f0',borderRadius:6,padding:'40px 32px'}}>
+          <div style={{width:48,height:48,borderRadius:6,background:'#f1f5f9',border:'1px solid #e2e8f0',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px'}}>
+            <LockClosedIcon style={{width:22,height:22,color:'#374151'}}/>
+          </div>
+          <h2 style={{fontSize:20,fontWeight:700,color:'#111827',marginBottom:8}}>Your trial has ended</h2>
+          <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:24}}>Your 7-day free trial of CoParent Pay has expired. Upgrade to Premium to continue tracking shared expenses with your co-parent.</p>
+          <div style={{background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:4,padding:'16px 20px',marginBottom:24,textAlign:'left'}}>
+            <div style={{fontSize:12,fontWeight:700,color:'#374151',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:10}}>Premium includes</div>
+            {['Unlimited shared expenses','Smart split rules','Monthly statements','Receipt attachments','Analytics and reporting','Priority support'].map(f=>(
+              <div key={f} style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+                <CheckCircleIcon style={{width:14,height:14,color:'#059669',flexShrink:0}}/>
+                <span style={{fontSize:13,color:'#374151'}}>{f}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{fontSize:24,fontWeight:800,color:'#111827',marginBottom:4}}>AUD $7.00 <span style={{fontSize:14,fontWeight:400,color:'#6b7280'}}>/ month</span></div>
+          <p style={{fontSize:12,color:'#9ca3af',marginBottom:20}}>Cancel anytime</p>
+          <a href="/plan" style={{display:'block',padding:'13px',background:'#0f172a',color:'#fff',textDecoration:'none',borderRadius:4,fontSize:14,fontWeight:600,textAlign:'center' as const}}>Upgrade to Premium</a>
+          <p style={{fontSize:12,color:'#9ca3af',marginTop:16}}>Your expense history is preserved and accessible after upgrading.</p>
+        </div>
+      </div>
+    </Shell>
+  )
 
   return (
     <Shell>
@@ -390,16 +421,25 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Free plan bar */}
+        {/* Trial / Plan bar */}
         {usage&&!isPremium&&(
-          <div style={{background:'#fff',border:'1px solid #e2e8f0',borderRadius:12,padding:'10px 14px',marginBottom:14}}>
-            <div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:600,color:'#374151',marginBottom:5}}>
-              <span>Free plan · {usage.count} / 10 expenses</span>
-              {atLimit&&<span style={{color:'#dc2626',fontWeight:700}}>Limit reached</span>}
-            </div>
-            <div style={{height:5,background:'#f1f5f9',borderRadius:3,overflow:'hidden'}}>
-              <div style={{height:'100%',width:`${Math.min((usage.count/10)*100,100)}%`,background:atLimit?'#dc2626':'#0f172a',borderRadius:3}}/>
-            </div>
+          <div style={{background:'#fff',border:'1px solid #e2e8f0',borderRadius:4,padding:'10px 14px',marginBottom:14}}>
+            {trialExpired ? (
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <span style={{fontSize:12,fontWeight:700,color:'#dc2626'}}>Trial period ended — upgrade to continue</span>
+                <a href="/plan" style={{fontSize:12,fontWeight:700,color:'#fff',background:'#0f172a',padding:'5px 12px',borderRadius:3,textDecoration:'none'}}>Upgrade now</a>
+              </div>
+            ) : (
+              <>
+                <div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:600,color:'#374151',marginBottom:5}}>
+                  <span>Free trial · {trialDays} day{trialDays!==1?'s':''} remaining</span>
+                  <a href="/plan" style={{fontSize:12,color:'#374151',textDecoration:'underline'}}>View plans</a>
+                </div>
+                <div style={{height:4,background:'#f1f5f9',borderRadius:2,overflow:'hidden'}}>
+                  <div style={{height:'100%',width:`${Math.max(((7-trialDays)/7)*100,4)}%`,background:trialDays<=2?'#dc2626':trialDays<=4?'#d97706':'#0f172a',borderRadius:2}}/>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -546,8 +586,8 @@ export default function DashboardPage() {
 
           {/* Add button */}
           <button onClick={openAdd} disabled={atLimit}
-            style={{width:'100%',padding:'11px 16px',background:atLimit?'#f1f5f9':'#0f172a',color:atLimit?'#9ca3af':'#fff',border:'none',borderRadius:4,fontSize:14,fontWeight:600,cursor:atLimit?'not-allowed':'pointer',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-            {atLimit?<><LockClosedIcon style={{width:14,height:14}}/> Expense limit reached — upgrade to Premium</>:<><PlusIcon style={{width:15,height:15}}/> Add expense</>}
+            style={{width:'100%',padding:'11px 16px',background:(trialExpired&&!isPremium)?'#f1f5f9':'#0f172a',color:(trialExpired&&!isPremium)?'#9ca3af':'#fff',border:'none',borderRadius:4,fontSize:14,fontWeight:600,cursor:atLimit?'not-allowed':'pointer',marginBottom:20,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            {(trialExpired&&!isPremium)?<><LockClosedIcon style={{width:14,height:14}}/> Trial ended — upgrade to Premium</>:<><PlusIcon style={{width:15,height:15}}/> Add expense</>}
           </button>
 
           <div style={{fontSize:11,fontWeight:700,color:'#94a3b8',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:10}}>

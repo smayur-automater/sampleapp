@@ -22,6 +22,7 @@ const TABS = [
   { path: '/statements', label: 'Statements'    },
   { path: '/plan',       label: 'Plan'        },
   { path: '/support',    label: 'Support'     },
+  { path: '/privacy',    label: 'Privacy'     },
 ]
 
 interface Profile {

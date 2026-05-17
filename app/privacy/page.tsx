@@ -1,361 +1,156 @@
-'use client'
-import Link from 'next/link'
+import React from 'react'
 
-const LAST_UPDATED = 'May 2026'
-const CONTACT_EMAIL = 'info@xfiniti.com.au'
-const APP_NAME = 'CoParent Pay'
-const COMPANY = 'Xfiniti Technology Pty Ltd'
-const COMPANY_ABN = '' // fill in if available
-
-const S: Record<string, React.CSSProperties> = {
-  page:    { fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', background: '#fff', color: '#1a1a1a', lineHeight: 1.7 },
-  wrap:    { maxWidth: 760, margin: '0 auto', padding: '40px 24px 80px' },
-  header:  { borderBottom: '1px solid #e5e7eb', paddingBottom: 24, marginBottom: 32 },
-  logo:    { fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 6 },
-  meta:    { fontSize: 13, color: '#6b7280' },
-  h2:      { fontSize: 18, fontWeight: 700, color: '#111827', marginTop: 36, marginBottom: 10 },
-  h3:      { fontSize: 15, fontWeight: 600, color: '#374151', marginTop: 20, marginBottom: 8 },
-  p:       { fontSize: 14, color: '#374151', marginBottom: 12 },
-  li:      { fontSize: 14, color: '#374151', marginBottom: 6, paddingLeft: 8 },
-  table:   { width: '100%', borderCollapse: 'collapse' as const, marginBottom: 16, fontSize: 13 },
-  th:      { textAlign: 'left' as const, padding: '8px 12px', background: '#f9fafb', border: '1px solid #e5e7eb', fontWeight: 600, color: '#374151' },
-  td:      { padding: '8px 12px', border: '1px solid #e5e7eb', color: '#374151', verticalAlign: 'top' as const },
-  callout: { background: '#f0fdf4', border: '1px solid #d1fae5', borderRadius: 6, padding: '14px 16px', marginBottom: 16, fontSize: 14, color: '#065f46' },
-  warn:    { background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 6, padding: '14px 16px', marginBottom: 16, fontSize: 14, color: '#374151' },
-  back:    { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#374151', textDecoration: 'none', marginBottom: 24, border: '1px solid #e5e7eb', padding: '6px 12px', borderRadius: 4 },
+export const metadata = {
+  title: 'Privacy Policy — CoParent Pay',
+  description: 'Privacy Policy for CoParent Pay by Xfiniti Technology Pty Ltd',
 }
 
-export default function PrivacyPage() {
+export default function PrivacyPolicy() {
   return (
-    <div style={S.page}>
-      <div style={S.wrap}>
-        <Link href="/dashboard" style={S.back}>← Back to app</Link>
+    <div style={{ minHeight:'100vh', background:'#fff', fontFamily:'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif', color:'#111827' }}>
+      <div style={{ borderBottom:'1px solid #e5e7eb', padding:'16px 24px', display:'flex', alignItems:'center', gap:12 }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="CoParent Pay" style={{ width:32, height:32, objectFit:'contain' }} />
+        <span style={{ fontWeight:700, fontSize:16, color:'#111827' }}>CoParent Pay</span>
+      </div>
 
-        <div style={S.header}>
-          <div style={S.logo}>{APP_NAME}</div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#111827', margin: '8px 0 8px' }}>
-            Privacy Policy
-          </h1>
-          <p style={{ ...S.meta, margin: 0 }}>
-            Last updated: {LAST_UPDATED} · {COMPANY}
-            {COMPANY_ABN && ` · ABN ${COMPANY_ABN}`}
-          </p>
-        </div>
+      <div style={{ maxWidth:760, margin:'0 auto', padding:'48px 24px 80px' }}>
+        <h1 style={{ fontSize:32, fontWeight:800, color:'#111827', marginBottom:6 }}>Privacy Policy</h1>
+        <p style={{ fontSize:14, color:'#6b7280', marginBottom:48 }}>Effective date: 18 May 2026 &nbsp;·&nbsp; Last updated: 18 May 2026</p>
 
-        <div style={S.callout}>
-          <strong>Summary:</strong> CoParent Pay collects only the information needed to run your shared expense account. We do not sell your data, share it with advertisers, or use it for any purpose other than providing and improving this service.
-        </div>
+        <S title="1. About This Policy">
+          <P>This Privacy Policy describes how <strong>Xfiniti Technology Pty Ltd</strong>, trading as <strong>CoParent Pay</strong> ("we", "us", "our"), collects, uses, stores, and discloses personal information when you use the CoParent Pay mobile and web application (the "App"). By creating an account or using the App, you acknowledge that you have read and agree to this policy.</P>
+          <P>We comply with the <strong>Australian Privacy Act 1988 (Cth)</strong> and the Australian Privacy Principles (APPs). Where applicable, we also comply with the <strong>EU General Data Protection Regulation (GDPR)</strong> and the <strong>California Consumer Privacy Act (CCPA)</strong>.</P>
+        </S>
 
-        {/* 1 */}
-        <h2 style={S.h2}>1. About This Policy</h2>
-        <p style={S.p}>
-          This Privacy Policy explains how {COMPANY} ("<strong>we</strong>", "<strong>us</strong>", "<strong>our</strong>") collects, uses, stores, and protects personal information when you use {APP_NAME} (the "<strong>Service</strong>"), available as a mobile application and web application.
-        </p>
-        <p style={S.p}>
-          By creating an account or using the Service, you agree to the collection and use of information described in this policy. If you do not agree, please do not use the Service.
-        </p>
-        <p style={S.p}>
-          This policy complies with the <em>Privacy Act 1988</em> (Cth) and the Australian Privacy Principles (APPs), as well as applicable data protection laws in other jurisdictions including the GDPR (where applicable).
-        </p>
+        <S title="2. Information We Collect">
+          <H3>2.1 Information You Provide</H3>
+          <UL items={['Full name and display name','Email address','Phone number (optional)','Password (stored as a one-way hash — we never store plaintext passwords)','Expense details: descriptions, amounts, dates, categories','Receipt images you upload','Settlement notes and co-parent correspondence within the App']}/>
+          <H3>2.2 Automatically Collected Information</H3>
+          <UL items={['Device type, operating system, and browser version','IP address and approximate location (country/city level only)','App usage patterns and session duration','Error logs and crash diagnostics','Authentication tokens and session identifiers']}/>
+          <H3>2.3 Information About Children</H3>
+          <P>To categorise shared expenses, users enter their children&apos;s names and optional dates of birth. This data is entered by and visible only to the adults in the household. The App is not directed at children and we do not knowingly collect personal data directly from individuals under 13. See Section 10 for full details.</P>
+        </S>
 
-        {/* 2 */}
-        <h2 style={S.h2}>2. Information We Collect</h2>
+        <S title="3. How We Use Your Information">
+          <UL items={['Create and manage your account','Provide expense tracking and settlement features','Send transactional emails (account verification, password reset, settlement notifications, co-parent invitations)','Display shared expense data to your authorised household members only','Calculate financial balances and generate settlement summaries','Generate monthly statements (Premium subscribers)','Improve the App through aggregated, anonymised analytics','Respond to support requests','Enforce our Terms of Service and prevent fraud','Comply with legal and regulatory obligations']}/>
+          <P><strong>We do not use your financial data for advertising, sell it to third parties, or use it to train AI or machine learning models.</strong></P>
+        </S>
 
-        <h3 style={S.h3}>2.1 Information You Provide Directly</h3>
-        <table style={S.table}>
-          <thead>
-            <tr>
-              <th style={S.th}>Category</th>
-              <th style={S.th}>Examples</th>
-              <th style={S.th}>Purpose</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              ['Account information', 'First name, last name, email address, password (hashed)', 'Create and authenticate your account'],
-              ['Contact information', 'Phone number', 'Account security and notifications'],
-              ['Expense data', 'Expense descriptions, amounts, dates, categories, split percentages', 'Core service functionality'],
-              ['Child information', 'Children\'s first names, date of birth (optional), gender (optional)', 'Linking expenses to specific children'],
-              ['Payment records', 'Settlement amounts, settlement notes, dates', 'Settlement tracking between co-parents'],
-              ['Receipt images', 'Photos or PDFs uploaded as receipts', 'Document storage for expense records'],
-              ['Support communications', 'Messages sent to our support team', 'Resolving issues and improving the service'],
-            ].map(([cat, ex, pur]) => (
-              <tr key={cat as string}>
-                <td style={{ ...S.td, fontWeight: 600 }}>{cat}</td>
-                <td style={S.td}>{ex}</td>
-                <td style={S.td}>{pur}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <S title="4. Legal Basis for Processing (GDPR)">
+          <P>For users in the European Economic Area, we process personal data under the following legal bases:</P>
+          <UL items={['Contract performance — processing necessary to deliver the App services you have agreed to','Legitimate interests — improving the App, preventing fraud, ensuring security (where not overridden by your rights)','Consent — where you have provided explicit consent','Legal obligation — where required by applicable law']}/>
+        </S>
 
-        <h3 style={S.h3}>2.2 Information Collected Automatically</h3>
-        <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-          {[
-            'Device type, operating system, and version',
-            'App version',
-            'General usage data (screens visited, features used) — used only in aggregate',
-            'Crash reports and error logs',
-            'IP address (used for security, not stored long-term)',
-          ].map(item => <li key={item} style={S.li}>{item}</li>)}
-        </ul>
+        <S title="5. Data Sharing and Disclosure">
+          <H3>5.1 Household Members</H3>
+          <P>Expense data, settlement records, and profile names are visible to all members of your shared household. You control who is invited.</P>
+          <H3>5.2 Service Providers</H3>
+          <P>We share data with the following third-party processors under strict data processing agreements:</P>
+          <UL items={['Supabase Inc. — database, authentication, and file storage (United States)','Vercel Inc. — application hosting and content delivery (United States)','Resend Inc. — transactional email delivery (United States)']}/>
+          <P>All providers are contractually required to process data only as instructed and to maintain appropriate security measures.</P>
+          <H3>5.3 Legal Requirements</H3>
+          <P>We may disclose information if required by law, court order, or government authority, or to protect the rights, property, or safety of CoParent Pay, our users, or the public.</P>
+          <H3>5.4 Business Transfer</H3>
+          <P>If CoParent Pay is acquired or undergoes a change of ownership, your information may transfer as part of that transaction. You will be notified by email or in-app notice.</P>
+          <H3>5.5 No Sale of Data</H3>
+          <P>We do not sell, rent, or trade your personal information to any third party for their marketing purposes.</P>
+        </S>
 
-        <h3 style={S.h3}>2.3 Information We Do NOT Collect</h3>
-        <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-          {[
-            'Bank account details or payment card numbers',
-            'Government-issued identification documents',
-            'Precise real-time location',
-            'Contacts or address book data',
-            'Microphone, camera, or other sensor data (except when you explicitly upload a receipt)',
-            'Data from third-party accounts or social media',
-          ].map(item => <li key={item} style={S.li}>{item}</li>)}
-        </ul>
+        <S title="6. Data Retention">
+          <UL items={['Account data is retained until you delete your account','Expense and settlement records are retained for 7 years from creation to satisfy financial record-keeping obligations','Receipt images are deleted within 30 days of account deletion','Audit logs are retained for 12 months','Anonymised aggregate statistics may be retained indefinitely']}/>
+        </S>
 
-        {/* 3 */}
-        <h2 style={S.h2}>3. How We Use Your Information</h2>
-        <p style={S.p}>We use your information for the following purposes:</p>
-        <table style={S.table}>
-          <thead>
-            <tr>
-              <th style={S.th}>Purpose</th>
-              <th style={S.th}>Legal Basis (GDPR)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              ['Providing and operating the Service (account creation, expense tracking, settlement workflow)', 'Performance of contract'],
-              ['Authenticating your identity and maintaining account security', 'Performance of contract / Legitimate interests'],
-              ['Sending transactional notifications (invitation emails, settlement approvals)', 'Performance of contract'],
-              ['Responding to support requests', 'Legitimate interests'],
-              ['Improving and debugging the Service', 'Legitimate interests'],
-              ['Complying with legal obligations', 'Legal obligation'],
-              ['Detecting and preventing fraud or abuse', 'Legitimate interests'],
-            ].map(([purpose, basis]) => (
-              <tr key={purpose as string}>
-                <td style={S.td}>{purpose}</td>
-                <td style={{ ...S.td, whiteSpace: 'nowrap' as const }}>{basis}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p style={S.p}>
-          <strong>We do not use your data for advertising, profiling, or sale to third parties.</strong>
-        </p>
+        <S title="7. Data Security">
+          <UL items={['All data in transit is encrypted using TLS 1.2 or higher','All data at rest is encrypted using AES-256','Passwords are hashed using bcrypt','Row-Level Security (RLS) ensures users can only access data within their own household','Access to production systems is restricted to authorised personnel','Regular security reviews and dependency updates are performed']}/>
+          <P>While we implement strong security measures, no electronic system is 100% secure. We cannot guarantee absolute security.</P>
+        </S>
 
-        {/* 4 */}
-        <h2 style={S.h2}>4. Information Sharing and Disclosure</h2>
+        <S title="8. International Data Transfers">
+          <P>Your data is stored and processed in data centres operated by our service providers, primarily in the United States. When transferring data outside Australia or the EEA, we ensure appropriate safeguards including Standard Contractual Clauses approved by the European Commission and adherence to recognised data transfer frameworks.</P>
+        </S>
 
-        <h3 style={S.h3}>4.1 Sharing with Your Co-Parent</h3>
-        <p style={S.p}>
-          The core purpose of {APP_NAME} is shared expense management. When you join a shared household with another person, the following information is visible to them:
-        </p>
-        <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-          {[
-            'Your display name',
-            'Expenses you record (description, amount, date, category, child)',
-            'Settlement requests you submit or approve',
-            'Activity log entries related to shared expenses',
-          ].map(item => <li key={item} style={S.li}>{item}</li>)}
-        </ul>
-        <p style={S.p}>Your email address, phone number, and password are never shared with other users.</p>
+        <S title="9. Your Rights and Choices">
+          <H3>9.1 Access and Portability</H3>
+          <P>You may request a copy of all personal data we hold about you by contacting <strong>info@xfiniti.com.au</strong>. Premium users may export expense data as CSV directly from the App.</P>
+          <H3>9.2 Correction</H3>
+          <P>You may update your profile (name, phone) within the App at any time.</P>
+          <H3>9.3 Deletion</H3>
+          <P>You may request deletion of your account and personal data. Expense records shared within a household may be retained in anonymised form or as required by law. To request deletion, email <strong>info@xfiniti.com.au</strong> with subject "Account Deletion Request". We will action your request within 30 days.</P>
+          <H3>9.4 Restriction and Objection (GDPR)</H3>
+          <P>You have the right to restrict processing of your data or object to processing based on legitimate interests. Contact us to exercise these rights.</P>
+          <H3>9.5 Withdraw Consent</H3>
+          <P>Where processing is based on consent, you may withdraw it at any time without affecting the lawfulness of prior processing.</P>
+          <H3>9.6 Communications</H3>
+          <P>Transactional emails (account verification, settlement notifications) are essential to the service. You may unsubscribe from any optional marketing communications at any time.</P>
+          <H3>9.7 California Residents (CCPA)</H3>
+          <P>California residents have the right to know what personal information is collected, to request deletion, and to opt out of the sale of personal information. We do not sell personal information. Contact <strong>info@xfiniti.com.au</strong> to exercise your rights.</P>
+        </S>
 
-        <h3 style={S.h3}>4.2 Service Providers</h3>
-        <p style={S.p}>We share data with the following trusted service providers, solely to operate the Service:</p>
-        <table style={S.table}>
-          <thead>
-            <tr>
-              <th style={S.th}>Provider</th>
-              <th style={S.th}>Purpose</th>
-              <th style={S.th}>Data Shared</th>
-              <th style={S.th}>Location</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              ['Supabase', 'Database, authentication, file storage', 'All user and expense data', 'USA (AWS)'],
-              ['Vercel', 'Application hosting', 'Anonymised request logs', 'USA / Global CDN'],
-              ['Resend', 'Transactional email delivery', 'Email address, name, invitation/notification content', 'USA'],
-            ].map(([provider, purpose, data, location]) => (
-              <tr key={provider as string}>
-                <td style={{ ...S.td, fontWeight: 600 }}>{provider}</td>
-                <td style={S.td}>{purpose}</td>
-                <td style={S.td}>{data}</td>
-                <td style={S.td}>{location}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p style={S.p}>All service providers are contractually bound to protect your data and may not use it for their own purposes.</p>
+        <S title="10. Children's Privacy">
+          <P>CoParent Pay is designed for use by adults (18 years and older) to manage shared expenses for their dependent children. <strong>The App is not directed at children and is not intended to be used by individuals under 18.</strong></P>
+          <P>While users enter their children&apos;s names and optional dates of birth to categorise expenses, this data is entered exclusively by the adult account holders and is accessible only within that household. We do not use this data for any purpose other than displaying it to the household members.</P>
+          <P>We do not knowingly collect personal information directly from children under 13. If you believe a child has submitted information to us directly, please contact <strong>info@xfiniti.com.au</strong> and we will promptly delete it.</P>
+          <P><strong>Apple App Store rating:</strong> This App is rated 4+ (suitable for all ages) and contains no objectionable content. It is a financial management tool for adults.</P>
+        </S>
 
-        <h3 style={S.h3}>4.3 Legal Requirements</h3>
-        <p style={S.p}>
-          We may disclose your information if required by law, court order, or government authority, or where we believe disclosure is necessary to protect the rights, property, or safety of {COMPANY}, our users, or the public.
-        </p>
+        <S title="11. Subscription and Trial">
+          <P>CoParent Pay offers a <strong>7-day free trial</strong> for new accounts, during which all features are available at no charge. After the trial period, a <strong>Premium subscription at AUD $7.00 per month</strong> is required to continue using the App.</P>
+          <P>Subscriptions are managed through the Apple App Store or Google Play Store and are subject to those platforms&apos; subscription and refund policies. We do not store payment card details. Subscription pricing may change with 30 days&apos; notice to existing subscribers.</P>
+          <P>You may cancel your subscription at any time through your App Store account settings. Cancellation takes effect at the end of the current billing period.</P>
+        </S>
 
-        <h3 style={S.h3}>4.4 Business Transfers</h3>
-        <p style={S.p}>
-          In the event of a merger, acquisition, or sale of all or part of our business, user data may be transferred to the acquiring entity. We will notify affected users by email and provide an opportunity to delete their account before the transfer takes effect.
-        </p>
+        <S title="12. Cookies and Analytics">
+          <P>The App uses minimal session storage to maintain your authentication state. We do not use third-party advertising cookies or cross-site tracking. Any analytics tools we use collect anonymised, aggregated data only and cannot be used to identify individual users.</P>
+        </S>
 
-        {/* 5 */}
-        <h2 style={S.h2}>5. Data Storage and Security</h2>
-        <p style={S.p}>
-          Your data is stored on Supabase infrastructure hosted on Amazon Web Services (AWS). The following security measures are in place:
-        </p>
-        <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-          {[
-            'All data is encrypted in transit using TLS 1.2 or higher',
-            'Data at rest is encrypted using AES-256',
-            'Passwords are hashed using bcrypt and never stored in plaintext',
-            'Row-Level Security (RLS) policies ensure each user can only access their own household data',
-            'Authentication tokens expire and are rotated automatically',
-            'Access to production infrastructure is restricted to authorised personnel only',
-          ].map(item => <li key={item} style={S.li}>{item}</li>)}
-        </ul>
-        <p style={S.p}>
-          No system is completely secure. While we implement industry-standard protections, we cannot guarantee absolute security. In the event of a data breach that is likely to result in serious harm, we will notify affected users and relevant authorities within 72 hours of becoming aware of the breach.
-        </p>
+        <S title="13. Third-Party Services">
+          <P>The App may link to third-party websites or services. This Privacy Policy does not apply to those third parties. We encourage you to review their privacy policies before providing any personal information.</P>
+        </S>
 
-        {/* 6 */}
-        <h2 style={S.h2}>6. Data Retention</h2>
-        <table style={S.table}>
-          <thead>
-            <tr>
-              <th style={S.th}>Data Type</th>
-              <th style={S.th}>Retention Period</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              ['Account data (name, email)', 'Until account deletion, plus 30 days backup retention'],
-              ['Expense and settlement records', 'Until account deletion or household deletion, plus 30 days backup retention'],
-              ['Receipt images', 'Until manually deleted by user or account deletion'],
-              ['Activity logs', 'Up to 12 months'],
-              ['Support communications', 'Up to 2 years'],
-              ['Anonymised analytics', 'Up to 3 years'],
-              ['Backup copies', 'Up to 30 days after deletion request'],
-            ].map(([type, retention]) => (
-              <tr key={type as string}>
-                <td style={{ ...S.td, fontWeight: 500 }}>{type}</td>
-                <td style={S.td}>{retention}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <S title="14. Changes to This Policy">
+          <P>We may update this Privacy Policy from time to time. Material changes will be communicated by a prominent in-app notice, an email to your registered address, and an update to the effective date above. Continued use of the App after changes take effect constitutes acceptance of the updated policy.</P>
+        </S>
 
-        {/* 7 */}
-        <h2 style={S.h2}>7. Your Rights and Choices</h2>
-        <p style={S.p}>Depending on your location, you have the following rights regarding your personal information:</p>
-        <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-          {[
-            { right: 'Access', desc: 'Request a copy of all personal data we hold about you.' },
-            { right: 'Correction', desc: 'Update or correct inaccurate information through your profile settings or by contacting us.' },
-            { right: 'Deletion', desc: 'Request deletion of your account and all associated data. See Section 8.' },
-            { right: 'Data portability', desc: 'Export your expense data in CSV format (Premium feature) or request a full data export by contacting us.' },
-            { right: 'Objection', desc: 'Object to processing of your data for legitimate interests purposes.' },
-            { right: 'Restriction', desc: 'Request that we restrict processing of your data in certain circumstances.' },
-            { right: 'Withdraw consent', desc: 'Where processing is based on consent, withdraw it at any time.' },
-          ].map(({ right, desc }) => (
-            <li key={right} style={S.li}><strong>{right}:</strong> {desc}</li>
-          ))}
-        </ul>
-        <p style={S.p}>
-          To exercise any of these rights, contact us at <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: '#374151', fontWeight: 600 }}>{CONTACT_EMAIL}</a>. We will respond within 30 days.
-        </p>
+        <S title="15. Contact and Complaints">
+          <P>For questions, concerns, or data requests, contact our Privacy Officer:</P>
+          <div style={{ background:'#f9fafb', border:'1px solid #e5e7eb', borderRadius:6, padding:'20px 24px', marginTop:12, marginBottom:16 }}>
+            <p style={{ margin:'0 0 4px', fontWeight:700, fontSize:14 }}>Xfiniti Technology Pty Ltd (trading as CoParent Pay)</p>
+            <p style={{ margin:'0 0 4px', fontSize:14, color:'#374151' }}>Australia</p>
+            <p style={{ margin:'0 0 0', fontSize:14, color:'#374151' }}>Email: <a href="mailto:info@xfiniti.com.au" style={{ color:'#1d4ed8' }}>info@xfiniti.com.au</a> — we respond within 30 days</p>
+          </div>
+          <P>If you believe we have not handled your personal information appropriately, you may lodge a complaint with the <strong>Office of the Australian Information Commissioner (OAIC)</strong> at <a href="https://www.oaic.gov.au" style={{ color:'#1d4ed8' }}>oaic.gov.au</a>, or your local data protection authority (EEA residents), or the California Attorney General (California residents).</P>
+        </S>
 
-        {/* 8 */}
-        <h2 style={S.h2}>8. Account Deletion</h2>
-        <p style={S.p}>You can delete your account at any time. To do so:</p>
-        <ol style={{ paddingLeft: 24, marginBottom: 16 }}>
-          {[
-            `Open ${APP_NAME} and go to Settings`,
-            'Tap "Delete account" and confirm',
-            'Alternatively, email us at ' + CONTACT_EMAIL + ' with subject "Account Deletion Request"',
-          ].map((step, i) => <li key={i} style={S.li}>{step}</li>)}
-        </ol>
-        <p style={S.p}>
-          When you delete your account: your profile is immediately deactivated; all personal data is deleted within 30 days; anonymised expense data (no names or email) may be retained for fraud detection and aggregate analytics; data shared with a co-parent in an active household will be retained for that household until the co-parent also deletes their account.
-        </p>
-
-        {/* 9 */}
-        <h2 style={S.h2}>9. Children's Privacy</h2>
-        <p style={S.p}>
-          {APP_NAME} is intended for use by adults (18 years and older). We do not knowingly collect personal information from children under the age of 13. The "child" information stored in the app (e.g., a child's name and date of birth) is entered by adult account holders for the purpose of tracking child-related expenses — we do not create accounts for or directly interact with minors.
-        </p>
-        <p style={S.p}>
-          If you believe we have inadvertently collected personal information from a child under 13, please contact us immediately at <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: '#374151', fontWeight: 600 }}>{CONTACT_EMAIL}</a> and we will delete it promptly.
-        </p>
-
-        {/* 10 */}
-        <h2 style={S.h2}>10. Cookies and Tracking</h2>
-        <p style={S.p}>
-          The web version of {APP_NAME} uses the following:
-        </p>
-        <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-          {[
-            { name: 'Session cookies', purpose: 'Required for authentication and keeping you logged in. These expire when you close your browser or after your session timeout.' },
-            { name: 'Local storage', purpose: 'Stores your session token locally so you remain logged in across browser restarts.' },
-          ].map(({ name, purpose }) => (
-            <li key={name} style={S.li}><strong>{name}:</strong> {purpose}</li>
-          ))}
-        </ul>
-        <p style={S.p}>
-          We do not use advertising cookies, third-party tracking cookies, or any analytics cookies that track you across other websites.
-        </p>
-
-        {/* 11 */}
-        <h2 style={S.h2}>11. International Data Transfers</h2>
-        <p style={S.p}>
-          Your data is stored in the United States on AWS infrastructure operated by Supabase. By using the Service, you consent to the transfer of your data outside Australia. Where required, we rely on appropriate safeguards (such as Standard Contractual Clauses) to ensure your data receives adequate protection.
-        </p>
-
-        {/* 12 */}
-        <h2 style={S.h2}>12. Third-Party Links</h2>
-        <p style={S.p}>
-          The Service may contain links to third-party websites (e.g., payment instructions, resources). This Privacy Policy does not apply to those sites. We encourage you to read the privacy policies of any third-party sites you visit.
-        </p>
-
-        {/* 13 */}
-        <h2 style={S.h2}>13. Changes to This Policy</h2>
-        <p style={S.p}>
-          We may update this Privacy Policy from time to time. When we make material changes, we will:
-        </p>
-        <ul style={{ paddingLeft: 20, marginBottom: 16 }}>
-          {[
-            'Update the "Last updated" date at the top of this policy',
-            'Display a notice within the app',
-            'Send an email notification for significant changes',
-          ].map(item => <li key={item} style={S.li}>{item}</li>)}
-        </ul>
-        <p style={S.p}>
-          Continued use of the Service after changes take effect constitutes acceptance of the revised policy.
-        </p>
-
-        {/* 14 */}
-        <h2 style={S.h2}>14. Contact and Complaints</h2>
-        <p style={S.p}>
-          If you have questions about this Privacy Policy or wish to make a privacy-related request or complaint, contact us:
-        </p>
-        <div style={S.warn}>
-          <strong>{COMPANY}</strong><br/>
-          Privacy enquiries: <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: '#374151' }}>{CONTACT_EMAIL}</a><br/>
-          Website: xfiniti.com.au
-        </div>
-        <p style={S.p}>
-          If you are not satisfied with our response, you may lodge a complaint with the Office of the Australian Information Commissioner (OAIC) at <a href="https://www.oaic.gov.au" target="_blank" rel="noopener noreferrer" style={{ color: '#374151' }}>oaic.gov.au</a>.
-        </p>
-        <p style={S.p}>
-          For EU/UK residents: you may also contact your local data protection authority.
-        </p>
-
-        <div style={{ borderTop: '1px solid #e5e7eb', marginTop: 40, paddingTop: 20 }}>
-          <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>
-            {APP_NAME} Privacy Policy · {LAST_UPDATED} · {COMPANY}
-            {COMPANY_ABN && ` · ABN ${COMPANY_ABN}`}
-          </p>
+        <div style={{ marginTop:48, paddingTop:24, borderTop:'1px solid #e5e7eb', fontSize:12, color:'#9ca3af' }}>
+          <p style={{ margin:0 }}>CoParent Pay Privacy Policy · Xfiniti Technology Pty Ltd · Effective 18 May 2026</p>
+          <p style={{ margin:'4px 0 0' }}>This policy satisfies the requirements of the Australian Privacy Act 1988, GDPR, CCPA, Apple App Store Review Guidelines 5.1, and Google Play Developer Policy.</p>
         </div>
       </div>
     </div>
+  )
+}
+
+function S({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom:40 }}>
+      <h2 style={{ fontSize:19, fontWeight:700, color:'#111827', marginBottom:14, paddingBottom:8, borderBottom:'1px solid #f3f4f6' }}>{title}</h2>
+      {children}
+    </div>
+  )
+}
+function H3({ children }: { children: React.ReactNode }) {
+  return <h3 style={{ fontSize:14, fontWeight:700, color:'#374151', marginBottom:8, marginTop:18 }}>{children}</h3>
+}
+function P({ children }: { children: React.ReactNode }) {
+  return <p style={{ fontSize:14, color:'#4b5563', lineHeight:1.8, marginBottom:12 }}>{children}</p>
+}
+function UL({ items }: { items: string[] }) {
+  return (
+    <ul style={{ paddingLeft:20, margin:'0 0 14px' }}>
+      {items.map((item, i) => (
+        <li key={i} style={{ fontSize:14, color:'#4b5563', lineHeight:1.8, marginBottom:3 }}>{item}</li>
+      ))}
+    </ul>
   )
 }
