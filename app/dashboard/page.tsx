@@ -12,6 +12,7 @@ import { useHousehold } from '@/lib/household'
 import { CURRENCIES } from '@/components/CurrencySelect'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, Legend } from 'recharts'
 import { logAudit } from '@/lib/audit'
+import { CategoryIcon } from '@/components/CategoryIcon'
 
 type SettlementStatus = 'outstanding' | 'partial' | 'pending_approval' | 'settled'
 interface Kid      { id: string; name: string; color: string }
@@ -26,7 +27,7 @@ interface Expense {
   pending_approval_by: string | null; pending_approval_amount: number | null
   pending_approval_note: string | null; pending_approval_at: string | null
   kid:      { id: string; name: string; color: string } | null
-  category: { id: string; name: string; color: string } | null
+  category: { id: string; name: string; color: string; icon: string | null } | null
 }
 interface Usage { plan: 'free'|'premium'; count: number; can_add: boolean; limit: number|null; trial_active: boolean; trial_days_left: number; trial_expired: boolean }
 
@@ -69,6 +70,7 @@ export default function DashboardPage() {
   const [pageLoad,   setPageLoad]   = useState(false)
   const [drillCat,   setDrillCat]   = useState<string|null>(null)
   const [drillKid,   setDrillKid]   = useState<string|null>(null)
+  const [kidFilter,  setKidFilter]   = useState<string>('all')
   const [custChart,  setCustChart]   = useState<'bar'|'pie'|'line'>('bar')
   const [custMetric, setCustMetric]  = useState<'category'|'kid'|'member'|'status'>('category')
 
@@ -101,7 +103,7 @@ export default function DashboardPage() {
     try {
       const [e, k, c, u, r] = await Promise.all([
         supabase.from('expenses')
-          .select('id,description,amount,currency,date,created_at,split_pct,paid_by_user_id,created_by,receipt_url,archived,settlement_status,settled_amount,settled_at,settlement_note,pending_approval_by,pending_approval_amount,pending_approval_note,pending_approval_at,kid:kids(id,name,color),category:categories(id,name,color)')
+          .select('id,description,amount,currency,date,created_at,split_pct,paid_by_user_id,created_by,receipt_url,archived,settlement_status,settled_amount,settled_at,settlement_note,pending_approval_by,pending_approval_amount,pending_approval_note,pending_approval_at,kid:kids(id,name,color),category:categories(id,name,color,icon)')
           .eq('household_id', ctx.household_id).eq('archived', false)
           .order('created_at', { ascending: false }),
         supabase.from('kids').select('id,name,color').eq('household_id', ctx.household_id).order('name'),
@@ -267,8 +269,8 @@ export default function DashboardPage() {
       if (period==='3month') return (now.getTime()-d.getTime())/86400000 <= 90
       if (period==='year')   return d.getFullYear()===now.getFullYear()
       return true
-    })
-  }, [expenses, currency, period])
+    }).filter(e => kidFilter==='all' || e.kid?.id===kidFilter)
+  }, [expenses, currency, period, kidFilter])
 
   const pendingMyApproval     = useMemo(() => expenses.filter(e=>e.settlement_status==='pending_approval'&&e.pending_approval_by!==ctx?.myUserId&&e.currency===currency), [expenses,ctx,currency])
   const awaitingTheirApproval = useMemo(() => expenses.filter(e=>e.settlement_status==='pending_approval'&&e.pending_approval_by===ctx?.myUserId&&e.currency===currency), [expenses,ctx,currency])
@@ -597,6 +599,25 @@ export default function DashboardPage() {
             {(trialExpired&&!isPremium)?<><LockClosedIcon style={{width:14,height:14}}/> Trial ended — upgrade to Premium</>:<><PlusIcon style={{width:15,height:15}}/> Add expense</>}
           </button>
 
+          {/* ── Child filter buttons (only when multiple kids) ── */}
+          {kids.length > 1 && (
+            <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
+              <button
+                onClick={()=>setKidFilter('all')}
+                style={{display:'flex',alignItems:'center',gap:7,padding:'5px 13px',border:kidFilter==='all'?'1.5px solid #111827':'1px solid #e2e8f0',borderRadius:99,background:kidFilter==='all'?'#f0f4ff':'#fff',cursor:'pointer',fontSize:12,fontWeight:kidFilter==='all'?700:500,color:kidFilter==='all'?'#111827':'#6b7280',transition:'all 0.15s'}}>
+                All children
+              </button>
+              {kids.map(kid=>(
+                <button key={kid.id}
+                  onClick={()=>setKidFilter(kidFilter===kid.id?'all':kid.id)}
+                  style={{display:'flex',alignItems:'center',gap:7,padding:'5px 13px',border:kidFilter===kid.id?`1.5px solid ${kid.color||'#2563eb'}`:'1px solid #e2e8f0',borderRadius:99,background:kidFilter===kid.id?(kid.color||'#2563eb')+'14':'#fff',cursor:'pointer',fontSize:12,fontWeight:kidFilter===kid.id?700:500,color:kidFilter===kid.id?(kid.color||'#2563eb'):'#6b7280',transition:'all 0.15s'}}>
+                  <div style={{width:7,height:7,borderRadius:'50%',background:kid.color||'#2563eb',flexShrink:0}}/>
+                  {kid.name}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div style={{fontSize:11,fontWeight:700,color:'#94a3b8',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:10}}>
             {filtered.length} expense{filtered.length!==1?'s':''} · most recent first
           </div>
@@ -620,12 +641,24 @@ export default function DashboardPage() {
                 return (
                   <div key={exp.id} style={{background:'#fff',border:`1px solid ${isExp?cfg.color+'44':'#e2e8f0'}`,borderRadius:13,overflow:'hidden'}}>
                     <div style={{padding:'11px 14px',display:'flex',alignItems:'center',gap:10}}>
-                      <div style={{width:38,height:38,borderRadius:11,background:exp.kid?.color??'#374151',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:700,fontSize:15,flexShrink:0}}>
-                        {exp.kid?.name?.[0]?.toUpperCase()??'?'}
+                      {/* Category icon */}
+                      <div style={{width:40,height:40,borderRadius:10,background:'#f3f4f6',border:'1px solid #e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                        <CategoryIcon
+                          name={exp.category?.icon??'tag'}
+                          size={19}
+                          color={exp.category?.color||'#6b7280'}
+                        />
                       </div>
                       <div style={{flex:1,minWidth:0}}>
+                        {/* Child name pill */}
+                        {exp.kid?.name && (
+                          <div style={{display:'inline-flex',alignItems:'center',gap:5,marginBottom:3}}>
+                            <div style={{width:6,height:6,borderRadius:'50%',background:exp.kid.color||'#2563eb',flexShrink:0}}/>
+                            <span style={{fontSize:11,fontWeight:600,color:exp.kid.color||'#2563eb'}}>{exp.kid.name}</span>
+                          </div>
+                        )}
                         <div style={{fontWeight:600,fontSize:14,color:'#0f172a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{exp.description}</div>
-                        <div style={{fontSize:11,color:'#94a3b8',marginTop:2,display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
+                        <div style={{fontSize:11,color:'#94a3b8',marginTop:1,display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
                           <span>{exp.category?.name}</span>
                           <span>·</span>
                           <span>{new Date(exp.date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</span>
