@@ -41,7 +41,7 @@ export default function PrivacyPolicy() {
           <P>Expense data, settlement records, and profile names are visible to all members of your shared household. You control who is invited.</P>
           <H3>5.2 Service Providers</H3>
           <P>We share data with the following third-party processors under strict data processing agreements:</P>
-          <UL items={['Supabase Inc. — database, authentication, and file storage (United States)','Vercel Inc. — application hosting and content delivery (United States)','Resend Inc. — transactional email delivery (United States)']}/>
+          <UL items={['Supabase — database, authentication, and file storage (data stored in Australia)','Vercel — application hosting and content delivery (edge network, primary region Australia)','Resend — transactional email delivery (Australia region)']}/>
           <P>All providers are contractually required to process data only as instructed and to maintain appropriate security measures.</P>
           <H3>5.3 Legal Requirements</H3>
           <P>We may disclose information if required by law, court order, or government authority, or to protect the rights, property, or safety of CoParent Pay, our users, or the public.</P>
@@ -52,7 +52,7 @@ export default function PrivacyPolicy() {
         </S>
 
         <S title="6. Data Retention">
-          <UL items={['Account data is retained until you delete your account','Expense and settlement records are retained for 7 years from creation to satisfy financial record-keeping obligations','Receipt images are deleted within 30 days of account deletion','Audit logs are retained for 12 months','Anonymised aggregate statistics may be retained indefinitely']}/>
+          <UL items={['Account data is retained until you delete your account','Expense, settlement, and financial records are retained for a minimum of 7 years from creation date, in compliance with Australian financial record-keeping obligations under the Corporations Act 2001 (Cth) and taxation law','Receipt images are deleted within 30 days of account deletion','Audit logs are retained for 12 months','Anonymised aggregate statistics may be retained indefinitely']}/>
         </S>
 
         <S title="7. Data Security">
@@ -61,7 +61,7 @@ export default function PrivacyPolicy() {
         </S>
 
         <S title="8. International Data Transfers">
-          <P>Your data is stored and processed in data centres operated by our service providers, primarily in the United States. When transferring data outside Australia or the EEA, we ensure appropriate safeguards including Standard Contractual Clauses approved by the European Commission and adherence to recognised data transfer frameworks.</P>
+          <P>Your data is stored and processed in Australia. Our infrastructure is configured to keep data within Australian data centres where possible. In limited cases where a service provider processes data outside Australia (for example, for email delivery), we ensure appropriate safeguards are in place including Standard Contractual Clauses and adherence to the Australian Privacy Act cross-border disclosure requirements.</P>
         </S>
 
         <S title="9. Your Rights and Choices">

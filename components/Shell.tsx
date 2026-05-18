@@ -22,12 +22,13 @@ const TABS = [
   { path: '/rules',      label: 'Expense Rules' },
   { path: '/statements', label: 'Statements'    },
   { path: '/plan',       label: 'Plan'          },
+  { path: '/about',      label: 'About Us'      },
+  { path: '/support',    label: 'Support'       },
 ]
 
 const FOOTER_LINKS = [
-  { path: '/about',   label: 'About Us'      },
-  { path: '/support', label: 'Support'        },
   { path: '/privacy', label: 'Privacy Policy' },
+  { path: '/refund',  label: 'Refund Policy'  },
 ]
 
 interface Profile {

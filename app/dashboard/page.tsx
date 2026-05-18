@@ -71,6 +71,7 @@ export default function DashboardPage() {
   const [drillCat,   setDrillCat]   = useState<string|null>(null)
   const [drillKid,   setDrillKid]   = useState<string|null>(null)
   const [kidFilter,  setKidFilter]   = useState<string>('all')
+  const [statusFilter,setStatusFilter] = useState<SettlementStatus|'all'>('all')
   const [custChart,  setCustChart]   = useState<'bar'|'pie'|'line'>('bar')
   const [custMetric, setCustMetric]  = useState<'category'|'kid'|'member'|'status'>('category')
 
@@ -287,7 +288,8 @@ export default function DashboardPage() {
       if (period==='year')   return d.getFullYear()===now.getFullYear()
       return true
     }).filter(e => kidFilter==='all' || e.kid?.id===kidFilter)
-  }, [expenses, currency, period, kidFilter])
+    .filter(e => statusFilter==='all' || e.settlement_status===statusFilter)
+  }, [expenses, currency, period, kidFilter, statusFilter])
 
   const pendingMyApproval     = useMemo(() => expenses.filter(e=>e.settlement_status==='pending_approval'&&e.pending_approval_by!==ctx?.myUserId&&e.currency===currency), [expenses,ctx,currency])
   const awaitingTheirApproval = useMemo(() => expenses.filter(e=>e.settlement_status==='pending_approval'&&e.pending_approval_by===ctx?.myUserId&&e.currency===currency), [expenses,ctx,currency])
@@ -556,13 +558,15 @@ export default function DashboardPage() {
           ]).map(({status,count,total})=>{
             const cfg = STATUS_CONFIG[status]
             return (
-              <div key={status} style={{background:'#fff',border:'1px solid #e2e8f0',borderBottom:`2px solid ${cfg.color}`,borderRadius:6,padding:'12px 10px'}}>
+              <div key={status} onClick={()=>{setTab('overview');setStatusFilter(statusFilter===status?'all':status)}}
+                style={{background:'#fff',border:`1px solid ${statusFilter===status?cfg.color+'88':'#e2e8f0'}`,borderBottom:`2px solid ${cfg.color}`,borderRadius:6,padding:'12px 10px',cursor:'pointer',transition:'all 0.15s',boxShadow:statusFilter===status?`0 0 0 2px ${cfg.color}22`:'none'}}>
                 <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:5}}>
                   <cfg.Icon style={{width:12,height:12,color:cfg.color}}/>
                   <span style={{fontSize:10,fontWeight:700,color:cfg.color,textTransform:'uppercase',letterSpacing:'0.04em'}}>{cfg.label}</span>
                 </div>
                 <div style={{fontSize:17,fontWeight:800,color:'#0f172a'}}>{cs}{total.toFixed(2)}</div>
                 <div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{count} expense{count!==1?'s':''}</div>
+                {statusFilter===status&&<div style={{fontSize:9,color:cfg.color,fontWeight:700,marginTop:3,textTransform:'uppercase',letterSpacing:'0.05em'}}>Filtered — tap to clear</div>}
               </div>
             )
           })}
@@ -635,8 +639,15 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <div style={{fontSize:11,fontWeight:700,color:'#94a3b8',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:10}}>
-            {filtered.length} expense{filtered.length!==1?'s':''} · most recent first
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+            <div style={{fontSize:11,fontWeight:700,color:'#94a3b8',letterSpacing:'0.06em',textTransform:'uppercase'}}>
+              {filtered.length} expense{filtered.length!==1?'s':''}{statusFilter!=='all'?` · ${STATUS_CONFIG[statusFilter].label}`:''}{kidFilter!=='all'?` · ${kids.find(k=>k.id===kidFilter)?.name??''}`:''} · most recent first
+            </div>
+            {(statusFilter!=='all'||kidFilter!=='all')&&(
+              <button onClick={()=>{setStatusFilter('all');setKidFilter('all')}} style={{fontSize:11,color:'#6b7280',background:'none',border:'1px solid #e5e7eb',borderRadius:3,padding:'2px 8px',cursor:'pointer'}}>
+                Clear filters
+              </button>
+            )}
           </div>
 
           {pageLoad?<div style={{textAlign:'center',padding:40,color:'#94a3b8'}}>Loading…</div>
