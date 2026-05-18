@@ -22,7 +22,7 @@ const TABS = [
   { path: '/rules',      label: 'Expense Rules' },
   { path: '/statements', label: 'Statements'    },
   { path: '/plan',       label: 'Plan'          },
-  { path: '/about',      label: 'About Us'      },
+  { path: '/about',      label: 'About'      },
   { path: '/support',    label: 'Support'       },
 ]
 

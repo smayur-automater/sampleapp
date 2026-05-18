@@ -9,10 +9,10 @@ import { logAudit } from '@/lib/audit'
 interface Kid { id: string; name: string; dob: string | null; color: string; gender: string; created_by: string | null }
 
 const COLORS = ['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#0891b2','#374151','#db2777']
-const GENDERS = ['Boy','Girl','Non-binary','Unknown']
+const GENDERS = ['Boy','Girl']
 
-const GENDER_ICON: Record<string, string> = { Boy: 'M', Girl: 'F', 'Non-binary': 'N', Unknown: '?' }
-const GENDER_COLOR: Record<string, string> = { Boy: '#2563eb', Girl: '#db2777', 'Non-binary': '#7c3aed', Unknown: '#94a3b8' }
+const GENDER_ICON: Record<string, string> = { Boy: 'M', Girl: 'F' }
+const GENDER_COLOR: Record<string, string> = { Boy: '#2563eb', Girl: '#db2777' }
 
 const INP: React.CSSProperties = { width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 14, background: '#f8fafc', outline: 'none', color: '#0f172a', boxSizing: 'border-box' }
 const SEL: React.CSSProperties = { width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 14, background: '#f8fafc', outline: 'none', color: '#0f172a', appearance: 'auto' }
@@ -47,13 +47,13 @@ export default function KidsPage() {
       .eq('household_id', ctx.household_id)
       .order('name')
     if (error) console.error('kids load error:', error.message)
-    setKids((data ?? []).map((k: Record<string,any>) => ({ id:k.id, name:k.name, dob:k.dob??null, color:k.color??'#475569', gender:k.gender??'Unknown', created_by:k.created_by??null })))
+    setKids((data ?? []).map((k: Record<string,any>) => ({ id:k.id, name:k.name, dob:k.dob??null, color:k.color??'#475569', gender:k.gender&&['Boy','Girl'].includes(k.gender)?k.gender:'Boy', created_by:k.created_by??null })))
     setLoading(false)
   }, [ctx])
 
   useEffect(() => { if (ctx) load() }, [ctx, load])
 
-  function openAdd() { setEditing(null); setForm({ name: '', dob: '', color: COLORS[0], gender: 'Unknown' }); setErr(''); setModal(true) }
+  function openAdd() { setEditing(null); setForm({ name: '', dob: '', color: COLORS[0], gender: 'Boy' }); setErr(''); setModal(true) }
   function openEdit(k: Kid) { setEditing(k); setForm({ name: k.name, dob: k.dob ?? '', color: k.color, gender: k.gender ?? 'Unknown' }); setErr(''); setModal(true) }
 
   async function save() {
@@ -115,7 +115,7 @@ export default function KidsPage() {
             {kids.map(kid => {
               const kidAge = age(kid.dob)
               const isOwner = kid.created_by === ctx?.myUserId
-              const gender = kid.gender ?? 'Unknown'
+              const gender = (kid.gender&&['Boy','Girl'].includes(kid.gender))?kid.gender:'Boy'
               return (
                 <div key={kid.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
                   {/* Avatar */}
