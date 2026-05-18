@@ -185,7 +185,7 @@ export default function RulesPage() {
               Category rules ({categoryRules.length})
             </div>
             {categoryRules.length === 0
-              ? <div style={{ background:'#fff', border:'2px dashed #e2e8f0', borderRadius:14, padding:'28px 20px', textAlign:'center', color:'#94a3b8', fontSize:13 }}>No category rules yet — click "Category rule" to add one</div>
+              ? <div style={{ background:'#fff', border:'2px dashed #e2e8f0', borderRadius:14, padding:'28px 20px', textAlign:'center', color:'#94a3b8', fontSize:13 }}>No category rules yet — click &ldquo;Category rule&rdquo; to add one</div>
               : <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                   {categoryRules.map(rule => <RuleCard key={rule.id} rule={rule} onDelete={() => deleteRule(rule.id)} label={rule.category?.name ?? '—'} dotColor={rule.category?.color ?? '#94a3b8'} />)}
                 </div>
@@ -198,7 +198,7 @@ export default function RulesPage() {
               Child rules ({kidRules.length})
             </div>
             {kidRules.length === 0
-              ? <div style={{ background:'#fff', border:'2px dashed #e2e8f0', borderRadius:14, padding:'28px 20px', textAlign:'center', color:'#94a3b8', fontSize:13 }}>No child rules yet — click "Kid rule" to add one</div>
+              ? <div style={{ background:'#fff', border:'2px dashed #e2e8f0', borderRadius:14, padding:'28px 20px', textAlign:'center', color:'#94a3b8', fontSize:13 }}>No child rules yet — click &ldquo;Kid rule&rdquo; to add one</div>
               : <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                   {kidRules.map(rule => <RuleCard key={rule.id} rule={rule} onDelete={() => deleteRule(rule.id)} label={rule.kid?.name ?? '—'} dotColor={rule.kid?.color ?? '#94a3b8'} />)}
                 </div>

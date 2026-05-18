@@ -279,7 +279,7 @@ export default function DashboardPage() {
     filtered.forEach(e => { myShare += Number(e.amount)*(e.created_by===ctx?.myUserId?e.split_pct:100-e.split_pct)/100 })
     const theirs = total - myShare
     const mePaid = me ? filtered.filter(e=>e.paid_by_user_id===me.user_id).reduce((s,e)=>s+Number(e.amount),0) : 0
-    // Balance = money I've paid minus my share, BUT exclude already settled/pending amounts
+    // Balance = money I&apos;ve paid minus my share, BUT exclude already settled/pending amounts
     // settled_amount tracks what has been paid toward each expense
     // balance only counts OUTSTANDING (unpaid) portion
     let settledByMe = 0
@@ -550,10 +550,15 @@ export default function DashboardPage() {
         </div>
 
         {/* ── TABS ── */}
-        <div style={{display:'flex',background:'#fff',border:'1px solid #e2e8f0',borderRadius:10,padding:3,marginBottom:12,gap:2}}>
-          {(['overview','analytics','expenses'] as const).map(t=>(
-            <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:'7px 0',border:'none',borderRadius:8,background:tab===t?'#0f172a':'transparent',color:tab===t?'#fff':'#64748b',fontSize:12,fontWeight:600,cursor:'pointer',textTransform:'uppercase',letterSpacing:'0.05em'}}>
-              {t.charAt(0).toUpperCase()+t.slice(1)}
+        <div style={{display:'flex',background:'#f3f4f6',border:'1px solid #e5e7eb',borderRadius:6,padding:3,marginBottom:16,gap:2}}>
+          {([
+            {key:'overview',  label:'Overview'},
+            {key:'analytics', label:'Analytics'},
+            {key:'expenses',  label:'Expenses'},
+          ] as {key:'overview'|'analytics'|'expenses', label:string}[]).map(({key,label})=>(
+            <button key={key} onClick={()=>setTab(key)}
+              style={{flex:1,padding:'9px 0',border:'none',borderRadius:4,background:tab===key?'#fff':'transparent',color:tab===key?'#111827':'#6b7280',fontSize:13,fontWeight:tab===key?700:400,cursor:'pointer',boxShadow:tab===key?'0 1px 2px rgba(0,0,0,0.07)':'none',transition:'all 0.15s'}}>
+              {label}
             </button>
           ))}
         </div>
@@ -1006,14 +1011,14 @@ export default function DashboardPage() {
                   <select value={form.kid_id} onChange={e=>{const id=e.target.value;const rule=kidRules[id];F({kid_id:id,...(rule&&!rule.is_optional?{split_pct:rule.split_pct}:{})})}} style={{...INP,cursor:'pointer',color:form.kid_id?'#0f172a':'#94a3b8'}}>
                     <option value="">Child…</option>{kids.map(k=><option key={k.id} value={k.id}>{k.name}</option>)}
                   </select>
-                  {form.kid_id&&kidRules[form.kid_id]&&<div style={{marginTop:3,fontSize:11,color:'#059669'}}>⚡ {kidRules[form.kid_id].split_pct}/{100-kidRules[form.kid_id].split_pct} rule</div>}
+                  {form.kid_id&&kidRules[form.kid_id]&&<div style={{marginTop:3,fontSize:11,color:'#059669'}}>Rule: {kidRules[form.kid_id].split_pct}/{100-kidRules[form.kid_id].split_pct} rule</div>}
                 </div>
                 <div>
                   <label style={LBL}>Category *</label>
                   <select value={form.category_id} onChange={e=>{const id=e.target.value;const rule=splitRules[id];F({category_id:id,...(rule&&!rule.is_optional?{split_pct:rule.split_pct}:{})})}} style={{...INP,cursor:'pointer',color:form.category_id?'#0f172a':'#94a3b8'}}>
                     <option value="">Category…</option>{cats.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
-                  {form.category_id&&splitRules[form.category_id]&&<div style={{marginTop:3,fontSize:11,color:'#059669'}}>⚡ {splitRules[form.category_id].split_pct}/{100-splitRules[form.category_id].split_pct} rule</div>}
+                  {form.category_id&&splitRules[form.category_id]&&<div style={{marginTop:3,fontSize:11,color:'#059669'}}>Rule: {splitRules[form.category_id].split_pct}/{100-splitRules[form.category_id].split_pct} rule</div>}
                 </div>
               </div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>

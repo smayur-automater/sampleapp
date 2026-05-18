@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 import {
   BellAlertIcon,
   ArrowLeftStartOnRectangleIcon,
@@ -217,13 +218,16 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
       {/* ── FOOTER ── */}
       <footer style={{ borderTop: '1px solid #e5e7eb', background: '#fff', padding: '12px 24px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 20 }}>
-        {FOOTER_LINKS.map(({ path, label }) => (
-          <button key={path} onClick={() => router.push(path)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500, color: '#9ca3af', padding: 0 }}>
-            {label}
-          </button>
+        {FOOTER_LINKS.map(({ path, label }, i) => (
+          <React.Fragment key={path}>
+            {i > 0 && <span style={{ fontSize: 12, color: '#e5e7eb' }}>·</span>}
+            <button onClick={() => router.push(path)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500, color: '#9ca3af', padding: 0 }}>
+              {label}
+            </button>
+          </React.Fragment>
         ))}
-        <span style={{ fontSize: 12, color: '#e5e7eb' }}>|</span>
+        <span style={{ fontSize: 12, color: '#e5e7eb' }}>·</span>
         <span style={{ fontSize: 12, color: '#d1d5db' }}>&copy; {new Date().getFullYear()} CoParent Pay</span>
       </footer>
 
@@ -350,7 +354,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                 {isPremium ? (
                   /* Already premium */
                   <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                    <div style={{ fontSize: 48, marginBottom: 12 }}>⭐</div>
+                    
                     <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>You&apos;re on Premium!</h2>
                     <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.6 }}>You have access to all premium features.</p>
                   </div>

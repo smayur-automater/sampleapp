@@ -227,7 +227,7 @@ export default function Page() {
 
           {/* FORGOT SENT */}
           {view==='forgot_sent'&&<div style={{textAlign:'center',padding:'8px 0'}}>
-            <div style={{fontSize:44,marginBottom:12}}>📧</div>
+            <div style={{fontSize:44,marginBottom:12}}></div>
             <div style={{fontSize:18,fontWeight:800,color:'#0f172a',marginBottom:8}}>Check your inbox</div>
             <p style={{fontSize:14,color:'#64748b',lineHeight:1.7,marginBottom:24}}>A reset link was sent to <strong style={{color:'#0f172a'}}>{email}</strong></p>
             <button onClick={()=>setView('signin')} style={btn}>Back to sign in</button>

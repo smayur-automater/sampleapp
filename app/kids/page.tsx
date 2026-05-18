@@ -11,7 +11,7 @@ interface Kid { id: string; name: string; dob: string | null; color: string; gen
 const COLORS = ['#2563eb','#059669','#d97706','#dc2626','#7c3aed','#0891b2','#374151','#db2777']
 const GENDERS = ['Boy','Girl','Non-binary','Unknown']
 
-const GENDER_ICON: Record<string, string> = { Boy: '👦', Girl: '👧', 'Non-binary': '🧒', Unknown: '👶' }
+const GENDER_ICON: Record<string, string> = { Boy: 'M', Girl: 'F', 'Non-binary': 'N', Unknown: '?' }
 const GENDER_COLOR: Record<string, string> = { Boy: '#2563eb', Girl: '#db2777', 'Non-binary': '#7c3aed', Unknown: '#94a3b8' }
 
 const INP: React.CSSProperties = { width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: 10, fontSize: 14, background: '#f8fafc', outline: 'none', color: '#0f172a', boxSizing: 'border-box' }
@@ -105,7 +105,7 @@ export default function KidsPage() {
           <div style={{ textAlign: 'center', padding: 48, color: '#94a3b8' }}>Loading…</div>
         ) : kids.length === 0 ? (
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: '48px 24px', textAlign: 'center' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>👶</div>
+            
             <div style={{ fontWeight: 700, fontSize: 16, color: '#334155', marginBottom: 6 }}>No children yet</div>
             <div style={{ fontSize: 13, color: '#64748b', marginBottom: 18 }}>Add a profile for each child to track their expenses</div>
             <button onClick={openAdd} style={{ padding: '9px 18px', background: '#1a3a6b', color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Add first child</button>

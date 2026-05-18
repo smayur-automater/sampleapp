@@ -13,7 +13,7 @@ export default function PrivacyPolicy() {
         <p style={{ fontSize:14, color:'#6b7280', marginBottom:48 }}>Effective date: 18 May 2026 &nbsp;·&nbsp; Last updated: 18 May 2026</p>
 
         <S title="1. About This Policy">
-          <P>This Privacy Policy describes how <strong>Xfiniti Technology Pty Ltd</strong>, trading as <strong>CoParent Pay</strong> ("we", "us", "our"), collects, uses, stores, and discloses personal information when you use the CoParent Pay mobile and web application (the "App"). By creating an account or using the App, you acknowledge that you have read and agree to this policy.</P>
+          <P>This Privacy Policy describes how <strong>Xfiniti Technology Pty Ltd</strong>, trading as <strong>CoParent Pay</strong> (&ldquo;we&rdquo;, "us", "our"), collects, uses, stores, and discloses personal information when you use the CoParent Pay mobile and web application (the "App"). By creating an account or using the App, you acknowledge that you have read and agree to this policy.</P>
           <P>We comply with the <strong>Australian Privacy Act 1988 (Cth)</strong> and the Australian Privacy Principles (APPs). Where applicable, we also comply with the <strong>EU General Data Protection Regulation (GDPR)</strong> and the <strong>California Consumer Privacy Act (CCPA)</strong>.</P>
         </S>
 
@@ -70,7 +70,7 @@ export default function PrivacyPolicy() {
           <H3>9.2 Correction</H3>
           <P>You may update your profile (name, phone) within the App at any time.</P>
           <H3>9.3 Deletion</H3>
-          <P>You may request deletion of your account and personal data. Expense records shared within a household may be retained in anonymised form or as required by law. To request deletion, email <strong>info@xfiniti.com.au</strong> with subject "Account Deletion Request". We will action your request within 30 days.</P>
+          <P>You may request deletion of your account and personal data. Expense records shared within a household may be retained in anonymised form or as required by law. To request deletion, email <strong>info@xfiniti.com.au</strong> with subject &ldquo;Account Deletion Request&rdquo;. We will action your request within 30 days.</P>
           <H3>9.4 Restriction and Objection (GDPR)</H3>
           <P>You have the right to restrict processing of your data or object to processing based on legitimate interests. Contact us to exercise these rights.</P>
           <H3>9.5 Withdraw Consent</H3>

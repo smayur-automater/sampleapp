@@ -145,7 +145,7 @@ export default function PlanPage() {
         <div style={{ background:'#f9fafb', border:'1px solid #e5e7eb', borderRadius:4, padding:'14px 18px', marginBottom:16 }}>
           <div style={{ fontSize:11, fontWeight:700, color:'#374151', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:6 }}>How to upgrade</div>
           <p style={{ fontSize:13, color:'#4b5563', lineHeight:1.7, margin:0 }}>
-            Click "Upgrade to Premium" to send a request to our team at <strong>info@xfiniti.com.au</strong>. We will activate your account within a few hours. Questions? Email <a href="mailto:info@xfiniti.com.au" style={{ color:'#1d4ed8' }}>info@xfiniti.com.au</a>.
+            Click &ldquo;Upgrade to Premium&rdquo; to send a request to our team at <strong>info@xfiniti.com.au</strong>. We will activate your account within a few hours. Questions? Email <a href="mailto:info@xfiniti.com.au" style={{ color:'#1d4ed8' }}>info@xfiniti.com.au</a>.
           </p>
         </div>
 
