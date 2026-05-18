@@ -11,15 +11,26 @@ import { supabase } from '@/lib/supabase'
 import { useHousehold } from '@/lib/household'
 import { CURRENCIES } from '@/components/CurrencySelect'
 import {
+
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
   LineChart, Line,
 } from 'recharts'
 
+// Format currency: commas, drop .00 if whole number, keep cents if present
+function fmtAmt(n: number): string {
+  const hasCents = (Math.round(n * 100) % 100) !== 0
+  return hasCents
+    ? n.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : n.toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+}
+
+
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
 const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 const CHART_COLORS = ['#2563eb','#059669','#d97706','#7c3aed','#dc2626','#0891b2','#374151','#db2777','#0891b2','#4f46e5']
 const sym = (code: string) => CURRENCIES.find(c => c.code === code)?.symbol ?? '$'
+
 
 type ViewMode = 'monthly' | 'yearly' | 'by_kid'
 type ChartType = 'bar' | 'pie' | 'line'
@@ -174,24 +185,24 @@ export default function StatementsPage() {
   <div style="text-align:right;"><div style="font-size:15px;font-weight:700;">${me?.display_name??''} &amp; ${co?.display_name??''}</div></div>
 </div>
 <div class="kpis">
-  <div class="kpi"><div class="kpi-l">Total spend</div><div class="kpi-v">${cs}${Number(s.total).toFixed(2)}</div></div>
+  <div class="kpi"><div class="kpi-l">Total spend</div><div class="kpi-v">${cs}${fmtAmt(Number(s.total))}</div></div>
   <div class="kpi"><div class="kpi-l">Expenses</div><div class="kpi-v">${exps.length}</div></div>
   <div class="kpi"><div class="kpi-l">Categories</div><div class="kpi-v">${cats.length}</div></div>
   <div class="kpi"><div class="kpi-l">Settled</div><div class="kpi-v">${exps.filter(e=>e.settlement_status==='settled').length}</div></div>
 </div>
 ${Math.abs(bal)>0.01?`<div class="bal" style="border-color:${bal>=0?'#059669':'#dc2626'};background:${bal>=0?'#f0fdf4':'#fef2f2'}">
   <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:${bal>=0?'#059669':'#dc2626'};margin-bottom:3px;">${bal>=0?`${co?.display_name} owes ${me?.display_name}`:`${me?.display_name} owes ${co?.display_name}`}</div>
-  <div style="font-size:20px;font-weight:700;color:${bal>=0?'#059669':'#dc2626'};">${cs}${Math.abs(bal).toFixed(2)}</div>
+  <div style="font-size:20px;font-weight:700;color:${bal>=0?'#059669':'#dc2626'};">${cs}${fmtAmt(Math.abs(bal))}</div>
 </div>`:''}
 <h2>Who paid what</h2>
 <table><thead><tr><th>Parent</th><th>Paid</th><th>Share owed</th><th>Net</th></tr></thead><tbody>
-${members.map(m=>`<tr><td><strong>${m.display_name}</strong></td><td>${cs}${Number(m.paid).toFixed(2)}</td><td>${cs}${Number(m.owed).toFixed(2)}</td><td style="font-weight:700;color:${m.paid-m.owed>=0?'#059669':'#dc2626'}">${cs}${Math.abs(m.paid-m.owed).toFixed(2)} ${m.paid-m.owed>=0?'to receive':'to pay'}</td></tr>`).join('')}
+${members.map(m=>`<tr><td><strong>${m.display_name}</strong></td><td>${cs}${fmtAmt(Number(m.paid))}</td><td>${cs}${fmtAmt(Number(m.owed))}</td><td style="font-weight:700;color:${m.paid-m.owed>=0?'#059669':'#dc2626'}">${cs}${fmtAmt(Math.abs(m.paid-m.owed))} ${m.paid-m.owed>=0?'to receive':'to pay'}</td></tr>`).join('')}
 </tbody></table>
 ${cats.length?`<h2>By category</h2><table><thead><tr><th>Category</th><th>Count</th><th>Total</th><th>% of spend</th></tr></thead><tbody>
-${cats.map(c=>`<tr><td>${c.name}</td><td>${c.count}</td><td>${cs}${Number(c.total).toFixed(2)}</td><td>${s.total>0?(Number(c.total)/s.total*100).toFixed(0):0}%</td></tr>`).join('')}</tbody></table>`:''}
+${cats.map(c=>`<tr><td>${c.name}</td><td>${c.count}</td><td>${cs}${fmtAmt(Number(c.total))}</td><td>${s.total>0?(Number(c.total)/s.total*100).toFixed(0):0}%</td></tr>`).join('')}</tbody></table>`:''}
 <h2>All expenses</h2>
 <table><thead><tr><th>Date</th><th>Description</th><th>Child</th><th>Category</th><th>Amount</th><th>Split</th><th>Paid by</th><th>Status</th></tr></thead><tbody>
-${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</td><td>${e.description}</td><td>${e.kid_name}</td><td>${e.category_name}</td><td>${cs}${Number(e.amount).toFixed(2)}</td><td>${e.split_pct}/${100-e.split_pct}</td><td>${e.paid_by_name}</td><td>${e.settlement_status}</td></tr>`).join('')}
+${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</td><td>${e.description}</td><td>${e.kid_name}</td><td>${e.category_name}</td><td>${cs}${fmtAmt(Number(e.amount))}</td><td>${e.split_pct}/${100-e.split_pct}</td><td>${e.paid_by_name}</td><td>${e.settlement_status}</td></tr>`).join('')}
 </tbody></table>`)
   }
 
@@ -205,20 +216,20 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
   <div style="text-align:right;"><div style="font-size:15px;font-weight:700;">${me?.display_name??''} &amp; ${co?.display_name??''}</div></div>
 </div>
 <div class="kpis">
-  <div class="kpi"><div class="kpi-l">Total spend</div><div class="kpi-v">${cs}${Number(s.total).toFixed(2)}</div></div>
+  <div class="kpi"><div class="kpi-l">Total spend</div><div class="kpi-v">${cs}${fmtAmt(Number(s.total))}</div></div>
   <div class="kpi"><div class="kpi-l">Expenses</div><div class="kpi-v">${exps.length}</div></div>
   <div class="kpi"><div class="kpi-l">Avg/month</div><div class="kpi-v">${cs}${months.length>0?(s.total/months.length).toFixed(0):'0'}</div></div>
-  <div class="kpi"><div class="kpi-l">Settled</div><div class="kpi-v">${cs}${months.reduce((a,m)=>a+Number(m.settled??0),0).toFixed(2)}</div></div>
+  <div class="kpi"><div class="kpi-l">Settled</div><div class="kpi-v">${cs}${fmtAmt(months.reduce((a,m)=>a+Number(m.settled??0),0))}</div></div>
 </div>
 <h2>Monthly breakdown</h2>
 <table><thead><tr><th>Month</th><th>Expenses</th><th>Total</th><th>Settled</th></tr></thead><tbody>
-${months.map(m=>`<tr><td>${MONTH_NAMES[m.month_num-1]}</td><td>${m.count}</td><td>${cs}${Number(m.total).toFixed(2)}</td><td>${cs}${Number(m.settled??0).toFixed(2)}</td></tr>`).join('')}
+${months.map(m=>`<tr><td>${MONTH_NAMES[m.month_num-1]}</td><td>${m.count}</td><td>${cs}${fmtAmt(Number(m.total))}</td><td>${cs}${fmtAmt(Number(m.settled??0))}</td></tr>`).join('')}
 </tbody></table>
 ${(s.by_category??[]).length?`<h2>By category</h2><table><thead><tr><th>Category</th><th>Count</th><th>Total</th></tr></thead><tbody>
-${(s.by_category??[]).map(c=>`<tr><td>${c.name}</td><td>${c.count}</td><td>${cs}${Number(c.total).toFixed(2)}</td></tr>`).join('')}</tbody></table>`:''}
+${(s.by_category??[]).map(c=>`<tr><td>${c.name}</td><td>${c.count}</td><td>${cs}${fmtAmt(Number(c.total))}</td></tr>`).join('')}</tbody></table>`:''}
 <h2>All expenses</h2>
 <table><thead><tr><th>Date</th><th>Description</th><th>Child</th><th>Category</th><th>Amount</th><th>Paid by</th><th>Status</th></tr></thead><tbody>
-${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</td><td>${e.description}</td><td>${e.kid_name}</td><td>${e.category_name}</td><td>${cs}${Number(e.amount).toFixed(2)}</td><td>${e.paid_by_name}</td><td>${e.settlement_status}</td></tr>`).join('')}
+${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</td><td>${e.description}</td><td>${e.kid_name}</td><td>${e.category_name}</td><td>${cs}${fmtAmt(Number(e.amount))}</td><td>${e.paid_by_name}</td><td>${e.settlement_status}</td></tr>`).join('')}
 </tbody></table>`)
   }
 
@@ -231,14 +242,14 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
   <div style="text-align:right;"><div style="font-size:15px;font-weight:700;">All time</div></div>
 </div>
 <div class="kpis">
-  <div class="kpi"><div class="kpi-l">Total spend</div><div class="kpi-v">$${Number(s.total).toFixed(2)}</div></div>
+  <div class="kpi"><div class="kpi-l">Total spend</div><div class="kpi-v">$${fmtAmt(Number(s.total))}</div></div>
   <div class="kpi"><div class="kpi-l">Expenses</div><div class="kpi-v">${exps.length}</div></div>
 </div>
 ${(s.by_category??[]).length?`<h2>By category</h2><table><thead><tr><th>Category</th><th>Count</th><th>Total</th></tr></thead><tbody>
-${(s.by_category??[]).map(c=>`<tr><td>${c.name}</td><td>${c.count}</td><td>$${Number(c.total).toFixed(2)}</td></tr>`).join('')}</tbody></table>`:''}
+${(s.by_category??[]).map(c=>`<tr><td>${c.name}</td><td>${c.count}</td><td>$${fmtAmt(Number(c.total))}</td></tr>`).join('')}</tbody></table>`:''}
 <h2>All expenses</h2>
 <table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Paid by</th><th>Status</th></tr></thead><tbody>
-${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</td><td>${e.description}</td><td>${e.category_name}</td><td>$${Number(e.amount).toFixed(2)}</td><td>${e.paid_by_name}</td><td>${e.settlement_status}</td></tr>`).join('')}
+${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</td><td>${e.description}</td><td>${e.category_name}</td><td>$${fmtAmt(Number(e.amount))}</td><td>${e.paid_by_name}</td><td>${e.settlement_status}</td></tr>`).join('')}
 </tbody></table>`)
   }
 
@@ -357,7 +368,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
               {/* KPIs */}
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
                 {[
-                  {l:'Total spend',  v:`$${Number(monthly.total).toFixed(2)}`},
+                  {l:'Total spend',  v:`$${fmtAmt(Number(monthly.total))}`},
                   {l:'Expenses',     v:String(monthly.expenses?.length??0)},
                   {l:'Categories',   v:String(monthly.by_category?.length??0)},
                 ].map(k=>(
@@ -392,8 +403,8 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                         <span style={{fontSize:13,fontWeight:600,color:'#111'}}>{m.display_name}</span>
                       </div>
                       <div style={{display:'flex',gap:16,fontSize:13}}>
-                        <span style={{color:'#6b7280'}}>Paid: <strong style={{color:'#111'}}>${Number(m.paid).toFixed(2)}</strong></span>
-                        <span style={{color:'#6b7280'}}>Owes: <strong style={{color:'#111'}}>${Number(m.owed).toFixed(2)}</strong></span>
+                        <span style={{color:'#6b7280'}}>Paid: <strong style={{color:'#111'}}>${fmtAmt(Number(m.paid))}</strong></span>
+                        <span style={{color:'#6b7280'}}>Owes: <strong style={{color:'#111'}}>${fmtAmt(Number(m.owed))}</strong></span>
                         <span style={{fontWeight:700,color:m.paid-m.owed>=0?'#059669':'#dc2626'}}>
                           {m.paid-m.owed>=0?'+':''}{(m.paid-m.owed).toFixed(2)}
                         </span>
@@ -415,7 +426,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                             <div style={{width:8,height:8,borderRadius:'50%',background:c.color||'#374151'}}/>
                             <span style={{fontSize:12,color:'#374151'}}>{c.name}</span>
                           </div>
-                          <span style={{fontSize:12,fontWeight:600,color:'#111'}}>${Number(c.total).toFixed(2)}</span>
+                          <span style={{fontSize:12,fontWeight:600,color:'#111'}}>${fmtAmt(Number(c.total))}</span>
                         </div>
                       ))}
                     </div>
@@ -424,7 +435,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                         <Pie data={(monthly.by_category??[]).map(c=>({name:c.name,value:Number(c.total),color:c.color}))} cx="50%" cy="50%" outerRadius={58} dataKey="value" labelLine={false} label={PL}>
                           {(monthly.by_category??[]).map((c,i)=><Cell key={i} fill={c.color||CHART_COLORS[i%CHART_COLORS.length]}/>)}
                         </Pie>
-                        <Tooltip formatter={(v:any)=>`$${Number(v).toFixed(2)}`}/>
+                        <Tooltip formatter={(v:any)=>`$${fmtAmt(Number(v))}`}/>
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -446,7 +457,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                           <div style={{fontSize:10,color:'#9ca3af'}}>{k.count} expenses</div>
                         </div>
                       </div>
-                      <span style={{fontSize:14,fontWeight:700,color:'#111'}}>${Number(k.total).toFixed(2)}</span>
+                      <span style={{fontSize:14,fontWeight:700,color:'#111'}}>${fmtAmt(Number(k.total))}</span>
                     </div>
                   ))}
                 </div>
@@ -473,7 +484,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                           <td style={{padding:'7px 8px',fontSize:12,color:'#111',fontWeight:500}}>{e.description}</td>
                           <td style={{padding:'7px 8px',fontSize:12,color:'#6b7280'}}>{e.kid_name}</td>
                           <td style={{padding:'7px 8px',fontSize:12,color:'#6b7280'}}>{e.category_name}</td>
-                          <td style={{padding:'7px 8px',fontSize:12,fontWeight:700,color:'#111',whiteSpace:'nowrap'}}>${Number(e.amount).toFixed(2)}</td>
+                          <td style={{padding:'7px 8px',fontSize:12,fontWeight:700,color:'#111',whiteSpace:'nowrap'}}>${fmtAmt(Number(e.amount))}</td>
                           <td style={{padding:'7px 8px',fontSize:12,color:'#6b7280',whiteSpace:'nowrap'}}>{e.paid_by_name}</td>
                           <td style={{padding:'7px 8px'}}>
                             <span style={{fontSize:10,fontWeight:700,padding:'2px 6px',borderRadius:3,background:e.settlement_status==='settled'?'#f0fdf4':e.settlement_status==='pending_approval'?'#f5f3ff':'#fef2f2',color:e.settlement_status==='settled'?'#059669':e.settlement_status==='pending_approval'?'#7c3aed':'#dc2626',border:`1px solid ${e.settlement_status==='settled'?'#d1fae5':e.settlement_status==='pending_approval'?'#ddd6fe':'#fecaca'}`}}>
@@ -503,7 +514,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
             ) : (<>
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:12}}>
                 {[
-                  {l:'Total spend',   v:`$${Number(yearly.total).toFixed(2)}`},
+                  {l:'Total spend',   v:`$${fmtAmt(Number(yearly.total))}`},
                   {l:'Expenses',      v:String(yearly.expenses?.length??0)},
                   {l:'Avg / month',   v:`$${((yearly.by_month??[]).length>0?yearly.total/(yearly.by_month??[]).length:0).toFixed(0)}`},
                 ].map(k=>(
@@ -523,7 +534,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                       <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false}/>
                       <XAxis dataKey="month" tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false}/>
                       <YAxis tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false} tickFormatter={v=>`$${v}`}/>
-                      <Tooltip formatter={(v:any)=>`$${Number(v).toFixed(2)}`}/>
+                      <Tooltip formatter={(v:any)=>`$${fmtAmt(Number(v))}`}/>
                       <Bar dataKey="settled"     name="Settled"     fill="#d1fae5" radius={[2,2,0,0]} stackId="a"/>
                       <Bar dataKey="outstanding" name="Outstanding" fill="#fca5a5" radius={[2,2,0,0]} stackId="a"/>
                     </BarChart>
@@ -544,7 +555,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                     <ResponsiveContainer width="100%" height={130}>
                       <PieChart><Pie data={(yearly.by_category??[]).map(c=>({name:c.name,value:Number(c.total),color:c.color}))} cx="50%" cy="50%" outerRadius={54} dataKey="value" labelLine={false} label={PL}>
                         {(yearly.by_category??[]).map((c,i)=><Cell key={i} fill={c.color||CHART_COLORS[i%CHART_COLORS.length]}/>)}
-                      </Pie><Tooltip formatter={(v:any)=>`$${Number(v).toFixed(2)}`}/></PieChart>
+                      </Pie><Tooltip formatter={(v:any)=>`$${fmtAmt(Number(v))}`}/></PieChart>
                     </ResponsiveContainer>
                   </div>
                 )}
@@ -554,7 +565,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                     <ResponsiveContainer width="100%" height={130}>
                       <PieChart><Pie data={(yearly.by_kid??[]).map(k=>({name:k.kid_name,value:Number(k.total),color:k.color}))} cx="50%" cy="50%" outerRadius={54} dataKey="value" labelLine={false} label={PL}>
                         {(yearly.by_kid??[]).map((k,i)=><Cell key={i} fill={k.color||CHART_COLORS[i%CHART_COLORS.length]}/>)}
-                      </Pie><Tooltip formatter={(v:any)=>`$${Number(v).toFixed(2)}`}/></PieChart>
+                      </Pie><Tooltip formatter={(v:any)=>`$${fmtAmt(Number(v))}`}/></PieChart>
                     </ResponsiveContainer>
                   </div>
                 )}
@@ -575,7 +586,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                           <td style={{padding:'7px 8px',fontSize:12,color:'#111'}}>{e.description}</td>
                           <td style={{padding:'7px 8px',fontSize:12,color:'#6b7280'}}>{e.kid_name}</td>
                           <td style={{padding:'7px 8px',fontSize:12,color:'#6b7280'}}>{e.category_name}</td>
-                          <td style={{padding:'7px 8px',fontSize:12,fontWeight:700,color:'#111',whiteSpace:'nowrap'}}>${Number(e.amount).toFixed(2)}</td>
+                          <td style={{padding:'7px 8px',fontSize:12,fontWeight:700,color:'#111',whiteSpace:'nowrap'}}>${fmtAmt(Number(e.amount))}</td>
                           <td style={{padding:'7px 8px'}}><span style={{fontSize:10,fontWeight:600,color:e.settlement_status==='settled'?'#059669':'#dc2626'}}>{e.settlement_status}</span></td>
                         </tr>
                       ))}
@@ -605,7 +616,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
               <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginBottom:12}}>
                 <div style={{...CARD,marginBottom:0}}>
                   <div style={LBL}>Total spend</div>
-                  <div style={{fontSize:22,fontWeight:700,color:'#111'}}>${Number(kidData.total).toFixed(2)}</div>
+                  <div style={{fontSize:22,fontWeight:700,color:'#111'}}>${fmtAmt(Number(kidData.total))}</div>
                 </div>
                 <div style={{...CARD,marginBottom:0}}>
                   <div style={LBL}>Expenses</div>
@@ -625,14 +636,14 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                             <div style={{width:8,height:8,borderRadius:'50%',background:c.color||'#374151'}}/>
                             <span style={{fontSize:12,color:'#374151'}}>{c.name}</span>
                           </div>
-                          <span style={{fontSize:12,fontWeight:600,color:'#111'}}>${Number(c.total).toFixed(2)}</span>
+                          <span style={{fontSize:12,fontWeight:600,color:'#111'}}>${fmtAmt(Number(c.total))}</span>
                         </div>
                       ))}
                     </div>
                     <ResponsiveContainer width="100%" height={130}>
                       <PieChart><Pie data={(kidData.by_category??[]).map(c=>({name:c.name,value:Number(c.total),color:c.color}))} cx="50%" cy="50%" outerRadius={54} dataKey="value" labelLine={false} label={PL}>
                         {(kidData.by_category??[]).map((c,i)=><Cell key={i} fill={c.color||CHART_COLORS[i%CHART_COLORS.length]}/>)}
-                      </Pie><Tooltip formatter={(v:any)=>`$${Number(v).toFixed(2)}`}/></PieChart>
+                      </Pie><Tooltip formatter={(v:any)=>`$${fmtAmt(Number(v))}`}/></PieChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
@@ -647,7 +658,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                       <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false}/>
                       <XAxis dataKey="name" tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false}/>
                       <YAxis tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false} tickFormatter={v=>`$${v}`}/>
-                      <Tooltip formatter={(v:any)=>`$${Number(v).toFixed(2)}`}/>
+                      <Tooltip formatter={(v:any)=>`$${fmtAmt(Number(v))}`}/>
                       <Line type="monotone" dataKey="total" stroke="#2563eb" strokeWidth={2} dot={{r:3,fill:'#2563eb'}} activeDot={{r:5}}/>
                     </LineChart>
                   </ResponsiveContainer>
@@ -667,7 +678,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                         <td style={{padding:'7px 8px',fontSize:12,color:'#6b7280',whiteSpace:'nowrap'}}>{new Date(e.date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</td>
                         <td style={{padding:'7px 8px',fontSize:12,color:'#111'}}>{e.description}</td>
                         <td style={{padding:'7px 8px',fontSize:12,color:'#6b7280'}}>{e.category_name}</td>
-                        <td style={{padding:'7px 8px',fontSize:12,fontWeight:700,color:'#111',whiteSpace:'nowrap'}}>${Number(e.amount).toFixed(2)}</td>
+                        <td style={{padding:'7px 8px',fontSize:12,fontWeight:700,color:'#111',whiteSpace:'nowrap'}}>${fmtAmt(Number(e.amount))}</td>
                         <td style={{padding:'7px 8px',fontSize:12,color:'#6b7280',whiteSpace:'nowrap'}}>{e.paid_by_name}</td>
                         <td style={{padding:'7px 8px'}}><span style={{fontSize:10,fontWeight:600,color:e.settlement_status==='settled'?'#059669':'#dc2626'}}>{e.settlement_status}</span></td>
                       </tr>
@@ -733,7 +744,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                       <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false}/>
                       <XAxis dataKey="name" tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false}/>
                       <YAxis tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false} tickFormatter={v=>`$${v}`}/>
-                      <Tooltip formatter={(v:any)=>`$${Number(v).toFixed(2)}`}/>
+                      <Tooltip formatter={(v:any)=>`$${fmtAmt(Number(v))}`}/>
                       <Bar dataKey="value" name="Amount" radius={[3,3,0,0]}>
                         {custData.map((d: {name:string;value:number;color:string},i:number)=><Cell key={i} fill={d.color||CHART_COLORS[i%CHART_COLORS.length]}/>) }
                       </Bar>
@@ -746,7 +757,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                       <Pie data={custData} cx="50%" cy="50%" outerRadius={80} dataKey="value" labelLine={false} label={PL}>
                         {custData.map((d: {name:string;value:number;color:string},i:number)=><Cell key={i} fill={d.color||CHART_COLORS[i%CHART_COLORS.length]}/>) }
                       </Pie>
-                      <Tooltip formatter={(v:any)=>`$${Number(v).toFixed(2)}`}/>
+                      <Tooltip formatter={(v:any)=>`$${fmtAmt(Number(v))}`}/>
                     </PieChart>
                   </ResponsiveContainer>
                 )}
@@ -756,7 +767,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
                       <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false}/>
                       <XAxis dataKey="name" tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false}/>
                       <YAxis tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false} tickFormatter={v=>`$${v}`}/>
-                      <Tooltip formatter={(v:any)=>`$${Number(v).toFixed(2)}`}/>
+                      <Tooltip formatter={(v:any)=>`$${fmtAmt(Number(v))}`}/>
                       <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={{r:3}} activeDot={{r:5}}/>
                     </LineChart>
                   </ResponsiveContainer>

@@ -1,3 +1,4 @@
+
 'use client'
 import React from 'react'
 import {
@@ -13,6 +14,16 @@ import { CURRENCIES } from '@/components/CurrencySelect'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, Legend } from 'recharts'
 import { logAudit } from '@/lib/audit'
 import { CategoryIcon } from '@/components/CategoryIcon'
+
+// Format currency: commas, drop .00 if whole number, keep cents if present
+function fmtAmt(n: number): string {
+  const hasCents = (Math.round(n * 100) % 100) !== 0
+  return hasCents
+    ? n.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : n.toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+}
+
+
 
 type SettlementStatus = 'outstanding' | 'partial' | 'pending_approval' | 'settled'
 interface Kid      { id: string; name: string; color: string }
@@ -254,7 +265,7 @@ export default function DashboardPage() {
     // I (me) am the one requesting settlement — I am the payer in the SQL so
     // pending_approval_by = me → the banner shows to co-parent only
     const currentMY = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`
-    if (!confirm(`Send settlement request of ${cs}${Math.abs(stats.balance).toFixed(2)} to ${co.display_name} for approval?`)) return
+    if (!confirm(`Send settlement request of ${cs}${fmtAmt(Math.abs(stats.balance))} to ${co.display_name} for approval?`)) return
     const {error} = await supabase.rpc('record_settlement',{
       hh_id:ctx.household_id, paid_by_uid:me.user_id, recv_by_uid:co.user_id,
       amt:Math.abs(stats.balance), curr:currency,
@@ -478,7 +489,7 @@ export default function DashboardPage() {
                   {exp.pending_approval_note&&<div style={{fontSize:11,color:'#7c3aed',marginTop:2,fontStyle:'italic'}}>"{exp.pending_approval_note}"</div>}
                 </div>
                 <div style={{textAlign:'right',flexShrink:0}}>
-                  <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{cs}{Number(exp.pending_approval_amount??exp.amount).toFixed(2)}</div>
+                  <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{cs}{fmtAmt(Number(exp.pending_approval_amount??exp.amount))}</div>
                   <div style={{fontSize:10,color:'#94a3b8'}}>settlement amount</div>
                 </div>
                 <div style={{display:'flex',gap:6,flexShrink:0}}>
@@ -508,7 +519,7 @@ export default function DashboardPage() {
                   {stats.balance>=0 ? 'Outstanding receivable' : 'Outstanding payable'}
                 </div>
                 <div style={{fontSize:42,fontWeight:800,color:stats.balance>=0?'#dc2626':'#1a3a6b',letterSpacing:'-1.5px',marginBottom:6}}>
-                  {cs}{Math.abs(stats.balance).toFixed(2)}
+                  {cs}{fmtAmt(Math.abs(stats.balance))}
                 </div>
                 <div style={{fontSize:12,color:'#94a3b8',marginBottom:12}}>
                   {stats.balance>=0?`${co.display_name} owes you`:`You owe ${co.display_name}`}
@@ -521,8 +532,8 @@ export default function DashboardPage() {
                       <div style={{height:'100%',width:`${Math.min((stats.settledAmt/stats.total)*100,100)}%`,background:'#059669',borderRadius:4,transition:'width .4s'}}/>
                     </div>
                     <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#94a3b8'}}>
-                      <span>{cs}{stats.settledAmt.toFixed(2)} Settled</span>
-                      <span>{cs}{(stats.total-stats.settledAmt).toFixed(2)} Remaining</span>
+                      <span>{cs}{fmtAmt(stats.settledAmt)} Settled</span>
+                      <span>{cs}{fmtAmt((stats.total-stats.settledAmt))} Remaining</span>
                     </div>
                   </div>
                 )}
@@ -561,7 +572,7 @@ export default function DashboardPage() {
                   <cfg.Icon style={{width:12,height:12,color:cfg.color}}/>
                   <span style={{fontSize:10,fontWeight:700,color:cfg.color,textTransform:'uppercase',letterSpacing:'0.04em'}}>{cfg.label}</span>
                 </div>
-                <div style={{fontSize:17,fontWeight:800,color:'#0f172a'}}>{cs}{total.toFixed(2)}</div>
+                <div style={{fontSize:17,fontWeight:800,color:'#0f172a'}}>{cs}{fmtAmt(total)}</div>
                 <div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{count} expense{count!==1?'s':''}</div>
               </div>
             )
@@ -596,9 +607,9 @@ export default function DashboardPage() {
           {/* KPIs */}
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:14}}>
             {[
-              {label:'Total',              value:`${cs}${stats.total.toFixed(2)}`,    sub:`${stats.count} expenses`,                                     color:'#64748b'},
-              {label:me?.display_name??'Mine',   value:`${cs}${stats.myShare.toFixed(2)}`, sub:`${stats.total>0?(stats.myShare/stats.total*100).toFixed(0):0}% share`, color:me?.color??'#1a3a6b'},
-              {label:co?.display_name??'Theirs', value:`${cs}${stats.theirs.toFixed(2)}`,  sub:`${stats.total>0?(stats.theirs/stats.total*100).toFixed(0):0}% share`, color:co?.color??'#94a3b8'},
+              {label:'Total',              value:`${cs}${fmtAmt(stats.total)}`,    sub:`${stats.count} expenses`,                                     color:'#64748b'},
+              {label:me?.display_name??'Mine',   value:`${cs}${fmtAmt(stats.myShare)}`, sub:`${stats.total>0?(stats.myShare/stats.total*100).toFixed(0):0}% share`, color:me?.color??'#1a3a6b'},
+              {label:co?.display_name??'Theirs', value:`${cs}${fmtAmt(stats.theirs)}`,  sub:`${stats.total>0?(stats.theirs/stats.total*100).toFixed(0):0}% share`, color:co?.color??'#94a3b8'},
             ].map(s=>(
               <div key={s.label} style={{background:'#fff',border:'1px solid #e2e8f0',borderRadius:12,padding:'12px'}}>
                 <div style={{marginBottom:5}}>
@@ -685,7 +696,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <div style={{textAlign:'right',flexShrink:0}}>
-                        <div style={{fontWeight:700,fontSize:14,color:'#0f172a'}}>{sym(exp.currency)}{Number(exp.amount).toFixed(2)}</div>
+                        <div style={{fontWeight:700,fontSize:14,color:'#0f172a'}}>{sym(exp.currency)}{fmtAmt(Number(exp.amount))}</div>
                         <div style={{fontSize:10,color:'#94a3b8'}}>{exp.split_pct}/{100-exp.split_pct}</div>
                       </div>
                       <div style={{display:'flex',alignItems:'center',gap:3,padding:'2px 7px',borderRadius:3,background:cfg.bg,border:`1px solid ${cfg.border}`,flexShrink:0}}>
@@ -711,13 +722,13 @@ export default function DashboardPage() {
                     {isExp&&(
                       <div style={{padding:'10px 14px 14px',background:'#f8fafc',borderTop:'1px solid #e2e8f0'}}>
                         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:8}}>
-                          <div><div style={{fontSize:10,fontWeight:600,color:'#94a3b8',textTransform:'uppercase',marginBottom:2}}>Owed</div><div style={{fontSize:14,fontWeight:700,color:'#0f172a'}}>{sym(exp.currency)}{owed.toFixed(2)}</div></div>
-                          <div><div style={{fontSize:10,fontWeight:600,color:'#94a3b8',textTransform:'uppercase',marginBottom:2}}>Settled</div><div style={{fontSize:14,fontWeight:700,color:'#059669'}}>{sym(exp.currency)}{Number(exp.settled_amount??0).toFixed(2)}</div></div>
-                          <div><div style={{fontSize:10,fontWeight:600,color:'#94a3b8',textTransform:'uppercase',marginBottom:2}}>Remaining</div><div style={{fontSize:14,fontWeight:700,color:rem>0?'#dc2626':'#059669'}}>{sym(exp.currency)}{Math.max(rem,0).toFixed(2)}</div></div>
+                          <div><div style={{fontSize:10,fontWeight:600,color:'#94a3b8',textTransform:'uppercase',marginBottom:2}}>Owed</div><div style={{fontSize:14,fontWeight:700,color:'#0f172a'}}>{sym(exp.currency)}{fmtAmt(owed)}</div></div>
+                          <div><div style={{fontSize:10,fontWeight:600,color:'#94a3b8',textTransform:'uppercase',marginBottom:2}}>Settled</div><div style={{fontSize:14,fontWeight:700,color:'#059669'}}>{sym(exp.currency)}{fmtAmt(Number(exp.settled_amount??0))}</div></div>
+                          <div><div style={{fontSize:10,fontWeight:600,color:'#94a3b8',textTransform:'uppercase',marginBottom:2}}>Remaining</div><div style={{fontSize:14,fontWeight:700,color:rem>0?'#dc2626':'#059669'}}>{sym(exp.currency)}{fmtAmt(Math.max(rem,0))}</div></div>
                         </div>
                         {exp.settlement_status==='pending_approval'&&(
                           <div style={{fontSize:12,color:'#7c3aed',padding:'6px 10px',background:'#f5f3ff',borderRadius:8,marginBottom:8}}>
-                            Settlement of {cs}{Number(exp.pending_approval_amount??0).toFixed(2)} pending approval from {exp.pending_approval_by===ctx?.myUserId?(co?.display_name??'co-parent'):'your'} approval
+                            Settlement of {cs}{fmtAmt(Number(exp.pending_approval_amount??0))} pending approval from {exp.pending_approval_by===ctx?.myUserId?(co?.display_name??'co-parent'):'your'} approval
                           </div>
                         )}
                         {exp.settlement_note&&<div style={{fontSize:12,color:cfg.color,fontStyle:'italic',marginBottom:6}}>Note: {exp.settlement_note}</div>}
@@ -743,7 +754,7 @@ export default function DashboardPage() {
                 {/* Total */}
                 <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:6,padding:'14px 16px'}}>
                   <div style={{fontSize:10,fontWeight:600,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>Total expenses</div>
-                  <div style={{fontSize:22,fontWeight:700,color:'#111827',letterSpacing:'-0.5px'}}>{cs}{stats.total.toFixed(2)}</div>
+                  <div style={{fontSize:22,fontWeight:700,color:'#111827',letterSpacing:'-0.5px'}}>{cs}{fmtAmt(stats.total)}</div>
                   <div style={{fontSize:11,color:'#9ca3af',marginTop:3}}>{stats.count} expense{stats.count!==1?'s':''}</div>
                 </div>
                 {/* Balance */}
@@ -752,7 +763,7 @@ export default function DashboardPage() {
                     {Math.abs(stats.balance)>0.01?(stats.balance>=0?'Outstanding receivable':'Outstanding payable'):'Balance'}
                   </div>
                   <div style={{fontSize:22,fontWeight:700,color:Math.abs(stats.balance)>0.01?(stats.balance>=0?'#059669':'#dc2626'):'#9ca3af',letterSpacing:'-0.5px'}}>
-                    {Math.abs(stats.balance)>0.01?`${cs}${Math.abs(stats.balance).toFixed(2)}`:'Settled'}
+                    {Math.abs(stats.balance)>0.01?`${cs}${fmtAmt(Math.abs(stats.balance))}`:'Settled'}
                   </div>
                   <div style={{fontSize:11,color:'#9ca3af',marginTop:3}}>
                     {Math.abs(stats.balance)>0.01?(stats.balance>=0?`${co?.display_name??'Co-parent'} owes you`:`You owe ${co?.display_name??'co-parent'}`):'No outstanding balance'}
@@ -762,7 +773,7 @@ export default function DashboardPage() {
                 {me&&(
                   <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:6,padding:'14px 16px'}}>
                     <div style={{fontSize:10,fontWeight:600,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>{me.display_name}</div>
-                    <div style={{fontSize:22,fontWeight:700,color:'#111827',letterSpacing:'-0.5px'}}>{cs}{stats.mePaid.toFixed(2)}</div>
+                    <div style={{fontSize:22,fontWeight:700,color:'#111827',letterSpacing:'-0.5px'}}>{cs}{fmtAmt(stats.mePaid)}</div>
                     <div style={{display:'flex',alignItems:'center',gap:6,marginTop:4}}>
                       <div style={{flex:1,height:3,background:'#f3f4f6',borderRadius:2,overflow:'hidden'}}>
                         <div style={{height:'100%',width:`${stats.total>0?(stats.mePaid/stats.total*100):0}%`,background:'#2563eb',borderRadius:2}}/>
@@ -775,7 +786,7 @@ export default function DashboardPage() {
                 {co&&(
                   <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:6,padding:'14px 16px'}}>
                     <div style={{fontSize:10,fontWeight:600,color:'#9ca3af',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>{co.display_name}</div>
-                    <div style={{fontSize:22,fontWeight:700,color:'#111827',letterSpacing:'-0.5px'}}>{cs}{stats.theirs.toFixed(2)}</div>
+                    <div style={{fontSize:22,fontWeight:700,color:'#111827',letterSpacing:'-0.5px'}}>{cs}{fmtAmt(stats.theirs)}</div>
                     <div style={{display:'flex',alignItems:'center',gap:6,marginTop:4}}>
                       <div style={{flex:1,height:3,background:'#f3f4f6',borderRadius:2,overflow:'hidden'}}>
                         <div style={{height:'100%',width:`${stats.total>0?(stats.theirs/stats.total*100):0}%`,background:'#059669',borderRadius:2}}/>
@@ -802,7 +813,7 @@ export default function DashboardPage() {
                             <div style={{width:8,height:8,borderRadius:'50%',background:cat.color||'#374151',flexShrink:0}}/>
                             <span style={{fontSize:12,fontWeight:drillCat===cat.id?700:500,color:'#111827'}}>{cat.name}</span>
                           </div>
-                          <span style={{fontSize:12,fontWeight:700,color:'#111827'}}>{cs}{cat.amount.toFixed(2)}</span>
+                          <span style={{fontSize:12,fontWeight:700,color:'#111827'}}>{cs}{fmtAmt(cat.amount)}</span>
                         </div>
                         <div style={{height:3,background:'#f3f4f6',borderRadius:2,overflow:'hidden'}}>
                           <div style={{height:'100%',width:`${stats.total>0?(cat.amount/stats.total*100):0}%`,background:cat.color||'#374151',borderRadius:2,transition:'width 0.3s'}}/>
@@ -825,7 +836,7 @@ export default function DashboardPage() {
                               <div style={{fontSize:10,color:'#9ca3af'}}>{new Date(e.date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</div>
                             </div>
                             <div style={{textAlign:'right'}}>
-                              <div style={{fontSize:12,fontWeight:700,color:'#111827'}}>{cs}{Number(e.amount).toFixed(2)}</div>
+                              <div style={{fontSize:12,fontWeight:700,color:'#111827'}}>{cs}{fmtAmt(Number(e.amount))}</div>
                               <div style={{fontSize:9,padding:'1px 5px',borderRadius:3,background:e.settlement_status==='settled'?'#f0fdf4':e.settlement_status==='pending_approval'?'#f5f3ff':'#fef2f2',color:e.settlement_status==='settled'?'#059669':e.settlement_status==='pending_approval'?'#7c3aed':'#dc2626',display:'inline-block',marginTop:1}}>{e.settlement_status}</div>
                             </div>
                           </div>
@@ -840,7 +851,7 @@ export default function DashboardPage() {
                           onClick={(d:any)=>setDrillCat(d.id)} style={{cursor:'pointer'}}>
                           {stats.byCat.map((d,i)=><Cell key={i} fill={d.color||'#374151'}/>)}
                         </Pie>
-                        <Tooltip formatter={(v:any)=>`${cs}${Number(v).toFixed(2)}`} contentStyle={{fontSize:12,border:'1px solid #e5e7eb',borderRadius:4}}/>
+                        <Tooltip formatter={(v:any)=>`${cs}${fmtAmt(Number(v))}`} contentStyle={{fontSize:12,border:'1px solid #e5e7eb',borderRadius:4}}/>
                       </PieChart>
                     </ResponsiveContainer>
                   )}
@@ -866,7 +877,7 @@ export default function DashboardPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false}/>
                     <XAxis dataKey="month" tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false}/>
                     <YAxis tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false} tickFormatter={v=>`${cs}${v}`}/>
-                    <Tooltip contentStyle={{fontSize:12,border:'1px solid #e5e7eb',borderRadius:4}} formatter={(v:any)=>`${cs}${Number(v).toFixed(2)}`}/>
+                    <Tooltip contentStyle={{fontSize:12,border:'1px solid #e5e7eb',borderRadius:4}} formatter={(v:any)=>`${cs}${fmtAmt(Number(v))}`}/>
                     <Bar dataKey="settled"     name="Settled"     fill="#d1fae5" radius={[2,2,0,0]} stackId="a"/>
                     <Bar dataKey="outstanding" name="Outstanding" fill="#fca5a5" radius={[2,2,0,0]} stackId="a"/>
                   </BarChart>
@@ -914,7 +925,7 @@ export default function DashboardPage() {
                                 {date&&<div style={{fontSize:10,color:'#d1d5db',marginTop:2}}>{new Date(date).toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>}
                               </div>
                               <div style={{textAlign:'right',flexShrink:0}}>
-                                <div style={{fontSize:13,fontWeight:700,color:'#111827'}}>{cs}{amt.toFixed(2)}</div>
+                                <div style={{fontSize:13,fontWeight:700,color:'#111827'}}>{cs}{fmtAmt(amt)}</div>
                                 <span style={{fontSize:9,fontWeight:700,padding:'2px 6px',borderRadius:3,background:isPending?'#f5f3ff':'#f0fdf4',color:isPending?'#7c3aed':'#059669',border:`1px solid ${isPending?'#ddd6fe':'#d1fae5'}`,display:'inline-block',marginTop:2}}>
                                   {isPending?'Pending approval':'Settled'}
                                 </span>
@@ -987,7 +998,7 @@ export default function DashboardPage() {
                           <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false}/>
                           <XAxis dataKey="name" tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false}/>
                           <YAxis tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false} tickFormatter={v=>`${cs}${v}`}/>
-                          <Tooltip contentStyle={{fontSize:12,border:'1px solid #e5e7eb',borderRadius:4}} formatter={(v:any)=>`${cs}${Number(v).toFixed(2)}`}/>
+                          <Tooltip contentStyle={{fontSize:12,border:'1px solid #e5e7eb',borderRadius:4}} formatter={(v:any)=>`${cs}${fmtAmt(Number(v))}`}/>
                           <Bar dataKey="value" name="Amount" radius={[3,3,0,0]}>
                             {custData.map((d:{name:string;value:number;color:string},i:number)=><Cell key={i} fill={d.color}/>)}
                           </Bar>
@@ -1000,7 +1011,7 @@ export default function DashboardPage() {
                           <Pie data={custData} cx="50%" cy="50%" innerRadius={40} outerRadius={72} dataKey="value" labelLine={false} label={PieLabel}>
                             {custData.map((d:{name:string;value:number;color:string},i:number)=><Cell key={i} fill={d.color}/>)}
                           </Pie>
-                          <Tooltip contentStyle={{fontSize:12,border:'1px solid #e5e7eb',borderRadius:4}} formatter={(v:any)=>`${cs}${Number(v).toFixed(2)}`}/>
+                          <Tooltip contentStyle={{fontSize:12,border:'1px solid #e5e7eb',borderRadius:4}} formatter={(v:any)=>`${cs}${fmtAmt(Number(v))}`}/>
                         </PieChart>
                       </ResponsiveContainer>
                     )}
@@ -1010,7 +1021,7 @@ export default function DashboardPage() {
                           <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false}/>
                           <XAxis dataKey="name" tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false}/>
                           <YAxis tick={{fontSize:10,fill:'#9ca3af'}} axisLine={false} tickLine={false} tickFormatter={v=>`${cs}${v}`}/>
-                          <Tooltip contentStyle={{fontSize:12,border:'1px solid #e5e7eb',borderRadius:4}} formatter={(v:any)=>`${cs}${Number(v).toFixed(2)}`}/>
+                          <Tooltip contentStyle={{fontSize:12,border:'1px solid #e5e7eb',borderRadius:4}} formatter={(v:any)=>`${cs}${fmtAmt(Number(v))}`}/>
                           <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={{r:3,fill:'#2563eb'}} activeDot={{r:5}}/>
                         </LineChart>
                       </ResponsiveContainer>
@@ -1019,7 +1030,7 @@ export default function DashboardPage() {
                       {custData.map((d:{name:string;value:number;color:string},i:number)=>(
                         <div key={i} style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'#6b7280'}}>
                           <div style={{width:8,height:8,borderRadius:2,background:d.color,flexShrink:0}}/>
-                          {d.name}: {cs}{d.value.toFixed(2)}
+                          {d.name}: {cs}{fmtAmt(d.value)}
                         </div>
                       ))}
                     </div>
@@ -1113,9 +1124,9 @@ export default function DashboardPage() {
             <div style={{background:'#0f172a',borderRadius:14,padding:'16px 20px',marginBottom:14,textAlign:'center'}}>
               <div style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.5)',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:4}}>Balance to settle</div>
               <div style={{fontSize:38,fontWeight:700,color:'#4ade80',letterSpacing:'-1px'}}>
-                {sym(settleModal.currency)}{(expenseOwed(settleModal)-Number(settleModal.settled_amount??0)).toFixed(2)}
+                {sym(settleModal.currency)}{(expenseOwed(settleModal)-Number(settleModal.settled_amount??0)).toFixed(2)}){fmtAmt((expenseOwed(settleModal)-Number(settleModal.settled_amount??0)))}
               </div>
-              <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:3}}>of {sym(settleModal.currency)}{Number(settleModal.amount).toFixed(2)} total</div>
+              <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:3}}>of {sym(settleModal.currency)}{fmtAmt(Number(settleModal.amount))}){fmtAmt(Number(settleModal.amount))} total</div>
             </div>
             <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:9,padding:'9px 13px',marginBottom:14}}>
               <div style={{fontWeight:700,fontSize:13,color:'#0f172a'}}>{settleModal.description}</div>
@@ -1205,7 +1216,7 @@ function ExpensesTab({ expenses, ctx, cs, STATUS_CONFIG, onEdit, onSettle, onApp
             <button onClick={()=>setExpanded(p=>({...p,[key]:!p[key]}))} style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'9px 14px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:0,cursor:'pointer',borderBottom:isOpen?'1px solid #e2e8f0':'1px solid #e2e8f0'}}>
               
               <span style={{flex:1,textAlign:'left',fontSize:13,fontWeight:700,color:'#0f172a'}}>{g.label}</span>
-              <span style={{fontSize:12,color:'#64748b',fontWeight:600}}>{g.items.length} · {cs}{total.toFixed(2)}</span>
+              <span style={{fontSize:12,color:'#64748b',fontWeight:600}}>{g.items.length} · {cs}{fmtAmt(total)}</span>
               <span style={{fontSize:11,color:'#94a3b8'}}>{isOpen?'▲':'▼'}</span>
             </button>
             {isOpen&&(
@@ -1227,7 +1238,7 @@ function ExpensesTab({ expenses, ctx, cs, STATUS_CONFIG, onEdit, onSettle, onApp
                         </div>
                       </div>
                       <div style={{textAlign:'right'}}>
-                        <div style={{fontSize:13,fontWeight:800,color:'#0f172a'}}>{cs}{exp.amount.toFixed(2)}</div>
+                        <div style={{fontSize:13,fontWeight:800,color:'#0f172a'}}>{cs}{fmtAmt(exp.amount)}</div>
                         <span style={{display:'inline-flex',alignItems:'center',gap:2,padding:'2px 6px',borderRadius:99,fontSize:9,fontWeight:700,background:cfg.bg,color:cfg.color,border:`1px solid ${cfg.border}`,marginTop:2}}>
                           <span style={{width:4,height:4,borderRadius:'50%',background:cfg.color,display:'inline-block'}}></span>{cfg.label}
                         </span>

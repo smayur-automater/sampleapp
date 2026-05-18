@@ -1,7 +1,18 @@
+
 'use client'
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+
+// Format currency: commas, drop .00 if whole number, keep cents if present
+function fmtAmt(n: number): string {
+  const hasCents = (Math.round(n * 100) % 100) !== 0
+  return hasCents
+    ? n.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : n.toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+}
+
+
 
 interface Stats { total_users:number;total_households:number;total_kids:number;total_expenses:number;total_spend:number;linked_households:number;pending_invites:number;new_users_7d:number;new_expenses_7d:number;expenses_by_day:{day:string;count:number;amount:number}[] }
 interface Household { id:string;name:string;created_at:string;member_count:number;kid_count:number;expense_count:number;total_spend:number;last_expense_at:string|null;members:{user_id:string;display_name:string;color:string;role:string;joined_at:string}[] }
@@ -175,7 +186,7 @@ export default function AdminPage() {
 <h1>${d.household.name} — Household Report</h1><p style="color:#9ca3af;margin:0">Generated ${new Date().toLocaleString('en-AU')} · CoParent Pay Admin</p>
 <h2>Members</h2><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead><tbody>${d.members.map(m=>`<tr><td>${m.display_name}</td><td>${m.email}</td><td>${m.role}</td><td>${fd(m.joined_at)}</td></tr>`).join('')}</tbody></table>
 <h2>Children</h2><table><thead><tr><th>Name</th><th>Date of birth</th></tr></thead><tbody>${(d.kids??[]).map(k=>`<tr><td>${k.name}</td><td>${k.dob?fd(k.dob):'—'}</td></tr>`).join('')}</tbody></table>
-<h2>Expenses (${exps.length})</h2><table><thead><tr><th>Date</th><th>Description</th><th>Child</th><th>Category</th><th>Amount</th><th>Status</th><th>Added by</th></tr></thead><tbody>${exps.map(e=>`<tr><td>${fd(e.date)}</td><td>${e.description}</td><td>${e.kid_name}</td><td>${e.category_name}</td><td>$${Number(e.amount).toFixed(2)}</td><td>${e.settlement_status}</td><td>${e.creator_email}</td></tr>`).join('')}</tbody></table>
+<h2>Expenses (${exps.length})</h2><table><thead><tr><th>Date</th><th>Description</th><th>Child</th><th>Category</th><th>Amount</th><th>Status</th><th>Added by</th></tr></thead><tbody>${exps.map(e=>`<tr><td>${fd(e.date)}</td><td>${e.description}</td><td>${e.kid_name}</td><td>${e.category_name}</td><td>$${fmtAmt(Number(e.amount))}</td><td>${e.settlement_status}</td><td>${e.creator_email}</td></tr>`).join('')}</tbody></table>
 <p class="footer">CoParent Pay · Xfiniti Technology Pty Ltd · Confidential · Data retained 7 years</p></body></html>`)
     w.document.close();w.print()
   }

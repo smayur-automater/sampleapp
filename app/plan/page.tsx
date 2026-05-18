@@ -1,3 +1,4 @@
+
 'use client'
 import React from 'react'
 import { useEffect, useState } from 'react'
@@ -5,6 +6,16 @@ import { useSearchParams } from 'next/navigation'
 import Shell from '@/components/Shell'
 import { supabase } from '@/lib/supabase'
 import { CheckCircleIcon, XCircleIcon, ClockIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+
+// Format currency: commas, drop .00 if whole number, keep cents if present
+function fmtAmt(n: number): string {
+  const hasCents = (Math.round(n * 100) % 100) !== 0
+  return hasCents
+    ? n.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : n.toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+}
+
+
 
 interface Usage {
   plan: 'free'|'premium'
