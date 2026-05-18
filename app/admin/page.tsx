@@ -54,11 +54,57 @@ export default function AdminPage() {
     try{
       if(view==='dashboard'||view==='plans'){
         const[sr,ur]=await Promise.all([supabase.rpc('admin_get_stats'),supabase.rpc('admin_get_users')])
-        if(ur.error)showT('Users error: '+ur.error.message)
-        setStats(sr.data);setUsers(Array.isArray(ur.data)?ur.data:[])
+        setStats(sr.data??null)
+        if(Array.isArray(ur.data)&&ur.data.length>0){
+          setUsers(ur.data)
+        } else {
+          // Fallback to household_members
+          const{data:members}=await supabase
+            .from('household_members')
+            .select('user_id,display_name,color,role,household_id,plan,plan_assigned_at,phone,country,joined_at,households(name)')
+            .order('joined_at',{ascending:false})
+          if(Array.isArray(members))setUsers(members.map((m:any)=>({id:m.user_id,email:m.user_id,created_at:m.joined_at,last_sign_in_at:null,email_confirmed_at:m.joined_at,display_name:m.display_name,color:m.color,role:m.role,household_id:m.household_id,household_name:m.households?.name??null,plan:m.plan??'free',plan_assigned_at:m.plan_assigned_at,phone:m.phone,country:m.country,expense_count:0,total_spend:0})))
+        }
       }
       else if(view==='households'){const{data,error}=await supabase.rpc('admin_get_households');if(error)showT('Error: '+error.message);setHouseholds(Array.isArray(data)?data:[])}
-      else if(view==='users'){const{data,error}=await supabase.rpc('admin_get_users');if(error)showT('Users error: '+error.message);setUsers(Array.isArray(data)?data:[])}
+      else if(view==='users'){
+        const{data,error}=await supabase.rpc('admin_get_users')
+        if(error){ showT('RPC error: '+error.message) }
+        if(Array.isArray(data)&&data.length>0){
+          setUsers(data)
+        } else {
+          // Fallback: build user list from household_members + join households
+          // This works even if auth.users is inaccessible via RPC
+          const{data:members}=await supabase
+            .from('household_members')
+            .select('user_id,display_name,color,role,household_id,plan,plan_assigned_at,phone,country,joined_at,households(name)')
+            .order('joined_at',{ascending:false})
+          if(Array.isArray(members)&&members.length>0){
+            setUsers(members.map((m:any)=>({
+              id: m.user_id,
+              email: m.user_id, // will show uid if auth.users unavailable
+              created_at: m.joined_at,
+              last_sign_in_at: null,
+              email_confirmed_at: m.joined_at,
+              display_name: m.display_name,
+              color: m.color,
+              role: m.role,
+              household_id: m.household_id,
+              household_name: m.households?.name??null,
+              plan: m.plan??'free',
+              plan_assigned_at: m.plan_assigned_at,
+              phone: m.phone,
+              country: m.country,
+              expense_count: 0,
+              total_spend: 0,
+            })))
+            showT('Showing members — run fix-admin-users.sql for full user data')
+          } else {
+            setUsers([])
+            showT('No users found. Run fix-admin-users.sql in Supabase SQL Editor.')
+          }
+        }
+      }
       else if(view==='admins'){const{data}=await supabase.from('admins').select('id,user_id,email,created_at').order('created_at');setAdmins(data??[])}
     }catch(e:any){showT('Load error: '+(e?.message??e));console.error(e)}
     setLoading(false)
