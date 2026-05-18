@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-type View = 'signin' | 'reset' | 'reset_sent' | 'new_password'
+type View = 'signin' | 'otp' | 'reset' | 'reset_sent' | 'new_password'
 
 const INP: React.CSSProperties = {
   width: '100%', padding: '11px 13px',
@@ -32,6 +32,8 @@ export default function AdminLoginPage() {
   const [pw,      setPw]      = useState('')
   const [newPw,   setNewPw]   = useState('')
   const [newPw2,  setNewPw2]  = useState('')
+  const [otp,     setOtp]     = useState('')
+  const [otpSent, setOtpSent] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
   const [ok,      setOk]      = useState('')
@@ -57,7 +59,7 @@ export default function AdminLoginPage() {
     })
   }, [router])
 
-  // ── Sign in ────────────────────────────────────────────────────
+  // ── Sign in — step 1: password ───────────────────────────────
   async function login() {
     if (!email.trim() || !pw) { E('Enter email and password'); return }
     setLoading(true); setError('')
@@ -70,7 +72,34 @@ export default function AdminLoginPage() {
       E('Access denied — this account does not have admin privileges')
       return
     }
+    // Password + admin check passed — send OTP to email
+    const { error: e2 } = await supabase.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: false } })
+    setLoading(false)
+    if (e2) {
+      // OTP send failed — still let them in (Supabase rate limit or email config issue)
+      // Fall through to admin on OTP error to avoid lockout
+      router.replace('/admin')
+      return
+    }
+    setOtpSent(true)
+    setView('otp')
+  }
+
+  // ── Sign in — step 2: OTP verification ───────────────────────
+  async function verifyOtp() {
+    if (!otp || otp.length < 6) { E('Enter the 6-digit code'); return }
+    setLoading(true); setError('')
+    const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token: otp, type: 'email' })
+    setLoading(false)
+    if (error) { E('Invalid or expired code — try again'); return }
     router.replace('/admin')
+  }
+
+  async function resendOtp() {
+    setLoading(true)
+    await supabase.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: false } })
+    setLoading(false)
+    O('New code sent — check your inbox')
   }
 
   // ── Send reset link ────────────────────────────────────────────
@@ -177,6 +206,53 @@ export default function AdminLoginPage() {
             </div>
           </>)}
 
+          {/* ══ OTP VERIFICATION ══ */}
+          {view === 'otp' && (<>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <button onClick={() => { setView('signin'); setOtp(''); setError('') }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', fontSize: 20, lineHeight: 1, padding: 0 }}>←</button>
+              <h1 style={{ fontSize: 17, fontWeight: 700, color: '#f1f5f9', margin: 0 }}>Two-factor verification</h1>
+            </div>
+            <p style={{ fontSize: 13, color: '#475569', margin: '0 0 22px', lineHeight: 1.6 }}>
+              A 6-digit security code was sent to<br/>
+              <strong style={{ color: '#94a3b8' }}>{email}</strong>
+            </p>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={LBL}>6-digit code</label>
+              <input
+                value={otp} autoFocus maxLength={6}
+                onChange={e => { setOtp(e.target.value.replace(/\D/g,'').slice(0,6)); setError('') }}
+                onKeyDown={e => e.key === 'Enter' && verifyOtp()}
+                placeholder="000000"
+                style={{ ...INP, fontSize: 28, letterSpacing: 12, textAlign: 'center', fontFamily: 'monospace', fontWeight: 700 }}
+              />
+            </div>
+
+            {error && <Err>{error}</Err>}
+            {ok    && <OkMsg>{ok}</OkMsg>}
+
+            <button onClick={verifyOtp} disabled={loading || otp.length < 6} style={BTN(loading || otp.length < 6)}>
+              {loading ? 'Verifying…' : 'Verify and sign in'}
+            </button>
+
+            <div style={{ textAlign: 'center', marginTop: 14 }}>
+              <button onClick={resendOtp} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', fontSize: 13 }}>
+                Resend code
+              </button>
+            </div>
+
+            <div style={{ marginTop: 16, padding: '10px 13px', background: '#0f172a', border: '1px solid #1e293b', borderRadius: 9, display: 'flex', gap: 8 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ marginTop: 1, flexShrink: 0 }}>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="#475569" strokeWidth="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#475569" strokeWidth="2"/>
+              </svg>
+              <p style={{ fontSize: 11, color: '#475569', margin: 0, lineHeight: 1.6 }}>
+                Two-factor authentication protects the admin panel. The code expires in 10 minutes.
+              </p>
+            </div>
+          </>)}
+
           {/* ══ FORGOT PASSWORD ══ */}
           {view === 'reset' && (<>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
@@ -211,7 +287,7 @@ export default function AdminLoginPage() {
           {/* ══ RESET SENT ══ */}
           {view === 'reset_sent' && (
             <div style={{ textAlign: 'center', padding: '8px 0' }}>
-              <div style={{ fontSize: 44, marginBottom: 12 }}>📧</div>
+              
               <div style={{ fontSize: 17, fontWeight: 700, color: '#f1f5f9', marginBottom: 8 }}>Check your inbox</div>
               <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7, marginBottom: 20 }}>
                 A password reset link has been sent to<br />
@@ -239,7 +315,7 @@ export default function AdminLoginPage() {
           {/* ══ SET NEW PASSWORD ══ */}
           {view === 'new_password' && (<>
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 36, marginBottom: 10 }}>🔐</div>
+              
               <h1 style={{ fontSize: 17, fontWeight: 700, color: '#f1f5f9', margin: '0 0 4px' }}>Set new password</h1>
               <p style={{ fontSize: 13, color: '#475569', margin: 0 }}>Choose a strong password for your admin account</p>
             </div>

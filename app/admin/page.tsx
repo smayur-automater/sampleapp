@@ -52,11 +52,15 @@ export default function AdminPage() {
   async function loadView(){
     setLoading(true)
     try{
-      if(view==='dashboard'||view==='plans'){const[sr,ur]=await Promise.all([supabase.rpc('admin_get_stats'),supabase.rpc('admin_get_users')]);setStats(sr.data);setUsers(ur.data??[])}
-      else if(view==='households'){const{data}=await supabase.rpc('admin_get_households');setHouseholds(data??[])}
-      else if(view==='users'){const{data}=await supabase.rpc('admin_get_users');setUsers(data??[])}
+      if(view==='dashboard'||view==='plans'){
+        const[sr,ur]=await Promise.all([supabase.rpc('admin_get_stats'),supabase.rpc('admin_get_users')])
+        if(ur.error)showT('Users error: '+ur.error.message)
+        setStats(sr.data);setUsers(Array.isArray(ur.data)?ur.data:[])
+      }
+      else if(view==='households'){const{data,error}=await supabase.rpc('admin_get_households');if(error)showT('Error: '+error.message);setHouseholds(Array.isArray(data)?data:[])}
+      else if(view==='users'){const{data,error}=await supabase.rpc('admin_get_users');if(error)showT('Users error: '+error.message);setUsers(Array.isArray(data)?data:[])}
       else if(view==='admins'){const{data}=await supabase.from('admins').select('id,user_id,email,created_at').order('created_at');setAdmins(data??[])}
-    }catch(e){console.error(e)}
+    }catch(e:any){showT('Load error: '+(e?.message??e));console.error(e)}
     setLoading(false)
   }
 
@@ -88,6 +92,14 @@ export default function AdminPage() {
     const{error}=await supabase.from('admins').insert({user_id:target.id,email:target.email})
     if(error){showT(error.message.includes('duplicate')?'Already an admin':'Error: '+error.message);return}
     setNewAdminEmail('');loadView();showT(`${target.email} is now an admin`)
+  }
+
+  async function makeAdminFromUser(uid:string,email:string){
+    ask(`Grant admin access to ${email}?`,async()=>{
+      const{error}=await supabase.from('admins').insert({user_id:uid,email})
+      if(error){showT(error.message.includes('duplicate')?`${email} is already an admin`:'Error: '+error.message);return}
+      showT(`${email} is now an admin`)
+    })
   }
 
   async function removeAdmin(id:string,email:string){
@@ -242,6 +254,7 @@ export default function AdminPage() {
                       <td style={TD}>
                         <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
                           <button onClick={e=>{e.stopPropagation();setPlan(u.id,u.plan==='premium'?'free':'premium',u.display_name??u.email)}} style={{padding:'3px 7px',fontSize:10,background:'#7c3aed22',color:'#a78bfa',border:'1px solid #7c3aed44',borderRadius:3,cursor:'pointer'}}>{u.plan==='premium'?'→ Free':'→ Premium'}</button>
+                          <button onClick={e=>{e.stopPropagation();makeAdminFromUser(u.id,u.email)}} style={{padding:'3px 7px',fontSize:10,background:'#06b6d422',color:'#22d3ee',border:'1px solid #06b6d444',borderRadius:3,cursor:'pointer'}}>Admin</button>
                           <button onClick={e=>{e.stopPropagation();setPwModal({uid:u.id,email:u.email})}} style={{padding:'3px 7px',fontSize:10,background:'#0ea5e922',color:'#38bdf8',border:'1px solid #0ea5e944',borderRadius:3,cursor:'pointer'}}>Pw</button>
                           <button onClick={e=>{e.stopPropagation();deleteUser(u.id,u.email)}} style={{padding:'3px 7px',fontSize:10,background:'#dc262622',color:'#f87171',border:'1px solid #dc262644',borderRadius:3,cursor:'pointer'}}>Del</button>
                         </div>
