@@ -32,8 +32,14 @@ export default function PrivacyPolicy() {
         </S>
 
         <S title="4. Legal Basis for Processing (GDPR)">
-          <P>For users in the European Economic Area, we process personal data under the following legal bases:</P>
-          <UL items={['Contract performance — processing necessary to deliver the App services you have agreed to','Legitimate interests — improving the App, preventing fraud, ensuring security (where not overridden by your rights)','Consent — where you have provided explicit consent','Legal obligation — where required by applicable law']}/>
+          <P>For users in the European Economic Area or United Kingdom, we process personal data under the following legal bases:</P>
+          <UL items={[
+            'Contract performance (Art. 6(1)(b) GDPR) — processing necessary to deliver the App services you have agreed to',
+            'Legitimate interests (Art. 6(1)(f) GDPR) — improving the App, preventing fraud, ensuring security, where not overridden by your rights',
+            'Consent (Art. 6(1)(a) GDPR) — where you have provided explicit consent (for example, optional communications)',
+            'Legal obligation (Art. 6(1)(c) GDPR) — where required by applicable law',
+          ]}/>
+          <P>The transfer of your personal data from the EEA or United Kingdom to Australia is made under Standard Contractual Clauses (SCCs) as described in Section 8.3 of this policy.</P>
         </S>
 
         <S title="5. Data Sharing and Disclosure">
@@ -41,7 +47,11 @@ export default function PrivacyPolicy() {
           <P>Expense data, settlement records, and profile names are visible to all members of your shared household. You control who is invited.</P>
           <H3>5.2 Service Providers</H3>
           <P>We share data with the following third-party processors under strict data processing agreements:</P>
-          <UL items={['Supabase — database, authentication, and file storage (data stored in Australia)','Vercel — application hosting and content delivery (edge network, primary region Australia)','Resend — transactional email delivery (Australia region)']}/>
+          <UL items={[
+            'Supabase Inc. — database, authentication, and file storage. Primary region: Sydney, Australia. Data Processing Agreement and SCCs executed.',
+            'Vercel Inc. — application hosting and content delivery. Primary region: Sydney, Australia. Data Processing Agreement and SCCs executed.',
+            'Resend Inc. — transactional email delivery. Data Processing Agreement and SCCs executed.',
+          ]}/>
           <P>All providers are contractually required to process data only as instructed and to maintain appropriate security measures.</P>
           <H3>5.3 Legal Requirements</H3>
           <P>We may disclose information if required by law, court order, or government authority, or to protect the rights, property, or safety of CoParent Pay, our users, or the public.</P>
@@ -60,8 +70,36 @@ export default function PrivacyPolicy() {
           <P>While we implement strong security measures, no electronic system is 100% secure. We cannot guarantee absolute security.</P>
         </S>
 
-        <S title="8. International Data Transfers">
-          <P>Your data is stored and processed in Australia. Our infrastructure is configured to keep data within Australian data centres where possible. In limited cases where a service provider processes data outside Australia (for example, for email delivery), we ensure appropriate safeguards are in place including Standard Contractual Clauses and adherence to the Australian Privacy Act cross-border disclosure requirements.</P>
+        <S title="8. International Data Transfers and Data Residency">
+
+          <H3>8.1 Primary storage location</H3>
+          <P>All personal data collected through CoParent Pay is <strong>stored and processed in Australia</strong> (Sydney region). We have chosen Australian infrastructure as our primary data store to comply with the Australian Privacy Act 1988 (Cth) and to serve our primary user base.</P>
+
+          <H3>8.2 Third-party processors and cross-border transfers</H3>
+          <P>We use the following third-party processors. Where data passes through infrastructure outside Australia, we have executed appropriate legal safeguards:</P>
+          <UL items={[
+            'Supabase Inc. — database, authentication, and file storage. Configured to the Asia-Pacific (Sydney, ap-southeast-2) region. Processing agreement and Standard Contractual Clauses (SCCs) in place.',
+            'Vercel Inc. — application hosting. Primary deployment in the Sydney edge region. Some edge cache nodes may operate globally for performance. Data Processing Agreement and SCCs in place.',
+            'Resend Inc. — transactional email delivery (account verification, settlement notifications). Email may be routed through international infrastructure. Data Processing Agreement and SCCs in place.',
+          ]}/>
+          <P>Each of these providers is contractually required to process personal data only as instructed by us, implement appropriate technical and organisational security measures, and comply with applicable data protection law.</P>
+
+          <H3>8.3 European Economic Area (EEA) and United Kingdom — GDPR</H3>
+          <P>Australia is not on the European Commission&apos;s list of countries with an adequacy decision for the purposes of the EU General Data Protection Regulation (GDPR) or UK GDPR. For users located in the EEA or United Kingdom, the transfer of personal data to Australia is lawfully made under <strong>Standard Contractual Clauses (SCCs)</strong> approved by the European Commission (Commission Decision 2021/914 of 4 June 2021), incorporated into our agreements with all processors.</P>
+          <P>By using CoParent Pay from the EEA or United Kingdom, you acknowledge that your personal data will be transferred to and processed in Australia under these safeguards. You have the right to obtain a copy of the SCCs applicable to your data by contacting <strong>info@xfiniti.com.au</strong>.</P>
+
+          <H3>8.4 United States — CCPA (California)</H3>
+          <P>The California Consumer Privacy Act (CCPA) does not impose data residency requirements. There is no legal requirement to store California residents&apos; data within the United States. Our Sydney infrastructure is fully compliant with CCPA obligations. We do not sell personal information. California residents may exercise their rights under Section 9.7 of this policy.</P>
+
+          <H3>8.5 Canada — PIPEDA</H3>
+          <P>Canada&apos;s Personal Information Protection and Electronic Documents Act (PIPEDA) permits cross-border data transfers provided the receiving organisation applies comparable protection. By using CoParent Pay, Canadian residents are informed that their data is stored in Australia and processed under the safeguards described in this policy. You may withdraw consent at any time, subject to legal and contractual restrictions.</P>
+
+          <H3>8.6 Other international users</H3>
+          <P>If you are located in a jurisdiction with specific data residency laws not addressed above, please contact us at <strong>info@xfiniti.com.au</strong> before using the Service. We will advise whether the Service can be made available to you in a compliant manner.</P>
+
+          <H3>8.7 Future multi-region infrastructure</H3>
+          <P>As our user base grows, we may introduce regional data storage options (for example, EU or US regions) to better serve users in those jurisdictions. We will update this policy and notify existing users if we change the location where their data is stored.</P>
+
         </S>
 
         <S title="9. Your Rights and Choices">

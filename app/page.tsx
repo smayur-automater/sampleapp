@@ -198,6 +198,16 @@ export default function Page() {
               <input type="password" value={pw2} onChange={e=>{setPw2(e.target.value);setErr('')}} onKeyDown={e=>e.key==='Enter'&&signUp()} placeholder="Re-enter password" style={inp}/>
             </div>
             {err&&<Alert type="error">{err}</Alert>}
+            {/* Data storage notice — shown when non-AU country selected */}
+            {country && country !== 'Australia' && (
+              <div style={{marginBottom:12,padding:'9px 12px',background:'#eff6ff',border:'1px solid #bfdbfe',borderLeft:'3px solid #2563eb',borderRadius:4}}>
+                <p style={{fontSize:11,color:'#1e40af',margin:0,lineHeight:1.6}}>
+                  <strong>Data storage notice:</strong> Your data will be stored in Australia under our{' '}
+                  <a href="/privacy#transfers" target="_blank" rel="noopener noreferrer" style={{color:'#1e40af'}}>international transfer safeguards</a>
+                  {' '}(Standard Contractual Clauses for EEA/UK users).
+                </p>
+              </div>
+            )}
             <div style={{marginBottom:12,display:'flex',alignItems:'flex-start',gap:10}}>
               <input type="checkbox" id="terms" checked={termsOk} onChange={e=>setTermsOk(e.target.checked)} style={{marginTop:3,flexShrink:0,accentColor:'#0f172a',width:14,height:14,cursor:'pointer'}}/>
               <label htmlFor="terms" style={{fontSize:12,color:'#6b7280',lineHeight:1.6,cursor:'pointer'}}>

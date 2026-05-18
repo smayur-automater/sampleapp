@@ -2,6 +2,7 @@
 import React from 'react'
 import {
   BellAlertIcon,
+  DocumentTextIcon,
   ArrowLeftStartOnRectangleIcon,
   UserCircleIcon,
   XMarkIcon,
@@ -57,7 +58,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
   const [audit,   setAudit]   = useState(false)
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [panel,   setPanel]   = useState<'profile' | 'upgrade' | null>(null)
+  const [panel,   setPanel]   = useState<'profile' | 'upgrade' | 'billing' | null>(null)
 
   // Profile edit state
   const [firstName, setFirstName] = useState('')
@@ -74,6 +75,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const [pwSaving,  setPwSaving]  = useState(false)
   const [pwOk,      setPwOk]      = useState('')
   const [pwErr,     setPwErr]     = useState('')
+
+  // Billing state
+  const [billing,  setBilling]  = useState<{id:string;date:string;description:string;amount:number;currency:string;status:string}[]>([])
+  const [billLoad, setBillLoad] = useState(false)
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -114,6 +119,40 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     setFirstName(fn)
     setLastName(ln)
     setPhone(ph)
+  }
+
+  async function loadBilling() {
+    setBillLoad(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setBillLoad(false); return }
+    const { data: member } = await supabase
+      .from('household_members')
+      .select('plan, plan_assigned_at')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (member?.plan === 'premium' && member.plan_assigned_at) {
+      const records: typeof billing = []
+      const start = new Date(member.plan_assigned_at)
+      const now   = new Date()
+      let cur = new Date(start.getFullYear(), start.getMonth(), 1)
+      let idx = 0
+      while (cur <= now && idx < 24) {
+        records.push({
+          id: `inv-${idx}`,
+          date: cur.toISOString(),
+          description: 'CoParent Pay Premium — Monthly subscription',
+          amount: 7.00,
+          currency: 'AUD',
+          status: 'paid',
+        })
+        cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1)
+        idx++
+      }
+      setBilling(records.reverse())
+    } else {
+      setBilling([])
+    }
+    setBillLoad(false)
   }
 
   async function saveProfile() {
@@ -252,6 +291,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                 <button onClick={() => setPanel('upgrade')}
                   style={{ padding: '7px 14px', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: panel === 'upgrade' ? 700 : 500, background: panel === 'upgrade' ? '#fff' : 'transparent', color: panel === 'upgrade' ? '#d97706' : '#64748b', boxShadow: panel === 'upgrade' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
                   {isPremium ? 'Premium' : 'Upgrade'}
+                </button>
+                <button onClick={() => { setPanel('billing'); loadBilling() }}
+                  style={{ padding: '7px 14px', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: panel === 'billing' ? 700 : 500, background: panel === 'billing' ? '#fff' : 'transparent', color: panel === 'billing' ? '#0f172a' : '#64748b', boxShadow: panel === 'billing' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
+                  Billing
                 </button>
               </div>
               <button onClick={() => setPanel(null)}
@@ -415,6 +458,95 @@ Thank you`)
                 )}
               </div>
             )}
+            {/* ── BILLING TAB ── */}
+            {panel === 'billing' && (
+              <div style={{ padding: '20px 22px 8px' }}>
+                <h2 style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>Billing &amp; Invoices</h2>
+                <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20, lineHeight: 1.6 }}>
+                  {isPremium ? 'Your Premium subscription history.' : 'No active subscription. Upgrade to Premium to see billing history.'}
+                </p>
+
+                {!isPremium && (
+                  <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                    <div style={{ width: 44, height: 44, background: '#f1f5f9', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                      <DocumentTextIcon style={{ width: 20, height: 20, color: '#94a3b8' }} />
+                    </div>
+                    <p style={{ fontSize: 14, color: '#94a3b8', marginBottom: 14 }}>No billing history yet</p>
+                    <button onClick={() => setPanel('upgrade')} style={{ padding: '9px 18px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                      View Premium plans
+                    </button>
+                  </div>
+                )}
+
+                {isPremium && billLoad && (
+                  <div style={{ textAlign: 'center', padding: '32px 0', color: '#94a3b8', fontSize: 13 }}>Loading…</div>
+                )}
+
+                {isPremium && !billLoad && (
+                  <>
+                    {/* Summary card */}
+                    <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 6, padding: '14px 16px', marginBottom: 18 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>CoParent Pay Premium</div>
+                          <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>AUD $7.00 per month</div>
+                        </div>
+                        <span style={{ padding: '3px 9px', background: '#f0fdf4', border: '1px solid #d1fae5', borderRadius: 3, fontSize: 11, fontWeight: 700, color: '#059669' }}>Active</span>
+                      </div>
+                      <div style={{ height: 1, background: '#e5e7eb', margin: '10px 0' }} />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#6b7280' }}>
+                        <span>Total paid to date</span>
+                        <span style={{ fontWeight: 700, color: '#111827' }}>AUD ${(billing.length * 7).toFixed(2)}</span>
+                      </div>
+                    </div>
+
+                    {/* Transactions */}
+                    {billing.length === 0 ? (
+                      <p style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', padding: '20px 0' }}>No transactions yet</p>
+                    ) : (
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>
+                          Transaction history ({billing.length})
+                        </div>
+                        {billing.map((b, i) => (
+                          <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: i < billing.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
+                            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#f0fdf4', border: '1px solid #d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <CheckCircleIcon style={{ width: 15, height: 15, color: '#059669' }} />
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{b.description}</div>
+                              <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>
+                                {new Date(b.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                {' · '}
+                                <span style={{ color: '#059669', fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Paid</span>
+                              </div>
+                            </div>
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>A${b.amount.toFixed(2)}</div>
+                              <div style={{ fontSize: 10, color: '#9ca3af' }}>{b.currency}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Invoice request note */}
+                    <div style={{ marginTop: 20, padding: '12px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 4 }}>
+                      <p style={{ fontSize: 12, color: '#92400e', margin: 0, lineHeight: 1.6 }}>
+                        Need a formal invoice or GST receipt? Email <a href="mailto:info@xfiniti.com.au" style={{ color: '#92400e', fontWeight: 700 }}>info@xfiniti.com.au</a> with your account email and billing month. We will send a PDF invoice within 24 hours.
+                      </p>
+                    </div>
+
+                    <div style={{ marginTop: 14, textAlign: 'center' }}>
+                      <button onClick={() => setPanel('upgrade')} style={{ fontSize: 12, color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                        Manage or cancel subscription
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
 
           </div>
         </div>
