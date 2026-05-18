@@ -127,7 +127,24 @@ export default function DashboardPage() {
 
   const ctxIdRef = useRef<string|null>(null)
   useEffect(() => {
-    if (ctx && ctx.household_id !== ctxIdRef.current) { ctxIdRef.current = ctx.household_id; loadData() }
+    if (!ctx || ctx.household_id === ctxIdRef.current) return
+    ctxIdRef.current = ctx.household_id
+    loadData()
+
+    // Real-time subscription — reload data whenever expenses or settlements change
+    const channel = supabase
+      .channel(`household_${ctx.household_id}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'expenses',
+        filter: `household_id=eq.${ctx.household_id}`,
+      }, () => { loadData() })
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'settlements',
+        filter: `household_id=eq.${ctx.household_id}`,
+      }, () => { loadData() })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
   }, [ctx, loadData])
 
   function openAdd() {
@@ -650,18 +667,13 @@ export default function DashboardPage() {
                         />
                       </div>
                       <div style={{flex:1,minWidth:0}}>
-                        {/* Child name pill */}
-                        {exp.kid?.name && (
-                          <div style={{display:'inline-flex',alignItems:'center',gap:5,marginBottom:3}}>
-                            <div style={{width:6,height:6,borderRadius:'50%',background:exp.kid.color||'#2563eb',flexShrink:0}}/>
-                            <span style={{fontSize:11,fontWeight:600,color:exp.kid.color||'#2563eb'}}>{exp.kid.name}</span>
-                          </div>
-                        )}
                         <div style={{fontWeight:600,fontSize:14,color:'#0f172a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{exp.description}</div>
                         <div style={{fontSize:11,color:'#94a3b8',marginTop:1,display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
                           <span>{exp.category?.name}</span>
                           <span>·</span>
                           <span>{new Date(exp.date).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}</span>
+                          <span>·</span>
+                          <span style={{color:'#b0b8c4'}}>{new Date(exp.created_at).toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'})}</span>
                           {payer&&<><span>·</span><span style={{fontWeight:500,color:'#6b7280'}}>{payer.user_id===ctx?.myUserId?'You':payer.display_name} paid</span></>}
                         </div>
                       </div>

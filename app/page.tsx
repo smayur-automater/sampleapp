@@ -40,6 +40,7 @@ export default function Page() {
   const [pw,        setPw]        = useState('')
   const [pw2,       setPw2]       = useState('')
   const [otp,       setOtp]       = useState('')
+  const [country,   setCountry]   = useState('Australia')
   const [loading,   setLoading]   = useState(false)
   const [err,       setErr]       = useState('')
   const [ok,        setOk]        = useState('')
@@ -79,7 +80,7 @@ export default function Page() {
 
     const { data, error: e1 } = await supabase.auth.signUp({
       email: email.trim(), password: pw,
-      options: { data: { first_name: firstName.trim(), last_name: lastName.trim(), phone: dialCode+' '+phone.trim() } }
+      options: { data: { first_name: firstName.trim(), last_name: lastName.trim(), phone: dialCode+' '+phone.trim(), country: country } }
     })
     if (e1) {
       setLoading(false)
@@ -175,6 +176,28 @@ export default function Page() {
             <div style={{marginBottom:14}}>
               <label style={lbl}>Phone number</label>
               <PhoneField dialCode={dialCode} onDial={setDialCode} value={phone} onChange={v=>{setPhone(v);setErr('')}} baseInp={inp}/>
+            </div>
+            <div style={{marginBottom:14}}>
+              <label style={lbl}>Country</label>
+              <select value={country} onChange={e=>setCountry(e.target.value)} style={{...inp,cursor:'pointer'}}>
+                <option>Australia</option>
+                <option>New Zealand</option>
+                <option>United Kingdom</option>
+                <option>United States</option>
+                <option>Canada</option>
+                <option>Ireland</option>
+                <option>India</option>
+                <option>Singapore</option>
+                <option>South Africa</option>
+                <option>Germany</option>
+                <option>France</option>
+                <option>Netherlands</option>
+                <option>Sweden</option>
+                <option>Norway</option>
+                <option>Denmark</option>
+                <option>United Arab Emirates</option>
+                <option>Other</option>
+              </select>
             </div>
             <div style={{marginBottom:14}}>
               <label style={lbl}>Email address</label>

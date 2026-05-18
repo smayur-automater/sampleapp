@@ -103,17 +103,12 @@ export default function StatementsPage() {
       .then(({data}) => { if(data) { setKids(data); if(data.length>0) setKidId(data[0].id) } })
   }, [ctx])
 
+  // Auto-load whenever view/period/kid changes — no manual refresh needed
   useEffect(() => {
     if (ctx && isPremium && view==='monthly') loadMonthly()
-  }, [ctx, year, month, view]) // eslint-disable-line
-
-  useEffect(() => {
-    if (ctx && isPremium && view==='yearly') loadYearly()
-  }, [ctx, yrYear, view]) // eslint-disable-line
-
-  useEffect(() => {
-    if (ctx && isPremium && view==='by_kid' && kidId) loadKid()
-  }, [ctx, kidId, view]) // eslint-disable-line
+    else if (ctx && isPremium && view==='yearly') loadYearly()
+    else if (ctx && isPremium && view==='by_kid' && kidId) loadKid()
+  }, [ctx, usage, year, month, yrYear, kidId, view]) // eslint-disable-line
 
   async function loadMonthly() {
     if (!ctx) return; setLoading(true)

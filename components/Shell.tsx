@@ -349,91 +349,67 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
             {/* ── UPGRADE TAB ── */}
             {panel === 'upgrade' && (
-              <div style={{ padding: '20px 22px 0' }}>
+              <div style={{ padding: '20px 22px 8px' }}>
+                <h2 style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>
+                  {isPremium ? 'Premium plan active' : 'Upgrade to Premium'}
+                </h2>
+                <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16, lineHeight: 1.6 }}>
+                  {isPremium
+                    ? 'Thank you for being a Premium member. To cancel, send us a request below — your access continues until the end of your billing period.'
+                    : 'Unlock unlimited expenses, statements, analytics, split rules, and more.'}
+                </p>
 
-                {isPremium ? (
-                  /* Already premium */
-                  <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                    
-                    <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>You&apos;re on Premium!</h2>
-                    <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.6 }}>You have access to all premium features.</p>
-                  </div>
-                ) : (
+                {!isPremium && (
                   <>
-                    {/* Free vs Premium comparison */}
-                    <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                      <h2 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', marginBottom: 6 }}>Upgrade to Premium</h2>
-                      <p style={{ fontSize: 14, color: '#64748b' }}>Unlock unlimited expenses and advanced features</p>
-                    </div>
-
-                    {/* Free tier */}
-                    <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 14, padding: 18, marginBottom: 12 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                        <div>
-                          <div style={{ fontSize: 15, fontWeight: 700, color: '#374151' }}>Free Plan</div>
-                          <div style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', marginTop: 2 }}>$0 <span style={{ fontSize: 13, fontWeight: 400, color: '#94a3b8' }}>/ forever</span></div>
-                        </div>
-                        <span style={{ padding: '4px 10px', background: '#e2e8f0', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#64748b' }}>Current</span>
-                      </div>
-                      {[
-                        'Up to 10 shared expenses',
-                        'Basic expense tracking',
-                        'Co-parent invitations',
-                        'Kids and categories management',
-                      ].map(f => (
-                        <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                          <CheckCircleIcon style={{ width: 16, height: 16, color: '#94a3b8', flexShrink: 0 }} />
-                          <span style={{ fontSize: 13, color: '#64748b' }}>{f}</span>
+                    <div style={{ background: '#0f172a', borderRadius: 6, padding: '16px', marginBottom: 14 }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginBottom: 3 }}>Premium</div>
+                      <div style={{ fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 12 }}>$7.00 <span style={{ fontSize: 12, fontWeight: 400, color: 'rgba(255,255,255,0.4)' }}>AUD / month</span></div>
+                      {['Unlimited expenses', 'Smart split rules', 'Monthly statements (PDF + CSV)', 'Analytics and custom charts', 'Receipt attachments', 'Priority support'].map(f => (
+                        <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+                          <CheckCircleIcon style={{ width: 13, height: 13, color: '#4ade80', flexShrink: 0 }}/>
+                          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>{f}</span>
                         </div>
                       ))}
                     </div>
-
-                    {/* Premium tier */}
-                    <div style={{ background: '#0f172a', border: '2px solid #1a3a6b', borderRadius: 14, padding: 18, marginBottom: 20, position: 'relative', overflow: 'hidden' }}>
-                      <div style={{ position: 'absolute', top: 12, right: 12, padding: '3px 10px', background: '#2ec4a0', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#fff' }}>
-                        RECOMMENDED
-                      </div>
-                      <div style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: 'rgba(255,255,255,0.8)' }}>Premium Plan</div>
-                        <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', marginTop: 2 }}>
-                          $7.00 <span style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.6)' }}>/ month</span>
-                        </div>
-                      </div>
-                      {[
-                        { text: 'Unlimited shared expenses (Free = 10 max)',  star: true  },
-                        { text: 'Smart split rules by category and child',    star: true  },
-                        { text: 'Monthly statements and expense reports',     star: true  },
-                        { text: 'Receipt photo attachments',                  star: true  },
-                        { text: 'Full expense history and analytics charts',  star: true  },
-                        { text: 'Export expenses to CSV',                     star: true  },
-                        { text: 'Priority support from CoParent Pay team',   star: true  },
-                        { text: 'All Free plan features included',            star: false },
-                      ].map(f => (
-                        <div key={f.text} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                          <CheckCircleIcon style={{ width: 16, height: 16, color: '#2ec4a0', flexShrink: 0 }} />
-                          <span style={{ fontSize: 13, color: '#fff' }}>{f.text}</span>
-                          {f.star && <span style={{ fontSize: 10, fontWeight: 700, color: '#fbbf24', marginLeft: 'auto', background: 'rgba(251,191,36,0.15)', padding: '1px 6px', borderRadius: 99 }}>PREMIUM</span>}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* CTA */}
-                    <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: '14px 16px', marginBottom: 16 }}>
-                      <p style={{ fontSize: 13, color: '#92400e', margin: 0, lineHeight: 1.6 }}>
-                        <strong>To upgrade:</strong> Contact your admin at{' '}
-                        <strong>xfiniti.com.au</strong> or ask your administrator to upgrade your account from the admin panel.
-                      </p>
-                    </div>
-
-                    <button onClick={() => {
+                    <button onClick={async () => {
+                      const { data: { user } } = await supabase.auth.getUser()
+                      if (!user) return
                       const subject = encodeURIComponent('CoParent Pay — Premium Upgrade Request')
-                      const body = encodeURIComponent(`Hi,\n\nI would like to upgrade my CoParent Pay account to Premium.\n\nMy email: ${profile?.email}\n\nPlease activate Premium on my account.\n\nThank you`)
+                      const body = encodeURIComponent(`Hi,
+
+I would like to upgrade my CoParent Pay account to Premium (AUD $7.00/month).
+
+My account email: ${user.email}
+
+Please activate Premium on my account.
+
+Thank you`)
                       window.open(`mailto:info@xfiniti.com.au?subject=${subject}&body=${body}`)
                     }}
-                      style={{ width: '100%', padding: 14, background: '#d97706', color: '#fff', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                      style={{ width: '100%', padding: 12, background: '#0f172a', color: '#fff', border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 700, cursor: 'pointer', marginBottom: 8 }}>
                       Request Premium upgrade
                     </button>
+                    <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center' as const, lineHeight: 1.6, margin: 0 }}>
+                      We will activate your account within a few hours of your request.
+                    </p>
                   </>
+                )}
+
+                {isPremium && (
+                  <button onClick={async () => {
+                    if (!confirm('Send a cancellation request to info@xfiniti.com.au? Your Premium access continues until our team processes the request.')) return
+                    const { data: { user } } = await supabase.auth.getUser()
+                    if (!user) return
+                    const res = await fetch('/api/support', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ name: user.email?.split('@')[0], email: user.email, subject: 'Premium Cancellation Request', message: `Please cancel the Premium subscription for account: ${user.email}. I understand my access continues until the end of the current billing period.` }),
+                    })
+                    if (res.ok) alert('Cancellation request sent. We will process it within 24 hours and no further charges will be made.')
+                    else alert('Could not send request — please email info@xfiniti.com.au directly.')
+                  }}
+                    style={{ width: '100%', padding: 11, background: '#fff', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer', marginBottom: 8 }}>
+                    Request cancellation
+                  </button>
                 )}
               </div>
             )}
