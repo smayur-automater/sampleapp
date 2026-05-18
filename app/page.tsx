@@ -41,6 +41,7 @@ export default function Page() {
   const [pw2,       setPw2]       = useState('')
   const [otp,       setOtp]       = useState('')
   const [country,   setCountry]   = useState('Australia')
+  const [termsOk,    setTermsOk]    = useState(false)
   const [loading,   setLoading]   = useState(false)
   const [err,       setErr]       = useState('')
   const [ok,        setOk]        = useState('')
@@ -70,6 +71,7 @@ export default function Page() {
   }
 
   async function signUp() {
+    if (!termsOk) { E('You must accept the Terms of Service to create an account'); return }
     if (!firstName.trim()) { E('Enter your first name'); return }
     if (!lastName.trim())  { E('Enter your last name'); return }
     if (!phone.trim())     { E('Enter your phone number'); return }
@@ -196,7 +198,17 @@ export default function Page() {
               <input type="password" value={pw2} onChange={e=>{setPw2(e.target.value);setErr('')}} onKeyDown={e=>e.key==='Enter'&&signUp()} placeholder="Re-enter password" style={inp}/>
             </div>
             {err&&<Alert type="error">{err}</Alert>}
-            <button onClick={signUp} disabled={loading} style={{...btn,...(loading?off:{})}}>{loading?'Creating account…':'Create account →'}</button>
+            <div style={{marginBottom:12,display:'flex',alignItems:'flex-start',gap:10}}>
+              <input type="checkbox" id="terms" checked={termsOk} onChange={e=>setTermsOk(e.target.checked)} style={{marginTop:3,flexShrink:0,accentColor:'#0f172a',width:14,height:14,cursor:'pointer'}}/>
+              <label htmlFor="terms" style={{fontSize:12,color:'#6b7280',lineHeight:1.6,cursor:'pointer'}}>
+                I agree to the{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:'#1d4ed8'}}>Terms of Service</a>,{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:'#1d4ed8'}}>Privacy Policy</a>, and{' '}
+                <a href="/refund" target="_blank" rel="noopener noreferrer" style={{color:'#1d4ed8'}}>Refund Policy</a>.
+                I confirm I am 18 years or older.
+              </label>
+            </div>
+            <button onClick={signUp} disabled={loading||!termsOk} style={{...btn,...(loading||!termsOk?off:{})}}>{loading?'Creating account…':'Create account →'}</button>
             <p style={{textAlign:'center',marginTop:12,fontSize:12,color:'#94a3b8',lineHeight:1.6}}>A verification code will be emailed to confirm your account.</p>
           </>}
 

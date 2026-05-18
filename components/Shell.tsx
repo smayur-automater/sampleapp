@@ -28,6 +28,7 @@ const TABS = [
 
 const FOOTER_LINKS = [
   { path: '/privacy', label: 'Privacy Policy' },
+  { path: '/terms',   label: 'Terms of Service' },
   { path: '/refund',  label: 'Refund Policy'  },
 ]
 
