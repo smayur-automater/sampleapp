@@ -1124,9 +1124,9 @@ export default function DashboardPage() {
             <div style={{background:'#0f172a',borderRadius:14,padding:'16px 20px',marginBottom:14,textAlign:'center'}}>
               <div style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.5)',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:4}}>Balance to settle</div>
               <div style={{fontSize:38,fontWeight:700,color:'#4ade80',letterSpacing:'-1px'}}>
-                {sym(settleModal.currency)}{(expenseOwed(settleModal)-Number(settleModal.settled_amount??0)).toFixed(2)}){fmtAmt((expenseOwed(settleModal)-Number(settleModal.settled_amount??0)))}
+                {sym(settleModal.currency)}{fmtAmt(Math.max(0, expenseOwed(settleModal)-Number(settleModal.settled_amount??0)))}
               </div>
-              <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:3}}>of {sym(settleModal.currency)}{fmtAmt(Number(settleModal.amount))}){fmtAmt(Number(settleModal.amount))} total</div>
+              <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:3}}>of {sym(settleModal.currency)}{fmtAmt(Number(settleModal.amount))} total</div>
             </div>
             <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:9,padding:'9px 13px',marginBottom:14}}>
               <div style={{fontWeight:700,fontSize:13,color:'#0f172a'}}>{settleModal.description}</div>
