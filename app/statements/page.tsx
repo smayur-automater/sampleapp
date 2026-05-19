@@ -300,7 +300,7 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
               </button>
               <button onClick={()=>{
                 const exps = view==='monthly'?(monthly?.expenses??[]):view==='yearly'?(yearly?.expenses??[]):(kidData?.expenses??[])
-                exportCSV(exps, `coparent-${view}-${year}.csv`)
+                exportCSV(exps, `kidexpense-${view}-${year}.csv`)
               }}
                 style={{display:'flex',alignItems:'center',gap:5,padding:'7px 11px',border:'1px solid #e5e7eb',borderRadius:3,background:'#fff',color:'#374151',fontSize:12,fontWeight:600,cursor:'pointer'}}>
                 <ArrowDownTrayIcon style={{width:13,height:13}}/> CSV

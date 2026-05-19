@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════
--- CoParent Admin Layer
+-- KidExpense Admin Layer
 -- Run in Supabase SQL Editor AFTER the main schema
 -- ════════════════════════════════════════════════════════════════
 

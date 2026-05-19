@@ -283,7 +283,7 @@ export default function DashboardPage() {
     const rows=[['Date','Description','Child','Category','Amount','Currency','Split%','Paid By','Status'],
       ...filtered.map(e=>[e.date,e.description,e.kid?.name??'',e.category?.name??'',e.amount,e.currency,e.split_pct,ctx?.members.find(m=>m.user_id===e.paid_by_user_id)?.display_name??'',e.settlement_status])]
     const csv=rows.map(r=>r.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n')
-    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download=`coparent-${new Date().toISOString().split('T')[0]}.csv`; a.click()
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download=`kidexpense-${new Date().toISOString().split('T')[0]}.csv`; a.click()
   }
 
   // ── Derived data ─────────────────────────────────────────────

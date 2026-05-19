@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════════
--- CoParent Pay — COMPLETE DATABASE SETUP
+-- KidExpense — COMPLETE DATABASE SETUP
 -- Run this ONE file in Supabase SQL Editor to set up everything.
 -- Safe to run multiple times (all statements use IF NOT EXISTS / OR REPLACE).
 -- ═══════════════════════════════════════════════════════════════════════

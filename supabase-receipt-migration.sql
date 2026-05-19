@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════
--- CoParent — Add receipt_url to expenses + Storage bucket policy
+-- KidExpense — Add receipt_url to expenses + Storage bucket policy
 -- Run this in Supabase SQL Editor (safe to run on existing data)
 -- ════════════════════════════════════════════════════════════════
 

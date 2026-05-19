@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════
--- CoParent Premium + Data Retention Migration
+-- KidExpense Premium + Data Retention Migration
 -- Run AFTER main schema and admin migration
 -- ════════════════════════════════════════════════════════════════
 

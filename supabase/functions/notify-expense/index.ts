@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
         <div style="width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:10px;display:flex;align-items:center;justify-content:center;">
           <span style="color:#fff;font-weight:800;font-size:14px;">CP</span>
         </div>
-        <span style="color:#fff;font-size:18px;font-weight:700;">CoParent</span>
+        <span style="color:#fff;font-size:18px;font-weight:700;">KidExpense</span>
       </div>
     </div>
 
@@ -116,12 +116,12 @@ Deno.serve(async (req) => {
         </div>
       </div>
 
-      <a href="${APP_URL}/dashboard" style="display:block;background:#2563eb;color:#ffffff;text-decoration:none;text-align:center;padding:13px;border-radius:10px;font-weight:600;font-size:14px;">View in CoParent →</a>
+      <a href="${APP_URL}/dashboard" style="display:block;background:#2563eb;color:#ffffff;text-decoration:none;text-align:center;padding:13px;border-radius:10px;font-weight:600;font-size:14px;">View in KidExpense →</a>
     </div>
 
     <!-- Footer -->
     <div style="padding:16px 28px;border-top:1px solid #e2e8f0;text-align:center;">
-      <p style="margin:0;font-size:12px;color:#94a3b8;">You're receiving this because you share a household on CoParent.<br>Manage notifications in app settings.</p>
+      <p style="margin:0;font-size:12px;color:#94a3b8;">You're receiving this because you share a household on KidExpense.<br>Manage notifications in app settings.</p>
     </div>
   </div>
 </body>
@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from:    'CoParent <notifications@your-domain.com>',  // update with your domain
+        from:    'KidExpense <notifications@your-domain.com>',  // update with your domain
         to:      [recipientEmail],
         subject: `${creatorName} added an expense: ${expense.description} (${currency} ${amount})`,
         html,

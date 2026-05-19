@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════════════
--- CoParent v5 — Lucide icons, household sharing, creator-only edit
+-- KidExpense v5 — Lucide icons, household sharing, creator-only edit
 -- Run this entire file in Supabase SQL Editor
 -- ════════════════════════════════════════════════════════════════════
 
