@@ -9,7 +9,7 @@ const SUPABASE_URL         = Deno.env.get('SUPABASE_URL') ?? ''
 const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const ZOHO_USER            = Deno.env.get('ZOHO_SMTP_USER') ?? ''   // info@xfiniti.com.au
 const ZOHO_PASS            = Deno.env.get('ZOHO_SMTP_PASS') ?? ''
-const FROM_NAME            = Deno.env.get('FROM_NAME') ?? 'CoParent Pay'
+const FROM_NAME            = Deno.env.get('FROM_NAME') ?? 'KidExpense'
 const APP_URL              = Deno.env.get('APP_URL') ?? 'https://your-app.vercel.app'
 
 const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
 
     // Build email HTML
     const html = buildEmail(senderName, to_email, inviteLink, expiryDate)
-    const subject = `${senderName} invited you to CoParent Pay`
+    const subject = `${senderName} invited you to KidExpense`
 
     // Send via Zoho SMTP using deno smtp library
     const smtpResult = await sendSmtp({ to: to_email, subject, html })
@@ -131,7 +131,7 @@ function buildEmail(sender: string, toEmail: string, link: string, expiry: strin
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>You've been invited to CoParent Pay</title>
+  <title>You've been invited to KidExpense</title>
 </head>
 <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 16px;">
@@ -142,7 +142,7 @@ function buildEmail(sender: string, toEmail: string, link: string, expiry: strin
         <tr>
           <td style="background:#1a3a6b;padding:28px 32px;text-align:center;">
             <p style="margin:0;font-size:24px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
-              CoParent<span style="color:#2ec4a0;"> Pay</span>
+              Kid<span style="color:#2ec4a0;">Expense</span>
             </p>
             <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.7);">
               Shared Expenses. Shared Responsibility.
@@ -159,7 +159,7 @@ function buildEmail(sender: string, toEmail: string, link: string, expiry: strin
             </h1>
             <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.7;">
               <strong style="color:#0f172a;">${sender}</strong> has invited you to join their household on
-              <strong style="color:#1a3a6b;">CoParent Pay</strong> — the simplest way to track and split
+              <strong style="color:#1a3a6b;">KidExpense</strong> — the simplest way to track and split
               your children's shared expenses.
             </p>
 

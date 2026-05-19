@@ -135,9 +135,9 @@ export default function Page() {
         {!isConfigured&&<div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:10,padding:'11px 14px',marginBottom:14,fontSize:13,color:'#dc2626',textAlign:'center'}}>⚠️ Missing Supabase environment variables</div>}
         <div style={{textAlign:'center',marginBottom:24}}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="CoParent Pay" style={{width:76,height:76,objectFit:'contain',margin:'0 auto 10px',display:'block'}}/>
+          <img src="/logo.png" alt="KidExpense" style={{width:76,height:76,objectFit:'contain',margin:'0 auto 10px',display:'block'}}/>
           <div style={{fontSize:26,fontWeight:800,letterSpacing:'-0.5px'}}>
-            <span style={{color:'#1a3a6b'}}>CoParent</span><span style={{color:'#2ec4a0'}}> Pay</span>
+            <span style={{color:'#1a3a6b'}}>Kid</span><span style={{color:'#2ec4a0'}}>Expense</span>
           </div>
           <div style={{fontSize:13,color:'#94a3b8',marginTop:4}}>Shared Expenses. Shared Responsibility.</div>
         </div>
@@ -263,7 +263,7 @@ export default function Page() {
           </div>}
 
         </div>
-        <p style={{textAlign:'center',marginTop:20,fontSize:12,color:'#94a3b8'}}>CoParent Pay · Secure sign-in</p>
+        <p style={{textAlign:'center',marginTop:20,fontSize:12,color:'#94a3b8'}}>KidExpense · Secure sign-in</p>
       </div>
     </div>
   )

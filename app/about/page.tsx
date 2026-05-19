@@ -79,10 +79,10 @@ export default function AboutPage() {
               Child expense management
             </span>
             <h1 style={{ fontSize: 30, fontWeight: 700, color: '#111827', lineHeight: 1.25, margin: '0 0 16px', letterSpacing: '-0.5px' }}>
-              CoParent Pay — shared child expenses, made simple
+              KidExpense — shared child expenses, made simple
             </h1>
             <p style={{ fontSize: 15, color: '#6b7280', lineHeight: 1.8, margin: '0 0 24px' }}>
-              Whether you are a single parent or co-parenting after separation, CoParent Pay gives both parties a single, transparent view of every shared expense — with a settlement workflow both sides must agree on.
+              Whether you are a single parent or co-parenting after separation, KidExpense gives both parties a single, transparent view of every shared expense — with a settlement workflow both sides must agree on.
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
               <div style={{ padding: '8px 16px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12, color: '#374151', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -128,7 +128,7 @@ export default function AboutPage() {
           <div>
             <span style={LBL}>Who it is for</span>
             <p style={{ fontSize: 15, color: '#4b5563', lineHeight: 1.8, marginBottom: 14 }}>
-              CoParent Pay is designed for separated or divorced parents sharing the financial costs of raising children. It removes the friction and disputes that come with spreadsheets and text messages — creating an auditable, court-friendly record both parents can trust.
+              KidExpense is designed for separated or divorced parents sharing the financial costs of raising children. It removes the friction and disputes that come with spreadsheets and text messages — creating an auditable, court-friendly record both parents can trust.
             </p>
             <p style={{ fontSize: 15, color: '#4b5563', lineHeight: 1.8, margin: 0 }}>
               Equally useful for single parents who need a structured record for budgeting, tax, or legal purposes.
@@ -233,7 +233,7 @@ export default function AboutPage() {
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: '0 0 5px' }}>Xfiniti Technologies Pty Ltd</p>
             <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.7, margin: '0 0 10px' }}>
-              CoParent Pay is a product of Xfiniti Technologies, an Australian company specialising in AI-powered consumer applications and cybersecurity. We build software that is secure by design, practical in daily use, and built to last.
+              KidExpense is a product of Xfiniti Technologies, an Australian company specialising in AI-powered consumer applications and cybersecurity. We build software that is secure by design, practical in daily use, and built to last.
             </p>
             <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

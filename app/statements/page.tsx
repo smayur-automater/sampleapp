@@ -168,7 +168,7 @@ export default function StatementsPage() {
   .footer{margin-top:28px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af;text-align:center;}
   @media print{body{padding:0;}}
 </style></head><body>${html}
-<div class="footer">CoParent Pay · ${new Date().toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})} · Confidential</div>
+<div class="footer">KidExpense · ${new Date().toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})} · Confidential</div>
 </body></html>`)
     w.document.close(); w.print()
     showToast('PDF ready — use Print → Save as PDF')
@@ -179,9 +179,9 @@ export default function StatementsPage() {
     const s = monthly; const exps = s.expenses??[]; const cats = s.by_category??[]; const members = s.by_member??[]
     const bal = members.length>=2 ? members[0].paid - members[0].owed : 0
     const cs = '$'
-    buildPDF(`CoParent Statement — ${MONTH_NAMES[month-1]} ${year}`, `
+    buildPDF(`KidExpense Statement — ${MONTH_NAMES[month-1]} ${year}`, `
 <div class="hdr">
-  <div><div class="brand">CoParent<span>Pay</span></div><div style="color:#6b7280;font-size:11px;margin-top:3px;">Monthly Statement · ${MONTH_NAMES[month-1]} ${year}</div></div>
+  <div><div class="brand">Kid<span>Expense</span></div><div style="color:#6b7280;font-size:11px;margin-top:3px;">Monthly Statement · ${MONTH_NAMES[month-1]} ${year}</div></div>
   <div style="text-align:right;"><div style="font-size:15px;font-weight:700;">${me?.display_name??''} &amp; ${co?.display_name??''}</div></div>
 </div>
 <div class="kpis">
@@ -210,9 +210,9 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
     if (!yearly) return
     const s = yearly; const exps = s.expenses??[]; const months = s.by_month??[]
     const cs = '$'
-    buildPDF(`CoParent Annual Statement — ${yrYear}`, `
+    buildPDF(`KidExpense Annual Statement — ${yrYear}`, `
 <div class="hdr">
-  <div><div class="brand">CoParentPay</div><div style="color:#6b7280;font-size:11px;margin-top:3px;">Annual Statement · ${yrYear}</div></div>
+  <div><div class="brand">KidExpense</div><div style="color:#6b7280;font-size:11px;margin-top:3px;">Annual Statement · ${yrYear}</div></div>
   <div style="text-align:right;"><div style="font-size:15px;font-weight:700;">${me?.display_name??''} &amp; ${co?.display_name??''}</div></div>
 </div>
 <div class="kpis">
@@ -236,9 +236,9 @@ ${exps.map(e=>`<tr><td>${new Date(e.date).toLocaleDateString('en-AU',{day:'numer
   function exportKidPDF() {
     if (!kidData) return
     const s = kidData; const exps = s.expenses??[]; const kid = s.kid
-    buildPDF(`CoParent Statement — ${kid?.name??'Child'}`, `
+    buildPDF(`KidExpense Statement — ${kid?.name??'Child'}`, `
 <div class="hdr">
-  <div><div class="brand">CoParentPay</div><div style="color:#6b7280;font-size:11px;margin-top:3px;">Statement by Child · ${kid?.name??''}</div></div>
+  <div><div class="brand">KidExpense</div><div style="color:#6b7280;font-size:11px;margin-top:3px;">Statement by Child · ${kid?.name??''}</div></div>
   <div style="text-align:right;"><div style="font-size:15px;font-weight:700;">All time</div></div>
 </div>
 <div class="kpis">

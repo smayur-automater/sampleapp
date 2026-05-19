@@ -140,7 +140,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         records.push({
           id: `inv-${idx}`,
           date: cur.toISOString(),
-          description: 'CoParent Pay Premium — Monthly subscription',
+          description: 'KidExpense Premium — Monthly subscription',
           amount: 7.00,
           currency: 'AUD',
           status: 'paid',
@@ -205,7 +205,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="" style={{ width: 32, height: 32, objectFit: 'contain' }} />
             <span style={{ fontWeight: 800, fontSize: 15, color: '#1a3a6b' }}>
-              CoParent<span style={{ color: '#2ec4a0' }}> Pay</span>
+              Kid<span style={{ color: '#2ec4a0' }}>Expense</span>
             </span>
           </div>
 
@@ -269,7 +269,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </React.Fragment>
         ))}
         <span style={{ fontSize: 12, color: '#e5e7eb' }}>·</span>
-        <span style={{ fontSize: 12, color: '#d1d5db' }}>&copy; {new Date().getFullYear()} CoParent Pay</span>
+        <span style={{ fontSize: 12, color: '#d1d5db' }}>&copy; {new Date().getFullYear()} KidExpense</span>
       </footer>
 
       {/* ── PROFILE / UPGRADE PANEL ── */}
@@ -419,10 +419,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                     <button onClick={async () => {
                       const { data: { user } } = await supabase.auth.getUser()
                       if (!user) return
-                      const subject = encodeURIComponent('CoParent Pay — Premium Upgrade Request')
+                      const subject = encodeURIComponent('KidExpense — Premium Upgrade Request')
                       const body = encodeURIComponent(`Hi,
 
-I would like to upgrade my CoParent Pay account to Premium (AUD $7.00/month).
+I would like to upgrade my KidExpense account to Premium (AUD $7.00/month).
 
 My account email: ${user.email}
 
@@ -488,7 +488,7 @@ Thank you`)
                     <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 6, padding: '14px 16px', marginBottom: 18 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>CoParent Pay Premium</div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>KidExpense Premium</div>
                           <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>AUD $7.00 per month</div>
                         </div>
                         <span style={{ padding: '3px 9px', background: '#f0fdf4', border: '1px solid #d1fae5', borderRadius: 3, fontSize: 11, fontWeight: 700, color: '#059669' }}>Active</span>

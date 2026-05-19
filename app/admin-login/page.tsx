@@ -155,7 +155,7 @@ export default function AdminLoginPage() {
             </svg>
           </div>
           <div style={{ fontSize: 19, fontWeight: 800, color: '#f1f5f9' }}>
-            CoParent<span style={{ color: '#2ec4a0' }}> Pay</span>
+            Kid<span style={{ color: '#2ec4a0' }}>Expense</span>
           </div>
           <div style={{ fontSize: 12, color: '#475569', marginTop: 3 }}>Admin Console</div>
         </div>
@@ -365,7 +365,7 @@ export default function AdminLoginPage() {
         </div>
 
         <p style={{ textAlign: 'center', marginTop: 18, fontSize: 12, color: '#334155' }}>
-          CoParent Pay Admin Console · v2.0
+          KidExpense Admin Console · v2.0
         </p>
       </div>
     </div>

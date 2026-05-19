@@ -1,4 +1,4 @@
-# CoParent Pay — Setup Guide
+# KidExpense — Setup Guide
 
 ## 1. Database (Supabase)
 Run `COMPLETE-DATABASE-SETUP.sql` in Supabase → SQL Editor.
@@ -19,6 +19,6 @@ Deploy the edge function for automatic invite emails:
   supabase secrets set ZOHO_SMTP_USER=info@xfiniti.com.au
   supabase secrets set ZOHO_SMTP_PASS=YOUR_APP_PASSWORD
   supabase secrets set APP_URL=https://your-app.vercel.app
-  supabase secrets set FROM_NAME="CoParent Pay"
+  supabase secrets set FROM_NAME="KidExpense"
 
 Until deployed, the invite link can be copied and shared manually.

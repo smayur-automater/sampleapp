@@ -15,14 +15,14 @@ export async function POST(req: NextRequest) {
     }
     const resend = new Resend(apiKey)
     await resend.emails.send({
-      from:    process.env.RESEND_FROM_EMAIL ?? 'CoParent Pay <onboarding@resend.dev>',
+      from:    process.env.RESEND_FROM_EMAIL ?? 'KidExpense <onboarding@resend.dev>',
       to:      'info@xfiniti.com.au',
       replyTo: email,
-      subject: `[CoParent Pay Support] ${subject}`,
+      subject: `[KidExpense Support] ${subject}`,
       html: `
         <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
           <h2 style="color:#1a3a6b;margin-bottom:4px">New Support Request</h2>
-          <p style="color:#64748b;font-size:13px;margin-bottom:24px">CoParent Pay — Support Form</p>
+          <p style="color:#64748b;font-size:13px;margin-bottom:24px">KidExpense — Support Form</p>
           <table style="width:100%;border-collapse:collapse">
             <tr><td style="padding:10px;background:#f8fafc;font-weight:700;font-size:13px;border-radius:6px 0 0 0;width:120px">Name</td><td style="padding:10px;font-size:13px">${name}</td></tr>
             <tr><td style="padding:10px;background:#f8fafc;font-weight:700;font-size:13px">Email</td><td style="padding:10px;font-size:13px"><a href="mailto:${email}">${email}</a></td></tr>

@@ -38,25 +38,25 @@ export default function TermsPage() {
           <h1 style={{ fontSize: 30, fontWeight: 800, color: '#111827', marginBottom: 6 }}>Terms of Service &amp; Legal Disclaimer</h1>
           <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>Effective date: 18 May 2026 &nbsp;·&nbsp; Last updated: 18 May 2026</p>
           <Warn>
-            <strong>Important:</strong> By creating an account or using CoParent Pay, you agree to these Terms in full. If you do not agree, you must not use the application. These Terms contain important limitations on liability, disclaimers of warranties, and an indemnification obligation. Please read carefully.
+            <strong>Important:</strong> By creating an account or using KidExpense, you agree to these Terms in full. If you do not agree, you must not use the application. These Terms contain important limitations on liability, disclaimers of warranties, and an indemnification obligation. Please read carefully.
           </Warn>
         </div>
 
         <S title="1. About these Terms">
-          <P>These Terms of Service ("Terms") constitute a legally binding agreement between you ("User", "you", "your") and <strong>Xfiniti Technology Pty Ltd</strong> (ABN pending), trading as <strong>CoParent Pay</strong> ("we", "us", "our", "Company"), governing your access to and use of the CoParent Pay mobile application and web platform (the "Service").</P>
+          <P>These Terms of Service ("Terms") constitute a legally binding agreement between you ("User", "you", "your") and <strong>Xfiniti Technology Pty Ltd</strong> (ABN pending), trading as <strong>KidExpense</strong> ("we", "us", "our", "Company"), governing your access to and use of the KidExpense mobile application and web platform (the "Service").</P>
           <P>These Terms are governed by the laws of the State of New South Wales, Australia, and the Commonwealth of Australia. Any dispute arising from these Terms will be subject to the exclusive jurisdiction of the courts of New South Wales, Australia.</P>
         </S>
 
         <S title="2. Nature of the Service">
-          <P>CoParent Pay is a <strong>financial expense tracking and record-keeping tool</strong>. It enables users to log, categorise, and share records of child-related expenses between co-parents or within a household unit.</P>
+          <P>KidExpense is a <strong>financial expense tracking and record-keeping tool</strong>. It enables users to log, categorise, and share records of child-related expenses between co-parents or within a household unit.</P>
           <Warn>
-            CoParent Pay is NOT a legal service, family law service, mediation service, counselling service, financial advice service, or court-authorised record system. Nothing in this Service constitutes legal, financial, therapeutic, or professional advice of any kind.
+            KidExpense is NOT a legal service, family law service, mediation service, counselling service, financial advice service, or court-authorised record system. Nothing in this Service constitutes legal, financial, therapeutic, or professional advice of any kind.
           </Warn>
           <P>The Service is intended solely to assist users in organising their own expense records. The Company makes no representation that records created within the Service are accurate, complete, admissible in legal proceedings, or compliant with any court order or parenting agreement.</P>
         </S>
 
         <S title="3. No Responsibility for Parental Disputes">
-          <P>CoParent Pay is a neutral tool. The Company is not a party to any parenting arrangement, separation agreement, divorce proceeding, family court matter, parenting plan, or dispute between users.</P>
+          <P>KidExpense is a neutral tool. The Company is not a party to any parenting arrangement, separation agreement, divorce proceeding, family court matter, parenting plan, or dispute between users.</P>
           <UL items={[
             'The Company takes no responsibility for any conflict, dispute, disagreement, or legal proceeding arising between co-parents or household members who use the Service.',
             'The Company does not mediate, adjudicate, or intervene in any dispute between users.',
@@ -71,14 +71,14 @@ export default function TermsPage() {
           <UL items={[
             'We will endeavour to notify the affected user before complying, unless prohibited by law or court order from doing so.',
             'We cannot guarantee the completeness, accuracy, or format of data produced in response to a legal request — data is provided as stored, without modification.',
-            'Users must not rely solely on CoParent Pay as their only record for legal proceedings. Users are responsible for maintaining their own independent records and seeking independent legal advice.',
+            'Users must not rely solely on KidExpense as their only record for legal proceedings. Users are responsible for maintaining their own independent records and seeking independent legal advice.',
             'The Company accepts no liability for any legal outcome, adverse judgment, or consequence arising from data produced in response to a legal request.',
             'Response to legal requests from authorities outside Australia will be assessed on a case-by-case basis in accordance with Australian law and our Privacy Policy.',
           ]}/>
         </S>
 
         <S title="5. Personal Information and PII">
-          <P>CoParent Pay collects only the personal information that users voluntarily provide as necessary to operate the Service. The Company does not independently collect, verify, or process sensitive personal information beyond what is described in our Privacy Policy.</P>
+          <P>KidExpense collects only the personal information that users voluntarily provide as necessary to operate the Service. The Company does not independently collect, verify, or process sensitive personal information beyond what is described in our Privacy Policy.</P>
           <UL items={[
             'Users are solely responsible for the accuracy, completeness, and lawfulness of personal information they enter into the Service, including information about third parties such as children and co-parents.',
             'By entering personal information about another person (including a child or co-parent), you represent that you have the legal right to do so and, where required, have obtained any necessary consent.',
@@ -129,7 +129,7 @@ export default function TermsPage() {
         </S>
 
         <S title="9. User Responsibilities">
-          <P>By using CoParent Pay, you agree that:</P>
+          <P>By using KidExpense, you agree that:</P>
           <UL items={[
             'You are at least 18 years of age',
             'All information you enter is accurate to the best of your knowledge',
@@ -143,7 +143,7 @@ export default function TermsPage() {
         </S>
 
         <S title="10. Children's Data">
-          <P>CoParent Pay is designed for use by adults to manage expenses for their dependent children. Users may enter their children's names and dates of birth to categorise expenses. By doing so:</P>
+          <P>KidExpense is designed for use by adults to manage expenses for their dependent children. Users may enter their children's names and dates of birth to categorise expenses. By doing so:</P>
           <UL items={[
             'You confirm you are the parent or legal guardian of the child whose information you enter',
             'You accept full responsibility for the accuracy of information entered about your child',
@@ -154,7 +154,7 @@ export default function TermsPage() {
         </S>
 
         <S title="11. Intellectual Property">
-          <P>All software, design, branding, trademarks, and content comprising the CoParent Pay Service are the exclusive property of Xfiniti Technology Pty Ltd. You are granted a limited, non-exclusive, non-transferable licence to use the Service for your personal, non-commercial purposes only.</P>
+          <P>All software, design, branding, trademarks, and content comprising the KidExpense Service are the exclusive property of Xfiniti Technology Pty Ltd. You are granted a limited, non-exclusive, non-transferable licence to use the Service for your personal, non-commercial purposes only.</P>
           <P>You may not copy, reproduce, distribute, reverse-engineer, modify, or create derivative works from any part of the Service without prior written consent from the Company.</P>
         </S>
 
@@ -187,13 +187,13 @@ export default function TermsPage() {
 
         {/* Contact box */}
         <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '20px 24px', marginTop: 8 }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>Xfiniti Technology Pty Ltd (trading as CoParent Pay)</p>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>Xfiniti Technology Pty Ltd (trading as KidExpense)</p>
           <p style={{ fontSize: 14, color: '#374151', margin: '0 0 4px' }}>Australia</p>
           <p style={{ fontSize: 14, color: '#374151', margin: 0 }}>Legal enquiries: <a href="mailto:info@xfiniti.com.au" style={{ color: '#2563eb' }}>info@xfiniti.com.au</a></p>
         </div>
 
         <div style={{ marginTop: 32, paddingTop: 20, borderTop: '1px solid #e5e7eb', fontSize: 12, color: '#9ca3af' }}>
-          <p style={{ margin: 0 }}>CoParent Pay Terms of Service &amp; Legal Disclaimer · Xfiniti Technology Pty Ltd · Effective 18 May 2026</p>
+          <p style={{ margin: 0 }}>KidExpense Terms of Service &amp; Legal Disclaimer · Xfiniti Technology Pty Ltd · Effective 18 May 2026</p>
           <p style={{ margin: '4px 0 0' }}>This document has been prepared to provide legal protection for the Company and should be reviewed by a qualified Australian solicitor before App Store and Google Play submission.</p>
         </div>
 

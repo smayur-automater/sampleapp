@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     }
 
     const apiKey  = process.env.RESEND_API_KEY
-    const fromEmail = process.env.RESEND_FROM_EMAIL ?? 'CoParent Pay <onboarding@resend.dev>'
+    const fromEmail = process.env.RESEND_FROM_EMAIL ?? 'KidExpense <onboarding@resend.dev>'
     const appUrl  = app_url ?? process.env.NEXT_PUBLIC_APP_URL ?? ''
 
     if (!apiKey) {
@@ -26,20 +26,20 @@ export async function POST(req: NextRequest) {
     const { error } = await resend.emails.send({
       from:    fromEmail,
       to:      to_email,
-      subject: `${senderName} invited you to CoParent Pay`,
+      subject: `${senderName} invited you to KidExpense`,
       html: `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
     <div style="background:#1a3a6b;padding:24px 32px;text-align:center;">
-      <div style="font-size:22px;font-weight:800;color:#fff;">CoParent<span style="color:#2ec4a0;"> Pay</span></div>
+      <div style="font-size:22px;font-weight:800;color:#fff;">Kid<span style="color:#2ec4a0;">Expense</span></div>
       <div style="font-size:13px;color:rgba(255,255,255,0.65);margin-top:4px;">Shared Expenses. Shared Responsibility.</div>
     </div>
     <div style="padding:32px;">
       <h2 style="margin:0 0 16px;font-size:22px;font-weight:800;color:#0f172a;">You have been invited!</h2>
       <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.7;">
-        <strong style="color:#0f172a;">${senderName}</strong> has invited you to join CoParent Pay —
+        <strong style="color:#0f172a;">${senderName}</strong> has invited you to join KidExpense —
         the simplest way to track and split your children's shared expenses.
       </p>
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:24px;">

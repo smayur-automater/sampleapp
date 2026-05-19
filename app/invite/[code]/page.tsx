@@ -86,7 +86,7 @@ export default function InvitePage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="" style={{ width: 34, height: 34, objectFit: 'contain' }} />
           <span style={{ fontWeight: 800, fontSize: 16, color: '#1a3a6b' }}>
-            CoParent<span style={{ color: '#2ec4a0' }}> Pay</span>
+            Kid<span style={{ color: '#2ec4a0' }}>Expense</span>
           </span>
         </div>
 

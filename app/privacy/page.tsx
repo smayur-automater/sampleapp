@@ -13,7 +13,7 @@ export default function PrivacyPolicy() {
         <p style={{ fontSize:14, color:'#6b7280', marginBottom:48 }}>Effective date: 18 May 2026 &nbsp;·&nbsp; Last updated: 18 May 2026</p>
 
         <S title="1. About This Policy">
-          <P>This Privacy Policy describes how <strong>Xfiniti Technology Pty Ltd</strong>, trading as <strong>CoParent Pay</strong> (&ldquo;we&rdquo;, "us", "our"), collects, uses, stores, and discloses personal information when you use the CoParent Pay mobile and web application (the "App"). By creating an account or using the App, you acknowledge that you have read and agree to this policy.</P>
+          <P>This Privacy Policy describes how <strong>Xfiniti Technology Pty Ltd</strong>, trading as <strong>KidExpense</strong> (&ldquo;we&rdquo;, "us", "our"), collects, uses, stores, and discloses personal information when you use the KidExpense mobile and web application (the "App"). By creating an account or using the App, you acknowledge that you have read and agree to this policy.</P>
           <P>We comply with the <strong>Australian Privacy Act 1988 (Cth)</strong> and the Australian Privacy Principles (APPs). Where applicable, we also comply with the <strong>EU General Data Protection Regulation (GDPR)</strong> and the <strong>California Consumer Privacy Act (CCPA)</strong>.</P>
         </S>
 
@@ -54,9 +54,9 @@ export default function PrivacyPolicy() {
           ]}/>
           <P>All providers are contractually required to process data only as instructed and to maintain appropriate security measures.</P>
           <H3>5.3 Legal Requirements</H3>
-          <P>We may disclose information if required by law, court order, or government authority, or to protect the rights, property, or safety of CoParent Pay, our users, or the public.</P>
+          <P>We may disclose information if required by law, court order, or government authority, or to protect the rights, property, or safety of KidExpense, our users, or the public.</P>
           <H3>5.4 Business Transfer</H3>
-          <P>If CoParent Pay is acquired or undergoes a change of ownership, your information may transfer as part of that transaction. You will be notified by email or in-app notice.</P>
+          <P>If KidExpense is acquired or undergoes a change of ownership, your information may transfer as part of that transaction. You will be notified by email or in-app notice.</P>
           <H3>5.5 No Sale of Data</H3>
           <P>We do not sell, rent, or trade your personal information to any third party for their marketing purposes.</P>
         </S>
@@ -73,7 +73,7 @@ export default function PrivacyPolicy() {
         <S title="8. International Data Transfers and Data Residency">
 
           <H3>8.1 Primary storage location</H3>
-          <P>All personal data collected through CoParent Pay is <strong>stored and processed in Australia</strong> (Sydney region). We have chosen Australian infrastructure as our primary data store to comply with the Australian Privacy Act 1988 (Cth) and to serve our primary user base.</P>
+          <P>All personal data collected through KidExpense is <strong>stored and processed in Australia</strong> (Sydney region). We have chosen Australian infrastructure as our primary data store to comply with the Australian Privacy Act 1988 (Cth) and to serve our primary user base.</P>
 
           <H3>8.2 Third-party processors and cross-border transfers</H3>
           <P>We use the following third-party processors. Where data passes through infrastructure outside Australia, we have executed appropriate legal safeguards:</P>
@@ -86,13 +86,13 @@ export default function PrivacyPolicy() {
 
           <H3>8.3 European Economic Area (EEA) and United Kingdom — GDPR</H3>
           <P>Australia is not on the European Commission&apos;s list of countries with an adequacy decision for the purposes of the EU General Data Protection Regulation (GDPR) or UK GDPR. For users located in the EEA or United Kingdom, the transfer of personal data to Australia is lawfully made under <strong>Standard Contractual Clauses (SCCs)</strong> approved by the European Commission (Commission Decision 2021/914 of 4 June 2021), incorporated into our agreements with all processors.</P>
-          <P>By using CoParent Pay from the EEA or United Kingdom, you acknowledge that your personal data will be transferred to and processed in Australia under these safeguards. You have the right to obtain a copy of the SCCs applicable to your data by contacting <strong>info@xfiniti.com.au</strong>.</P>
+          <P>By using KidExpense from the EEA or United Kingdom, you acknowledge that your personal data will be transferred to and processed in Australia under these safeguards. You have the right to obtain a copy of the SCCs applicable to your data by contacting <strong>info@xfiniti.com.au</strong>.</P>
 
           <H3>8.4 United States — CCPA (California)</H3>
           <P>The California Consumer Privacy Act (CCPA) does not impose data residency requirements. There is no legal requirement to store California residents&apos; data within the United States. Our Sydney infrastructure is fully compliant with CCPA obligations. We do not sell personal information. California residents may exercise their rights under Section 9.7 of this policy.</P>
 
           <H3>8.5 Canada — PIPEDA</H3>
-          <P>Canada&apos;s Personal Information Protection and Electronic Documents Act (PIPEDA) permits cross-border data transfers provided the receiving organisation applies comparable protection. By using CoParent Pay, Canadian residents are informed that their data is stored in Australia and processed under the safeguards described in this policy. You may withdraw consent at any time, subject to legal and contractual restrictions.</P>
+          <P>Canada&apos;s Personal Information Protection and Electronic Documents Act (PIPEDA) permits cross-border data transfers provided the receiving organisation applies comparable protection. By using KidExpense, Canadian residents are informed that their data is stored in Australia and processed under the safeguards described in this policy. You may withdraw consent at any time, subject to legal and contractual restrictions.</P>
 
           <H3>8.6 Other international users</H3>
           <P>If you are located in a jurisdiction with specific data residency laws not addressed above, please contact us at <strong>info@xfiniti.com.au</strong> before using the Service. We will advise whether the Service can be made available to you in a compliant manner.</P>
@@ -120,14 +120,14 @@ export default function PrivacyPolicy() {
         </S>
 
         <S title="10. Children's Privacy">
-          <P>CoParent Pay is designed for use by adults (18 years and older) to manage shared expenses for their dependent children. <strong>The App is not directed at children and is not intended to be used by individuals under 18.</strong></P>
+          <P>KidExpense is designed for use by adults (18 years and older) to manage shared expenses for their dependent children. <strong>The App is not directed at children and is not intended to be used by individuals under 18.</strong></P>
           <P>While users enter their children&apos;s names and optional dates of birth to categorise expenses, this data is entered exclusively by the adult account holders and is accessible only within that household. We do not use this data for any purpose other than displaying it to the household members.</P>
           <P>We do not knowingly collect personal information directly from children under 13. If you believe a child has submitted information to us directly, please contact <strong>info@xfiniti.com.au</strong> and we will promptly delete it.</P>
           <P><strong>Apple App Store rating:</strong> This App is rated 4+ (suitable for all ages) and contains no objectionable content. It is a financial management tool for adults.</P>
         </S>
 
         <S title="11. Subscription and Trial">
-          <P>CoParent Pay offers a <strong>7-day free trial</strong> for new accounts, during which all features are available at no charge. After the trial period, a <strong>Premium subscription at AUD $7.00 per month</strong> is required to continue using the App.</P>
+          <P>KidExpense offers a <strong>7-day free trial</strong> for new accounts, during which all features are available at no charge. After the trial period, a <strong>Premium subscription at AUD $7.00 per month</strong> is required to continue using the App.</P>
           <P>Subscriptions are managed through the Apple App Store or Google Play Store and are subject to those platforms&apos; subscription and refund policies. We do not store payment card details. Subscription pricing may change with 30 days&apos; notice to existing subscribers.</P>
           <P>You may cancel your subscription at any time through your App Store account settings. Cancellation takes effect at the end of the current billing period.</P>
         </S>
@@ -147,7 +147,7 @@ export default function PrivacyPolicy() {
         <S title="15. Contact and Complaints">
           <P>For questions, concerns, or data requests, contact our Privacy Officer:</P>
           <div style={{ background:'#f9fafb', border:'1px solid #e5e7eb', borderRadius:6, padding:'20px 24px', marginTop:12, marginBottom:16 }}>
-            <p style={{ margin:'0 0 4px', fontWeight:700, fontSize:14 }}>Xfiniti Technology Pty Ltd (trading as CoParent Pay)</p>
+            <p style={{ margin:'0 0 4px', fontWeight:700, fontSize:14 }}>Xfiniti Technology Pty Ltd (trading as KidExpense)</p>
             <p style={{ margin:'0 0 4px', fontSize:14, color:'#374151' }}>Australia</p>
             <p style={{ margin:'0 0 0', fontSize:14, color:'#374151' }}>Email: <a href="mailto:info@xfiniti.com.au" style={{ color:'#1d4ed8' }}>info@xfiniti.com.au</a> — we respond within 30 days</p>
           </div>
@@ -155,7 +155,7 @@ export default function PrivacyPolicy() {
         </S>
 
         <div style={{ marginTop:48, paddingTop:24, borderTop:'1px solid #e5e7eb', fontSize:12, color:'#9ca3af' }}>
-          <p style={{ margin:0 }}>CoParent Pay Privacy Policy · Xfiniti Technology Pty Ltd · Effective 18 May 2026</p>
+          <p style={{ margin:0 }}>KidExpense Privacy Policy · Xfiniti Technology Pty Ltd · Effective 18 May 2026</p>
           <p style={{ margin:'4px 0 0' }}>This policy satisfies the requirements of the Australian Privacy Act 1988, GDPR, CCPA, Apple App Store Review Guidelines 5.1, and Google Play Developer Policy.</p>
         </div>
       </div>

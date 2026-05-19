@@ -45,9 +45,9 @@ export default function PlanPage() {
   function showToast(m: string) { setToast(m); setTimeout(() => setToast(''), 4000) }
 
   function requestUpgrade() {
-    const subject = encodeURIComponent('CoParent Pay — Premium Upgrade Request')
+    const subject = encodeURIComponent('KidExpense — Premium Upgrade Request')
     const body = encodeURIComponent(
-      `Hi,\n\nI would like to upgrade my CoParent Pay account to Premium (AUD $7.00/month).\n\nMy account email: ${email}\n\nPlease activate Premium on my account.\n\nThank you`
+      `Hi,\n\nI would like to upgrade my KidExpense account to Premium (AUD $7.00/month).\n\nMy account email: ${email}\n\nPlease activate Premium on my account.\n\nThank you`
     )
     window.open(`mailto:info@xfiniti.com.au?subject=${subject}&body=${body}`)
   }

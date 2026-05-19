@@ -1,4 +1,4 @@
-# CoParent Pay
+# KidExpense
 
 **Shared Expenses. Shared Responsibility.**
 
@@ -51,8 +51,8 @@ Settle individual expenses or bulk-settle an entire month in one tap.
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/your-username/coparent-pay.git
-cd coparent-pay
+git clone https://github.com/your-username/kidexpense.git
+cd kidexpense
 npm install
 ```
 
@@ -104,7 +104,7 @@ Open [http://localhost:3000](http://localhost:3000)
 ### Fix Google OAuth branding
 
 In Google Cloud Console → APIs & Services → OAuth consent screen:
-- Set **App name** to `CoParent Pay`
+- Set **App name** to `KidExpense`
 - Add your Vercel domain to **Authorized domains**
 
 ---
@@ -135,7 +135,7 @@ WHERE email = 'your@email.com';
 ## Project Structure
 
 ```
-coparent-pay/
+kidexpense/
 ├── app/
 │   ├── page.tsx              # Login
 │   ├── layout.tsx            # Root layout + metadata

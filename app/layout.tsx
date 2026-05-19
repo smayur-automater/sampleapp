@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'CoParent Pay',
+  title: 'KidExpense',
   description: 'Shared Expenses. Shared Responsibility.',
   icons: {
     icon:  [
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   openGraph: {
-    title: 'CoParent Pay',
+    title: 'KidExpense',
     description: 'Shared Expenses. Shared Responsibility.',
     images: ['/logo.png'],
   },

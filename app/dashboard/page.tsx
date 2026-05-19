@@ -410,7 +410,7 @@ export default function DashboardPage() {
             <LockClosedIcon style={{width:22,height:22,color:'#374151'}}/>
           </div>
           <h2 style={{fontSize:20,fontWeight:700,color:'#111827',marginBottom:8}}>Your trial has ended</h2>
-          <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:24}}>Your 7-day free trial of CoParent Pay has expired. Upgrade to Premium to continue tracking shared expenses with your co-parent.</p>
+          <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:24}}>Your 7-day free trial of KidExpense has expired. Upgrade to Premium to continue tracking shared expenses with your co-parent.</p>
           <div style={{background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:4,padding:'16px 20px',marginBottom:24,textAlign:'left'}}>
             <div style={{fontSize:12,fontWeight:700,color:'#374151',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:10}}>Premium includes</div>
             {['Unlimited shared expenses','Smart split rules','Monthly statements','Receipt attachments','Analytics and reporting','Priority support'].map(f=>(

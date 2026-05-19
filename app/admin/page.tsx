@@ -145,7 +145,7 @@ export default function AdminPage() {
     if(!newAdminEmail.trim()||!newAdminEmail.includes('@')){showT('Enter a valid email');return}
     const{data:allUsers}=await supabase.rpc('admin_get_users')
     const target=(allUsers??[]).find((u:User)=>u.email.toLowerCase()===newAdminEmail.toLowerCase().trim())
-    if(!target){showT('User not found — they must have a CoParent Pay account first');return}
+    if(!target){showT('User not found — they must have a KidExpense account first');return}
     const{error}=await supabase.from('admins').insert({user_id:target.id,email:target.email})
     if(error){showT(error.message.includes('duplicate')?'Already an admin':'Error: '+error.message);return}
     setNewAdminEmail('');loadView();showT(`${target.email} is now an admin`)
@@ -183,11 +183,11 @@ export default function AdminPage() {
   function exportPDF(d:HouseholdDetail){
     const w=window.open('','_blank')!;const exps=d.expenses??[]
     w.document.write(`<!DOCTYPE html><html><head><title>Report</title><style>body{font-family:sans-serif;padding:32px;font-size:12px}h1{font-size:18px}h2{font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:#9ca3af;margin:20px 0 8px}table{width:100%;border-collapse:collapse}th{text-align:left;padding:6px 8px;font-size:10px;font-weight:700;color:#9ca3af;border-bottom:1px solid #e5e7eb}td{padding:7px 8px;border-bottom:1px solid #f3f4f6;font-size:11px}.footer{margin-top:24px;font-size:10px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:12px}@media print{body{padding:0}}</style></head><body>
-<h1>${d.household.name} — Household Report</h1><p style="color:#9ca3af;margin:0">Generated ${new Date().toLocaleString('en-AU')} · CoParent Pay Admin</p>
+<h1>${d.household.name} — Household Report</h1><p style="color:#9ca3af;margin:0">Generated ${new Date().toLocaleString('en-AU')} · KidExpense Admin</p>
 <h2>Members</h2><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead><tbody>${d.members.map(m=>`<tr><td>${m.display_name}</td><td>${m.email}</td><td>${m.role}</td><td>${fd(m.joined_at)}</td></tr>`).join('')}</tbody></table>
 <h2>Children</h2><table><thead><tr><th>Name</th><th>Date of birth</th></tr></thead><tbody>${(d.kids??[]).map(k=>`<tr><td>${k.name}</td><td>${k.dob?fd(k.dob):'—'}</td></tr>`).join('')}</tbody></table>
 <h2>Expenses (${exps.length})</h2><table><thead><tr><th>Date</th><th>Description</th><th>Child</th><th>Category</th><th>Amount</th><th>Status</th><th>Added by</th></tr></thead><tbody>${exps.map(e=>`<tr><td>${fd(e.date)}</td><td>${e.description}</td><td>${e.kid_name}</td><td>${e.category_name}</td><td>$${fmtAmt(Number(e.amount))}</td><td>${e.settlement_status}</td><td>${e.creator_email}</td></tr>`).join('')}</tbody></table>
-<p class="footer">CoParent Pay · Xfiniti Technology Pty Ltd · Confidential · Data retained 7 years</p></body></html>`)
+<p class="footer">KidExpense · Xfiniti Technology Pty Ltd · Confidential · Data retained 7 years</p></body></html>`)
     w.document.close();w.print()
   }
 
@@ -208,7 +208,7 @@ export default function AdminPage() {
       {/* Sidebar */}
       <div style={SB}>
         <div style={{padding:'20px 18px 14px',borderBottom:'1px solid #334155'}}>
-          <div style={{fontSize:14,fontWeight:700,color:'#f1f5f9'}}>CoParent Pay</div>
+          <div style={{fontSize:14,fontWeight:700,color:'#f1f5f9'}}>KidExpense</div>
           <div style={{fontSize:11,color:'#64748b',marginTop:2}}>Admin panel</div>
         </div>
         <nav style={{flex:1,padding:'10px 10px'}}>
@@ -465,7 +465,7 @@ export default function AdminPage() {
           <div>
             <div style={{...CD,marginBottom:14}}>
               <div style={{fontSize:11,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:10}}>Add admin user</div>
-              <p style={{fontSize:13,color:'#64748b',marginBottom:10,lineHeight:1.6}}>The user must already have a CoParent Pay account.</p>
+              <p style={{fontSize:13,color:'#64748b',marginBottom:10,lineHeight:1.6}}>The user must already have a KidExpense account.</p>
               <div style={{display:'flex',gap:8}}>
                 <input value={newAdminEmail} onChange={e=>setNewAdminEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addAdmin()} placeholder="user@example.com" style={{...INP,flex:1}}/>
                 <button onClick={addAdmin} style={{padding:'9px 18px',background:'#7c3aed',color:'#fff',border:'none',borderRadius:6,fontSize:13,fontWeight:600,cursor:'pointer',flexShrink:0}}>Add admin</button>

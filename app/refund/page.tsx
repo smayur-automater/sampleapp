@@ -29,17 +29,17 @@ export default function RefundPolicy() {
         <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 44 }}>Effective date: 18 May 2026 · Last updated: 18 May 2026</p>
 
         <S title="1. Overview">
-          <P>This Refund Policy applies to all subscriptions and purchases made through CoParent Pay, operated by Xfiniti Technology Pty Ltd. By subscribing to our Premium plan, you agree to this policy.</P>
+          <P>This Refund Policy applies to all subscriptions and purchases made through KidExpense, operated by Xfiniti Technology Pty Ltd. By subscribing to our Premium plan, you agree to this policy.</P>
           <P>We offer a <strong>7-day free trial</strong> so you can evaluate all Premium features before committing to a paid subscription. No payment is required during the trial period.</P>
         </S>
 
         <S title="2. No refunds after 7-day trial">
           <P><strong>We do not offer refunds once your paid subscription has commenced</strong>, subject to the exceptions listed in Section 4.</P>
-          <P>Because CoParent Pay provides a full 7-day free trial with unrestricted access to all features, we consider this a sufficient opportunity for users to assess whether the product meets their needs before making any payment.</P>
+          <P>Because KidExpense provides a full 7-day free trial with unrestricted access to all features, we consider this a sufficient opportunity for users to assess whether the product meets their needs before making any payment.</P>
           <P>By starting a paid subscription after your trial, you acknowledge that:</P>
           <UL items={[
             'You have had 7 days of full access to evaluate the product',
-            'You are satisfied that CoParent Pay meets your requirements',
+            'You are satisfied that KidExpense meets your requirements',
             'You agree to the no-refund policy for the subscription period',
           ]}/>
         </S>
@@ -77,13 +77,13 @@ export default function RefundPolicy() {
         <S title="7. Contact us">
           <P>If you have a question about this policy or wish to raise a billing concern, contact us at:</P>
           <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 6, padding: '16px 20px', marginTop: 8 }}>
-            <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: 14, color: '#111827' }}>Xfiniti Technology Pty Ltd (trading as CoParent Pay)</p>
+            <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: 14, color: '#111827' }}>Xfiniti Technology Pty Ltd (trading as KidExpense)</p>
             <p style={{ margin: 0, fontSize: 14, color: '#374151' }}>Email: <a href="mailto:info@xfiniti.com.au" style={{ color: '#2563eb' }}>info@xfiniti.com.au</a> — we respond within 5 business days</p>
           </div>
         </S>
 
         <div style={{ marginTop: 40, paddingTop: 20, borderTop: '1px solid #e5e7eb', fontSize: 12, color: '#9ca3af' }}>
-          <p style={{ margin: 0 }}>CoParent Pay Refund Policy · Xfiniti Technology Pty Ltd · Effective 18 May 2026</p>
+          <p style={{ margin: 0 }}>KidExpense Refund Policy · Xfiniti Technology Pty Ltd · Effective 18 May 2026</p>
         </div>
       </div>
     </Shell>

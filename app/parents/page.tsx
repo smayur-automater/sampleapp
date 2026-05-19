@@ -221,10 +221,10 @@ export default function ParentsPage() {
     catch { const el = document.createElement('textarea'); el.value = inviteLink(code); document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); showToast('Link copied!') }
   }
 
-  function shareEmail(inv: Invite) { const link = inviteLink(inv.code); window.open(`mailto:${inv.invited_email}?subject=${encodeURIComponent('You have been invited to CoParent Pay')}&body=${encodeURIComponent(`Hi,\n\nClick the link below to join CoParent Pay:\n${link}\n\nExpires in 7 days.`)}`) }
-  function shareWhatsApp(inv: Invite) { window.open(`https://wa.me/?text=${encodeURIComponent(`Join me on CoParent Pay: ${inviteLink(inv.code)}`)}`, '_blank') }
-  function shareSMS(inv: Invite) { window.location.href = `sms:?&body=${encodeURIComponent(`Join me on CoParent Pay: ${inviteLink(inv.code)}`)}` }
-  function shareNative(inv: Invite) { if ('share' in navigator) navigator.share({ title: 'Join CoParent Pay', url: inviteLink(inv.code) }).catch(() => {}) }
+  function shareEmail(inv: Invite) { const link = inviteLink(inv.code); window.open(`mailto:${inv.invited_email}?subject=${encodeURIComponent('You have been invited to KidExpense')}&body=${encodeURIComponent(`Hi,\n\nClick the link below to join KidExpense:\n${link}\n\nExpires in 7 days.`)}`) }
+  function shareWhatsApp(inv: Invite) { window.open(`https://wa.me/?text=${encodeURIComponent(`Join me on KidExpense: ${inviteLink(inv.code)}`)}`, '_blank') }
+  function shareSMS(inv: Invite) { window.location.href = `sms:?&body=${encodeURIComponent(`Join me on KidExpense: ${inviteLink(inv.code)}`)}` }
+  function shareNative(inv: Invite) { if ('share' in navigator) navigator.share({ title: 'Join KidExpense', url: inviteLink(inv.code) }).catch(() => {}) }
   const canShareNative = typeof navigator !== 'undefined' && 'share' in navigator
 
   async function cancelInvite(id: string) { await supabase.from('invites').delete().eq('id', id); load() }
