@@ -429,31 +429,41 @@ My account email: ${user.email}
 Please activate Premium on my account.
 
 Thank you`)
-                      window.open(`mailto:info@xfiniti.com.au?subject=${subject}&body=${body}`)
+                      try {
+                        const res  = await fetch('/api/stripe/checkout', {
+                          method: 'POST', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ user_id: user.id, email: user.email }),
+                        })
+                        const data = await res.json()
+                        if (data.url) window.location.href = data.url
+                        else alert('Could not start checkout — ' + (data.error ?? 'please try again'))
+                      } catch { alert('Could not connect — please try again') }
                     }}
                       style={{ width: '100%', padding: 12, background: '#0f172a', color: '#fff', border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 700, cursor: 'pointer', marginBottom: 8 }}>
-                      Request Premium upgrade
+                      Upgrade to Premium — $7.00/month
                     </button>
                     <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center' as const, lineHeight: 1.6, margin: 0 }}>
-                      We will activate your account within a few hours of your request.
+                      Secured by Stripe. Cancel anytime.
                     </p>
                   </>
                 )}
 
                 {isPremium && (
                   <button onClick={async () => {
-                    if (!confirm('Send a cancellation request to info@xfiniti.com.au? Your Premium access continues until our team processes the request.')) return
                     const { data: { user } } = await supabase.auth.getUser()
                     if (!user) return
-                    const res = await fetch('/api/support', {
-                      method: 'POST', headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ name: user.email?.split('@')[0], email: user.email, subject: 'Premium Cancellation Request', message: `Please cancel the Premium subscription for account: ${user.email}. I understand my access continues until the end of the current billing period.` }),
-                    })
-                    if (res.ok) alert('Cancellation request sent. We will process it within 24 hours and no further charges will be made.')
-                    else alert('Could not send request — please email info@xfiniti.com.au directly.')
+                    try {
+                      const res  = await fetch('/api/stripe/portal', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id: user.id }),
+                      })
+                      const data = await res.json()
+                      if (data.url) window.location.href = data.url
+                      else alert(data.error ?? 'Could not open billing portal')
+                    } catch { alert('Could not connect — please email info@xfiniti.com.au') }
                   }}
-                    style={{ width: '100%', padding: 11, background: '#fff', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer', marginBottom: 8 }}>
-                    Request cancellation
+                    style={{ width: '100%', padding: 11, background: '#fff', color: '#374151', border: '1px solid #e5e7eb', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: 'pointer', marginBottom: 8 }}>
+                    Manage billing / Cancel subscription
                   </button>
                 )}
               </div>

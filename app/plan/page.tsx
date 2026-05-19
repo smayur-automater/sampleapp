@@ -26,15 +26,26 @@ interface Usage {
 
 export default function PlanPage() {
   const [usage,    setUsage]    = useState<Usage|null>(null)
+  const [userId,   setUserId]   = useState('')
   const [email,    setEmail]    = useState('')
   const [loading,  setLoading]  = useState(true)
-  const [cancelling, setCancelling] = useState(false)
+  const [cancelling,      setCancelling]      = useState(false)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [portalLoading,   setPortalLoading]   = useState(false)
   const [cancelDone, setCancelDone] = useState(false)
   const [toast,    setToast]    = useState('')
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const upgrade = params.get('upgrade')
+    if (upgrade === 'success')   showToast('Payment successful — Premium is now active!')
+    if (upgrade === 'cancelled') showToast('Checkout cancelled — your plan was not changed')
+  }, []) // eslint-disable-line
+
+  useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
+      setUserId(user.id ?? '')
       setEmail(user.email ?? '')
       const { data } = await supabase.rpc('get_my_usage')
       if (data) setUsage(data as Usage)
@@ -44,12 +55,46 @@ export default function PlanPage() {
 
   function showToast(m: string) { setToast(m); setTimeout(() => setToast(''), 4000) }
 
-  function requestUpgrade() {
-    const subject = encodeURIComponent('KidExpense — Premium Upgrade Request')
-    const body = encodeURIComponent(
-      `Hi,\n\nI would like to upgrade my KidExpense account to Premium (AUD $7.00/month).\n\nMy account email: ${email}\n\nPlease activate Premium on my account.\n\nThank you`
-    )
-    window.open(`mailto:info@xfiniti.com.au?subject=${subject}&body=${body}`)
+  async function startCheckout() {
+    if (!userId || !email) return
+    setCheckoutLoading(true)
+    try {
+      const res  = await fetch('/api/stripe/checkout', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ user_id: userId, email }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        showToast('Could not start checkout — ' + (data.error ?? 'please try again'))
+      }
+    } catch {
+      showToast('Could not connect to payment system — please try again')
+    }
+    setCheckoutLoading(false)
+  }
+
+  async function openPortal() {
+    if (!userId) return
+    setPortalLoading(true)
+    try {
+      const res  = await fetch('/api/stripe/portal', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ user_id: userId }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        showToast(data.error ?? 'Could not open billing portal')
+      }
+    } catch {
+      showToast('Could not connect — please email info@xfiniti.com.au')
+    }
+    setPortalLoading(false)
   }
 
   async function requestCancellation() {
@@ -166,41 +211,47 @@ export default function PlanPage() {
                 ))}
               </div>
               {!isPremium && (
-                <button onClick={requestUpgrade}
-                  style={{ width: '100%', padding: 11, background: '#fff', color: '#0f172a', border: 'none', borderRadius: 3, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-                  Upgrade to Premium
+                <button onClick={startCheckout} disabled={checkoutLoading}
+                  style={{ width: '100%', padding: 11, background: checkoutLoading?'#6b7280':'#fff', color: '#0f172a', border: 'none', borderRadius: 3, fontSize: 13, fontWeight: 700, cursor: checkoutLoading?'not-allowed':'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                  {checkoutLoading ? 'Connecting to Stripe…' : 'Upgrade to Premium — $7.00/month'}
                 </button>
               )}
             </div>
           </div>
         )}
 
-        {/* Cancellation section — Premium users only */}
+        {/* Manage subscription — Premium users */}
         {isPremium && (
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 4, padding: '16px 18px', marginBottom: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 6 }}>Cancel subscription</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 6 }}>Manage subscription</div>
             <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.65, margin: '0 0 12px' }}>
-              Cancelling sends a request to our team at <strong>info@xfiniti.com.au</strong>. Your Premium access continues until the end of your current billing period. No further charges will be made after cancellation is processed.
+              View invoices, update your payment method, or cancel your subscription through the Stripe billing portal. Cancellation takes effect at the end of your current billing period.
             </p>
-            {cancelDone ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: '#f0fdf4', border: '1px solid #d1fae5', borderRadius: 4 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button onClick={openPortal} disabled={portalLoading}
+                style={{ padding: '9px 18px', background: '#0f172a', color: '#fff', border: 'none', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: portalLoading?'not-allowed':'pointer' }}>
+                {portalLoading ? 'Opening…' : 'Manage billing & invoices'}
+              </button>
+              <button onClick={requestCancellation} disabled={cancelling}
+                style={{ padding: '9px 18px', background: '#fff', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: cancelling?'not-allowed':'pointer' }}>
+                {cancelling ? 'Sending…' : 'Request cancellation by email'}
+              </button>
+            </div>
+            {cancelDone && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: '#f0fdf4', border: '1px solid #d1fae5', borderRadius: 4, marginTop: 10 }}>
                 <CheckCircleIcon style={{ width: 15, height: 15, color: '#059669', flexShrink: 0 }}/>
                 <span style={{ fontSize: 13, color: '#059669', fontWeight: 600 }}>Cancellation request sent — we will process it within 24 hours.</span>
               </div>
-            ) : (
-              <button onClick={requestCancellation} disabled={cancelling}
-                style={{ padding: '9px 18px', background: '#fff', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: cancelling?'not-allowed':'pointer' }}>
-                {cancelling ? 'Sending request…' : 'Request cancellation'}
-              </button>
             )}
           </div>
         )}
 
-        {/* How to upgrade note */}
+        {/* Stripe security note */}
         {!isPremium && (
-          <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 4, padding: '12px 16px', marginBottom: 16 }}>
+          <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 4, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 10 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" style={{ flexShrink:0, marginTop:1 }}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             <p style={{ fontSize: 12, color: '#6b7280', margin: 0, lineHeight: 1.6 }}>
-              Click Upgrade to send an email request to <strong>info@xfiniti.com.au</strong>. We will activate your Premium account within a few hours. Questions? Email us directly.
+              Payments are securely processed by <strong>Stripe</strong>. We never store your card details. Your subscription renews monthly — cancel anytime from the billing portal.
             </p>
           </div>
         )}
