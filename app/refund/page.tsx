@@ -30,18 +30,23 @@ export default function RefundPolicy() {
 
         <S title="1. Overview">
           <P>This Refund Policy applies to all subscriptions and purchases made through KidExpense, operated by Xfiniti Technology Pty Ltd. By subscribing to our Premium plan, you agree to this policy.</P>
-          <P>We offer a <strong>7-day free trial</strong> so you can evaluate all Premium features before committing to a paid subscription. No payment is required during the trial period.</P>
+          <P>We offer a <strong>30-day free trial</strong> so you can evaluate all Premium features before committing to a paid subscription. No payment is required during the trial period.</P>
         </S>
 
-        <S title="2. No refunds after 7-day trial">
+        <S title="2. No refunds after 30-day trial">
           <P><strong>We do not offer refunds once your paid subscription has commenced</strong>, subject to the exceptions listed in Section 4.</P>
-          <P>Because KidExpense provides a full 7-day free trial with unrestricted access to all features, we consider this a sufficient opportunity for users to assess whether the product meets their needs before making any payment.</P>
+          <P>Because KidExpense provides a full 30-day free trial with unrestricted access to all features, we consider this a sufficient opportunity for users to assess whether the product meets their needs before making any payment.</P>
           <P>By starting a paid subscription after your trial, you acknowledge that:</P>
           <UL items={[
-            'You have had 7 days of full access to evaluate the product',
+            'You have had 30 days of full access to evaluate the product',
             'You are satisfied that KidExpense meets your requirements',
             'You agree to the no-refund policy for the subscription period',
           ]}/>
+        </S>
+
+                <S title="2b. No refunds after subscription commences">
+          <P><strong>Once a paid subscription commences, no refund will be issued for any reason</strong>, including but not limited to: change of mind, failure to use the Service, or dissatisfaction with the product. Your subscription continues until the end of the current billing period after cancellation.</P>
+          <P>This policy is consistent with the 30-day free trial offered before any charge is made. We encourage all users to fully evaluate KidExpense during the trial period before committing to a paid subscription.</P>
         </S>
 
         <S title="3. Cancellation">

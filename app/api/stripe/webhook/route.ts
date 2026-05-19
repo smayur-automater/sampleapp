@@ -1,42 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+// Force dynamic — prevents Next.js static analysis at build time
+export const dynamic = 'force-dynamic'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-04-22.dahlia' as any,
-})
-
-// Must use service role key to bypass RLS and update any user's plan
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
-// Helper: set a user's plan in household_members
-async function setPlan(
-  userId: string,
-  plan: 'premium' | 'free',
-  stripeCustomerId?: string
-) {
-  const update: Record<string, string> = {
-    plan,
-    plan_assigned_at: new Date().toISOString(),
-  }
-  if (stripeCustomerId) {
-    update.stripe_customer_id = stripeCustomerId
-  }
-
-  const { error } = await supabaseAdmin
-    .from('household_members')
-    .update(update)
-    .eq('user_id', userId)
-
-  if (error) {
-    console.error(`setPlan error for ${userId}:`, error.message)
-  } else {
-    console.log(`Plan set to ${plan} for user ${userId}`)
-  }
-}
 
 // Helper: get user_id from Stripe subscription metadata
 function getUserId(sub: Stripe.Subscription): string | null {
@@ -44,9 +11,17 @@ function getUserId(sub: Stripe.Subscription): string | null {
 }
 
 export async function POST(req: NextRequest) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
+    apiVersion: '2026-04-22.dahlia' as any,
+  })
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+  )
+
   const body      = await req.text()
   const signature = req.headers.get('stripe-signature') ?? ''
-  const secret    = process.env.STRIPE_WEBHOOK_SECRET!
+  const secret    = process.env.STRIPE_WEBHOOK_SECRET ?? ''
 
   // Verify the webhook came from Stripe
   let event: Stripe.Event
@@ -72,7 +47,12 @@ export async function POST(req: NextRequest) {
         break
       }
 
-      await setPlan(userId, 'premium', custId)
+      await supabaseAdmin.from('household_members').update({
+        plan: 'premium',
+        plan_assigned_at: new Date().toISOString(),
+        stripe_customer_id: custId,
+      }).eq('user_id', userId)
+      console.log('Premium activated for', userId)
       break
     }
 
@@ -86,7 +66,11 @@ export async function POST(req: NextRequest) {
       const userId = getUserId(sub)
       if (!userId) break
 
-      await setPlan(userId, 'premium', sub.customer as string)
+      await supabaseAdmin.from('household_members').update({
+        plan: 'premium',
+        plan_assigned_at: new Date().toISOString(),
+        stripe_customer_id: sub.customer as string,
+      }).eq('user_id', userId)
       break
     }
 
@@ -103,8 +87,11 @@ export async function POST(req: NextRequest) {
       // Only downgrade if subscription is actually cancelled/past_due
       // Don't downgrade on first retry — Stripe retries 3 times
       if (sub.status === 'past_due' || sub.status === 'unpaid') {
-        await setPlan(userId, 'free')
-        console.log(`Downgraded user ${userId} due to payment failure (${sub.status})`)
+        await supabaseAdmin.from('household_members').update({
+        plan: 'free',
+        plan_assigned_at: new Date().toISOString(),
+      }).eq('user_id', userId)
+      console.log('Downgraded due to payment failure:', userId, sub.status)
       }
       break
     }
@@ -115,8 +102,11 @@ export async function POST(req: NextRequest) {
       const userId = getUserId(sub)
       if (!userId) break
 
-      await setPlan(userId, 'free')
-      console.log(`Subscription cancelled — downgraded user ${userId}`)
+      await supabaseAdmin.from('household_members').update({
+        plan: 'free',
+        plan_assigned_at: new Date().toISOString(),
+      }).eq('user_id', userId)
+      console.log('Subscription cancelled — downgraded:', userId)
       break
     }
 
@@ -127,9 +117,16 @@ export async function POST(req: NextRequest) {
       if (!userId) break
 
       if (sub.status === 'active') {
-        await setPlan(userId, 'premium', sub.customer as string)
+        await supabaseAdmin.from('household_members').update({
+        plan: 'premium',
+        plan_assigned_at: new Date().toISOString(),
+        stripe_customer_id: sub.customer as string,
+      }).eq('user_id', userId)
       } else if (sub.status === 'canceled') {
-        await setPlan(userId, 'free')
+        await supabaseAdmin.from('household_members').update({
+          plan: 'free',
+          plan_assigned_at: new Date().toISOString(),
+        }).eq('user_id', userId)
       }
       break
     }

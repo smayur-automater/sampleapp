@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+// Force dynamic — prevents Next.js static analysis at build time
+export const dynamic = 'force-dynamic'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-04-22.dahlia' as any,
-})
-
-// Service role client to read stripe_customer_id
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
 export async function POST(req: NextRequest) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
+    apiVersion: '2026-04-22.dahlia' as any,
+  })
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+  )
   try {
     const { user_id } = await req.json()
 
@@ -38,7 +38,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kidexpense-mayur-shahs-projects-fe47d9df.vercel.app'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL
+      ?? req.headers.get('origin')
+      ?? 'https://kidexpense-mayur-shahs-projects-fe47d9df.vercel.app'
 
     const portalSession = await stripe.billingPortal.sessions.create({
       customer:   member.stripe_customer_id,

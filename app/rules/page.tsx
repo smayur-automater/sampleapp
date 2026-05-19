@@ -88,13 +88,14 @@ export default function RulesPage() {
     if (!ctx) return
     setSaving(true); setErr('')
 
+    // Build payload without null columns — DB has NOT NULL constraint on category_id
     const payload: any = {
       household_id: ctx.household_id,
       split_pct:    form.split_pct,
       is_optional:  form.is_optional,
-      category_id:  ruleType === 'category' ? form.category_id : null,
-      kid_id:       ruleType === 'kid'      ? form.kid_id      : null,
     }
+    if (ruleType === 'category') payload.category_id = form.category_id
+    if (ruleType === 'kid')      payload.kid_id       = form.kid_id
 
     const { error } = await supabase.from('split_rules').insert(payload)
     setSaving(false)

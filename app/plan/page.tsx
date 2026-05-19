@@ -118,7 +118,7 @@ export default function PlanPage() {
   }
 
   const isPremium    = usage?.plan === 'premium'
-  const trialDays    = usage?.trial_days_left ?? 7
+  const trialDays    = usage?.trial_days_left ?? 30
   const trialExpired = usage?.trial_expired ?? false
   const trialActive  = !isPremium && !trialExpired
 
@@ -170,7 +170,7 @@ export default function PlanPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' as const, letterSpacing: '0.07em', marginBottom: 3 }}>Free Trial</div>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: '#111827' }}>$0 <span style={{ fontSize: 13, fontWeight: 400, color: '#9ca3af' }}>/ 7 days</span></div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: '#111827' }}>$0 <span style={{ fontSize: 13, fontWeight: 400, color: '#9ca3af' }}>/ 30 days</span></div>
                 </div>
                 {trialActive  && <span style={{ padding: '2px 8px', background: '#f0fdf4', border: '1px solid #d1fae5', borderRadius: 3, fontSize: 11, fontWeight: 700, color: '#059669' }}>Active</span>}
                 {trialExpired && <span style={{ padding: '2px 8px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 3, fontSize: 11, fontWeight: 700, color: '#dc2626' }}>Expired</span>}
@@ -179,13 +179,13 @@ export default function PlanPage() {
               {trialActive && (
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ height: 4, background: '#f1f5f9', borderRadius: 2, overflow: 'hidden', marginBottom: 4 }}>
-                    <div style={{ height: '100%', width: `${Math.max(((7-trialDays)/7)*100,4)}%`, background: trialDays<=2?'#dc2626':trialDays<=4?'#d97706':'#059669', borderRadius: 2 }}/>
+                    <div style={{ height: '100%', width: `${Math.max(((30-trialDays)/30)*100,4)}%`, background: trialDays<=5?'#dc2626':trialDays<=10?'#d97706':'#059669', borderRadius: 2 }}/>
                   </div>
-                  <div style={{ fontSize: 11, color: '#6b7280' }}>{trialDays} of 7 days remaining</div>
+                  <div style={{ fontSize: 11, color: '#6b7280' }}>{trialDays} of 30 days remaining</div>
                 </div>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {['All Premium features included', 'No credit card required', 'Full access for 7 days'].map(f => (
+                {['All Premium features included', 'No credit card required', 'Full access for 30 days'].map(f => (
                   <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                     {trialActive ? <CheckCircleIcon style={{ width: 13, height: 13, color: '#059669', flexShrink: 0 }}/> : <XCircleIcon style={{ width: 13, height: 13, color: '#d1d5db', flexShrink: 0 }}/>}
                     <span style={{ fontSize: 12, color: trialActive?'#374151':'#9ca3af' }}>{f}</span>

@@ -59,7 +59,7 @@ const FEATURES = [
   },
 ]
 
-const TRIAL_ITEMS   = ['All features included', 'No credit card required', 'Full access for 7 days']
+const TRIAL_ITEMS   = ['All features included', 'No credit card required', 'Full access for 30 days']
 const PREMIUM_ITEMS = ['Unlimited shared expenses', 'Smart split rules (category + child)', 'Monthly statements — PDF and CSV', 'Receipt photo attachments', 'Analytics and custom charts', 'Priority support']
 
 const S: React.CSSProperties = { fontFamily: 'system-ui,-apple-system,sans-serif' }
@@ -177,7 +177,7 @@ export default function AboutPage() {
                 <p style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>Free Trial</p>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 3 }}>
                   <span style={{ fontSize: 26, fontWeight: 700, color: '#111827' }}>$0</span>
-                  <span style={{ fontSize: 13, color: '#9ca3af' }}>/ 7 days</span>
+                  <span style={{ fontSize: 13, color: '#9ca3af' }}>/ 30 days</span>
                 </div>
                 <p style={{ fontSize: 12, color: '#9ca3af', margin: '0 0 16px' }}>No credit card required</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
@@ -189,7 +189,7 @@ export default function AboutPage() {
                   ))}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                     <XCircleIcon style={{ width: 13, height: 13, color: '#d1d5db', flexShrink: 0 }}/>
-                    <span style={{ fontSize: 12, color: '#9ca3af' }}>Expires after 7 days</span>
+                    <span style={{ fontSize: 12, color: '#9ca3af' }}>Expires after 30 days</span>
                   </div>
                 </div>
               </div>

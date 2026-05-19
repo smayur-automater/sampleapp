@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+// Force dynamic — prevents Next.js static analysis at build time
+export const dynamic = 'force-dynamic'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-04-22.dahlia' as any,
-})
-
 export async function POST(req: NextRequest) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
+    apiVersion: '2026-04-22.dahlia' as any,
+  })
   try {
     const { user_id, email } = await req.json()
 
@@ -13,7 +15,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing user_id or email' }, { status: 400 })
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://kidexpense-mayur-shahs-projects-fe47d9df.vercel.app'
+    // Use env var, or derive from request origin so redirects always work
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL
+      ?? req.headers.get('origin')
+      ?? req.headers.get('referer')?.split('/').slice(0,3).join('/')
+      ?? 'https://kidexpense-mayur-shahs-projects-fe47d9df.vercel.app'
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',

@@ -127,7 +127,7 @@ export default function PrivacyPolicy() {
         </S>
 
         <S title="11. Subscription and Trial">
-          <P>KidExpense offers a <strong>7-day free trial</strong> for new accounts, during which all features are available at no charge. After the trial period, a <strong>Premium subscription at AUD $7.00 per month</strong> is required to continue using the App.</P>
+          <P>KidExpense offers a <strong>30-day free trial</strong> for new accounts, during which all features are available at no charge. After the trial period, a <strong>Premium subscription at AUD $7.00 per month</strong> is required to continue using the App.</P>
           <P>Subscriptions are managed through the Apple App Store or Google Play Store and are subject to those platforms&apos; subscription and refund policies. We do not store payment card details. Subscription pricing may change with 30 days&apos; notice to existing subscribers.</P>
           <P>You may cancel your subscription at any time through your App Store account settings. Cancellation takes effect at the end of the current billing period.</P>
         </S>

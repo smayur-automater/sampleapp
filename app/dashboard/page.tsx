@@ -159,7 +159,7 @@ export default function DashboardPage() {
   }, [ctx, loadData])
 
   function openAdd() {
-    if (trialExpired && !isPremium) { setSaveErr('Your 7-day trial has ended. Please upgrade to Premium to add expenses.'); return }
+    if (trialExpired && !isPremium) { setSaveErr('Your 30-day trial has ended. Please upgrade to Premium to add expenses.'); return }
     const autoKid  = kids.length===1 ? kids[0].id  : ''
     const autoCat  = cats.length===1 ? cats[0].id  : ''
     const autoSplit = (autoKid && kidRules[autoKid] && !kidRules[autoKid].is_optional) ? kidRules[autoKid].split_pct
@@ -386,7 +386,7 @@ export default function DashboardPage() {
 
   const isPremium   = usage?.plan==='premium'
   const trialActive = usage?.trial_active ?? true
-  const trialDays   = usage?.trial_days_left ?? 7
+  const trialDays   = usage?.trial_days_left ?? 30
   const trialExpired = usage?.trial_expired ?? false
   const atLimit     = trialExpired && !isPremium
 
@@ -410,7 +410,7 @@ export default function DashboardPage() {
             <LockClosedIcon style={{width:22,height:22,color:'#374151'}}/>
           </div>
           <h2 style={{fontSize:20,fontWeight:700,color:'#111827',marginBottom:8}}>Your trial has ended</h2>
-          <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:24}}>Your 7-day free trial of KidExpense has expired. Upgrade to Premium to continue tracking shared expenses with your co-parent.</p>
+          <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:24}}>Your 30-day free trial of KidExpense has expired. Upgrade to Premium to continue tracking shared expenses with your co-parent.</p>
           <div style={{background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:4,padding:'16px 20px',marginBottom:24,textAlign:'left'}}>
             <div style={{fontSize:12,fontWeight:700,color:'#374151',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:10}}>Premium includes</div>
             {['Unlimited shared expenses','Smart split rules','Monthly statements','Receipt attachments','Analytics and reporting','Priority support'].map(f=>(
@@ -468,7 +468,7 @@ export default function DashboardPage() {
                   <a href="/plan" style={{fontSize:12,color:'#374151',textDecoration:'underline'}}>View plans</a>
                 </div>
                 <div style={{height:4,background:'#f1f5f9',borderRadius:2,overflow:'hidden'}}>
-                  <div style={{height:'100%',width:`${Math.max(((7-trialDays)/7)*100,4)}%`,background:trialDays<=2?'#dc2626':trialDays<=4?'#d97706':'#0f172a',borderRadius:2}}/>
+                  <div style={{height:'100%',width:`${Math.max(((30-trialDays)/30)*100,4)}%`,background:trialDays<=5?'#dc2626':trialDays<=10?'#d97706':'#0f172a',borderRadius:2}}/>
                 </div>
               </>
             )}
